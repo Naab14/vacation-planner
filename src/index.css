@@ -1,29 +1,36 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Epilogue:ital,wght@0,400;0,500;0,800;0,900;1,800;1,900&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ── Default Theme ────────────────────────────────────────────────────────── */
+/* ── Default Theme — Neo-Kinetic Travelogue ───────────────────────────────── */
 :root {
-  --bg-primary: #fff;
-  --bg-secondary: #f3f4f6;
-  --bg-panel: #f9fafb;
-  --text-primary: #111827;
-  --text-secondary: #6b7280;
-  --accent: #3b82f6;
-  --accent-hover: #2563eb;
-  --accent-secondary: #8b5cf6;
-  --border: #e5e7eb;
+  /* Electric Horizon palette */
+  --bg-primary: #f8fafc;
+  --bg-secondary: #f1f5f9;
+  --bg-panel: #ffffff;
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+  --accent: #4f46e5;
+  --accent-hover: #4338ca;
+  --accent-secondary: #3b82f6;
+  --accent-alert: #f43f5e;
+  --accent-reward: #fbbf24;
+  --border: #e2e8f0;
   --border-radius: 12px;
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  --font-body: 'Inter', system-ui, sans-serif;
-  --font-heading: 'Inter', system-ui, sans-serif;
-  --draft-bg: #d1d5db;
-  --draft-border: #9ca3af;
-  --pending-bg: #fef08a;
+  /* Tactile shadows — heavier for physical presence */
+  --shadow-sm: 0 1px 3px 0 rgba(0,0,0,0.1), 0 1px 2px -1px rgba(0,0,0,0.1);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.12), 0 4px 6px -4px rgba(0,0,0,0.08);
+  --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.12), 0 8px 10px -6px rgba(0,0,0,0.06);
+  /* Typography — Editorial & Impact */
+  --font-body: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-heading: 'Epilogue', system-ui, sans-serif;
+  /* Status colors */
+  --draft-bg: #e2e8f0;
+  --draft-border: #94a3b8;
+  --pending-bg: #fef9c3;
   --pending-border: #facc15;
   --approved-bg: #bbf7d0;
   --approved-border: #22c55e;
@@ -31,12 +38,13 @@
   --requested-border: #f59e0b;
   --coverage-green: #22c55e;
   --coverage-yellow: #eab308;
-  --coverage-red: #ef4444;
-  --topbar-bg: #1e293b;
+  --coverage-red: #f43f5e;
+  /* Navigation */
+  --topbar-bg: #1e1b4b;
   --topbar-text: #f8fafc;
-  --holiday-bg: #fef2f2;
-  --holiday-border: #fca5a5;
-  --holiday-text: #b91c1c;
+  --holiday-bg: #fff1f2;
+  --holiday-border: #fda4af;
+  --holiday-text: #be123c;
 }
 
 /* ── MotherDuck Theme ─────────────────────────────────────────────────────── */
@@ -198,12 +206,30 @@ h1, h2, h3, h4, h5, h6 { font-family: var(--font-heading); }
   pointer-events: none;
 }
 
-/* ── Drag ghost ───────────────────────────────────────────────────────────── */
+/* ── Drag ghost — "Lift" interaction ──────────────────────────────────────── */
 .drag-ghost {
-  opacity: 0.6;
+  opacity: 0.55;
   outline: 2px solid var(--accent);
   outline-offset: 1px;
 }
+.drag-lifting {
+  transform: scale(1.05);
+  box-shadow: 0 25px 50px -12px rgba(79, 70, 229, 0.35);
+  z-index: 999;
+}
 .drop-target-highlight {
-  background: rgba(59, 130, 246, 0.08) !important;
+  background: rgba(79, 70, 229, 0.07) !important;
+}
+
+/* ── Kinetic card ─────────────────────────────────────────────────────────── */
+.kinetic-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-xl);
+  transition: box-shadow 200ms ease-out, transform 200ms ease-out;
+}
+.kinetic-card:hover {
+  box-shadow: 0 25px 50px -12px rgba(79, 70, 229, 0.15);
+  transform: translateY(-1px);
 }

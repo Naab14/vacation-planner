@@ -170,10 +170,20 @@ export default function App() {
         )}
       </div>
 
-      {/* Toast */}
+      {/* Toast — punchy kinetic notification */}
       {toast && (
-        <div className="fixed bottom-4 right-4 z-50 px-4 py-2 rounded shadow-lg text-sm font-medium"
-          style={{ background: 'var(--accent)', color: '#fff', borderRadius: 'var(--border-radius)' }}>
+        <div
+          className="fixed bottom-5 right-5 z-50 px-5 py-3 text-sm font-bold"
+          style={{
+            background: 'var(--accent)',
+            color: '#fff',
+            borderRadius: '999px',
+            boxShadow: '0 8px 24px rgba(79,70,229,0.45)',
+            fontFamily: 'var(--font-body)',
+            letterSpacing: '-0.01em',
+            animation: 'none',
+          }}
+        >
           {toast}
         </div>
       )}

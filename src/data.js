@@ -60,7 +60,7 @@ export const defaultSettings = {
 
 // ── Themes ───────────────────────────────────────────────────────────────────
 export const themes = [
-  { id: 'default', label: 'Default' },
+  { id: 'default', label: 'Neo-Kinetic' },
   { id: 'motherduck', label: 'MotherDuck' },
   { id: 'dark', label: 'Dark' },
   { id: 'ocean', label: 'Ocean' },

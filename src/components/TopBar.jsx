@@ -6,59 +6,103 @@ export default function TopBar({ shiftMode, onShiftModeChange, theme, onThemeCha
     { value: 'combined', label: 'Combined' },
     { value: 'summer', label: 'Summer' },
   ];
-  
-  // Use Tailwind utility classes for buttons
-  const btnClass = "px-4 py-1.5 text-sm font-medium rounded-lg transition-all duration-200 hover:scale-[1.02] active:scale-95 shadow-sm bg-white/10 backdrop-blur-sm text-white/90 hover:bg-white/20 hover:text-white border border-white/10";
-  const dangerBtnClass = "px-4 py-1.5 text-sm font-medium rounded-lg transition-all duration-200 hover:scale-[1.02] active:scale-95 shadow-sm bg-red-500/10 backdrop-blur-sm text-red-300 hover:bg-red-500/20 hover:text-red-200 border border-red-500/20";
+
+  const btnClass = "px-4 py-1.5 text-sm font-semibold rounded-lg transition-all duration-200 hover:scale-[1.02] active:scale-95 bg-white/10 backdrop-blur-sm text-white/90 hover:bg-white/20 hover:text-white border border-white/15 shadow-sm";
+  const dangerBtnClass = "px-4 py-1.5 text-sm font-semibold rounded-lg transition-all duration-200 hover:scale-[1.02] active:scale-95 bg-rose-500/15 backdrop-blur-sm text-rose-300 hover:bg-rose-500/25 hover:text-rose-200 border border-rose-500/25 shadow-sm";
 
   return (
-    <div className="flex items-center gap-4 px-6 py-3 flex-wrap shadow-md dark:shadow-none transition-colors duration-300 z-30 relative" style={{ background: 'var(--topbar-bg)', color: 'var(--topbar-text)' }}>
-      <h1 className="text-xl font-bold mr-6 whitespace-nowrap tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-300 drop-shadow-sm">Semester Planner</h1>
+    <div
+      className="flex items-center gap-4 px-6 py-3 flex-wrap z-30 relative"
+      style={{
+        background: 'var(--topbar-bg)',
+        color: 'var(--topbar-text)',
+        boxShadow: '0 4px 24px -4px rgba(0,0,0,0.4)',
+      }}
+    >
+      {/* Impact heading — Epilogue italic */}
+      <h1
+        className="mr-6 whitespace-nowrap select-none"
+        style={{
+          fontFamily: 'var(--font-heading)',
+          fontWeight: 900,
+          fontStyle: 'italic',
+          fontSize: '1.35rem',
+          letterSpacing: '-0.05em',
+          background: 'linear-gradient(135deg, #818CF8 0%, #C7D2FE 100%)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+        }}
+      >
+        Semester Planner
+      </h1>
 
-      {/* Shift mode toggle */}
-      <div className="flex items-center gap-1.5 bg-black/20 p-1 rounded-xl backdrop-blur-md border border-white/5 mx-2 shadow-inner">
+      {/* Shift mode — pill toggle */}
+      <div className="flex items-center gap-1 bg-black/25 p-1 rounded-full backdrop-blur-md border border-white/5 mx-1 shadow-inner">
         {modes.map(m => (
-          <button key={m.value} onClick={() => onShiftModeChange(m.value)}
-            className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-300 ${shiftMode === m.value ? 'bg-blue-500 text-white shadow-md' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}
-            >
+          <button
+            key={m.value}
+            onClick={() => onShiftModeChange(m.value)}
+            className={`px-4 py-1.5 text-sm font-semibold rounded-full transition-all duration-200 ${
+              shiftMode === m.value
+                ? 'bg-indigo-500 text-white shadow-lg scale-105'
+                : 'text-white/65 hover:bg-white/10 hover:text-white'
+            }`}
+            style={shiftMode === m.value ? { boxShadow: '0 4px 12px rgba(99,102,241,0.4)' } : {}}
+          >
             {m.label}
           </button>
         ))}
       </div>
 
-      {/* View mode toggle */}
-      <div className="flex items-center gap-1.5 bg-black/20 p-1 rounded-xl backdrop-blur-md border border-white/5 mx-2 shadow-inner">
+      {/* View mode — pill toggle */}
+      <div className="flex items-center gap-1 bg-black/25 p-1 rounded-full backdrop-blur-md border border-white/5 mx-1 shadow-inner">
         {['week', 'day'].map(v => (
-          <button key={v} onClick={() => onViewModeChange(v)}
-            className={`px-4 py-1.5 text-sm font-medium rounded-lg transition-all duration-300 ${viewMode === v ? 'bg-blue-500 text-white shadow-md' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}
-            >
+          <button
+            key={v}
+            onClick={() => onViewModeChange(v)}
+            className={`px-4 py-1.5 text-sm font-semibold rounded-full transition-all duration-200 ${
+              viewMode === v
+                ? 'bg-indigo-500 text-white shadow-lg scale-105'
+                : 'text-white/65 hover:bg-white/10 hover:text-white'
+            }`}
+            style={viewMode === v ? { boxShadow: '0 4px 12px rgba(99,102,241,0.4)' } : {}}
+          >
             {v === 'week' ? 'Vecka' : 'Dag'}
           </button>
         ))}
       </div>
 
-      {/* Theme */}
-      <div className="flex items-center gap-2 ml-4">
-        <span className="text-xs uppercase tracking-wider font-semibold opacity-60">Theme</span>
+      {/* Theme selector */}
+      <div className="flex items-center gap-2 ml-2">
+        <span className="text-xs uppercase tracking-widest font-bold opacity-40">Theme</span>
         <div className="relative">
-          <select value={theme} onChange={e => onThemeChange(e.target.value)}
-            className="appearance-none pl-3 pr-8 py-1.5 text-sm rounded-lg font-medium outline-none transition-all duration-200 cursor-pointer shadow-sm border"
-            style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', borderColor: 'var(--border)' }}>
-            {themes.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
+          <select
+            value={theme}
+            onChange={e => onThemeChange(e.target.value)}
+            className="appearance-none pl-3 pr-8 py-1.5 text-sm rounded-lg font-semibold outline-none transition-all duration-200 cursor-pointer border"
+            style={{ background: 'rgba(255,255,255,0.08)', color: 'var(--topbar-text)', borderColor: 'rgba(255,255,255,0.12)' }}
+          >
+            {themes.map(t => <option key={t.id} value={t.id} style={{ background: '#1e1b4b' }}>{t.label}</option>)}
           </select>
-          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 opacity-50">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 opacity-40">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" /></svg>
           </div>
         </div>
       </div>
 
       {/* Actions */}
-      <div className="flex items-center gap-2.5 ml-auto flex-wrap">
+      <div className="flex items-center gap-2 ml-auto flex-wrap">
         <button onClick={onToggleOperators} className={btnClass}>Operators</button>
-        <div className="w-px h-5 bg-white/20 mx-1"></div>
+        <div className="w-px h-5 bg-white/15 mx-0.5" />
         <button onClick={onImportCSV} className={btnClass}>Import CSV</button>
         <button onClick={onExportJSON} className={btnClass}>Export</button>
-        <button onClick={onSave} className={`${btnClass} !bg-blue-600/80 !border-blue-500/50 hover:!bg-blue-500/90`}>Save</button>
+        <button
+          onClick={onSave}
+          className="px-4 py-1.5 text-sm font-semibold rounded-lg transition-all duration-200 hover:scale-[1.02] active:scale-95 text-white border shadow-sm"
+          style={{ background: '#4f46e5', borderColor: '#6366f1', boxShadow: '0 4px 12px rgba(79,70,229,0.35)' }}
+        >
+          Save
+        </button>
         <button onClick={onReset} className={dangerBtnClass}>Reset</button>
       </div>
     </div>
