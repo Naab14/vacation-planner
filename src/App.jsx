@@ -1,13 +1,18 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { seedOperators, seedVacationBlocks, buildDefaultDemand, defaultSettings, themes } from './data';
-import { saveState, loadState, clearState, saveTheme, loadTheme, exportJSON, importJSON, debouncedSave } from './storage';
+import { seedOperators, seedVacationBlocks, buildDefaultDemand, defaultSettings } from './data';
+import {
+  saveState, loadState, clearState,
+  saveTheme, loadTheme,
+  saveUI, loadUI,
+  exportJSON, importJSON, debouncedSave,
+  buildShareLink, loadStateFromUrl, clearShareHash, copyToClipboard,
+} from './storage';
 import { parseCSV, mergeOperators, downloadCSVTemplate } from './csv';
 import { buildHolidayMap } from './holidays';
 
 import TopBar from './components/TopBar';
 import OperatorPanel from './components/OperatorPanel';
 import CalendarGrid from './components/CalendarGrid';
-import DayView from './components/DayView';
 
 /* ── Utility ──────────────────────────────────────────────────────────────── */
 let _uid = 0;
@@ -22,6 +27,8 @@ function getDefaults() {
   };
 }
 
+const storedUI = loadUI();
+
 /* ═══════════════════════════════════════════════════════════════════════════ */
 /*  APP                                                                      */
 /* ═══════════════════════════════════════════════════════════════════════════ */
@@ -32,14 +39,28 @@ export default function App() {
   const [toast, setToast] = useState(null);
   const [showDemand, setShowDemand] = useState(false);
   const [showOperatorMgmt, setShowOperatorMgmt] = useState(false);
-  const [viewMode, setViewMode] = useState('week'); // 'week' | 'day'
-  const [selectedDay, setSelectedDay] = useState(null); // { week, dayOfWeek } for day view
+  const [zoom, setZoom] = useState(storedUI.zoom === 'day' ? 'day' : 'week');
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(!!storedUI.sidebarCollapsed);
 
   const { operators, vacationBlocks, demand, settings } = state;
   const { startWeek, visibleWeeks, shiftMode } = settings;
-  const weeks = useMemo(() => Array.from({ length: visibleWeeks }, (_, i) => startWeek + i), [startWeek, visibleWeeks]);
+  const weeks = useMemo(
+    () => Array.from({ length: visibleWeeks }, (_, i) => startWeek + i),
+    [startWeek, visibleWeeks],
+  );
 
   const holidayMap = useMemo(() => buildHolidayMap(), []);
+
+  // Load shared state from URL hash on mount (#share=...)
+  useEffect(() => {
+    const shared = loadStateFromUrl();
+    if (shared) {
+      setState(shared);
+      clearShareHash();
+      flash('Loaded shared workspace');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Theme effect
   useEffect(() => {
@@ -48,8 +69,13 @@ export default function App() {
     saveTheme(theme);
   }, [theme]);
 
-  // Auto-save
+  // Auto-save core state
   useEffect(() => { debouncedSave(state); }, [state]);
+
+  // Persist UI preferences (zoom + sidebar)
+  useEffect(() => {
+    saveUI({ zoom, sidebarCollapsed });
+  }, [zoom, sidebarCollapsed]);
 
   const flash = msg => { setToast(msg); setTimeout(() => setToast(null), 3000); };
 
@@ -69,8 +95,14 @@ export default function App() {
     setState(s => ({ ...s, demand: { ...s.demand, [proc]: { ...s.demand[proc], [week]: val } } })), []);
   const setShiftMode = useCallback(m =>
     setState(s => ({ ...s, settings: { ...s.settings, shiftMode: m } })), []);
-  const shiftWeeks = useCallback(delta =>
-    setState(s => ({ ...s, settings: { ...s.settings, startWeek: Math.max(1, Math.min(52 - s.settings.visibleWeeks + 1, s.settings.startWeek + delta)) } })), []);
+  const setStartWeek = useCallback(w =>
+    setState(s => ({
+      ...s,
+      settings: {
+        ...s.settings,
+        startWeek: Math.max(1, Math.min(52 - s.settings.visibleWeeks + 1, w)),
+      },
+    })), []);
 
   /* ── Operator management ────────────────────────────────────────────────── */
   const addOperator = useCallback((name, shift) => {
@@ -119,6 +151,11 @@ export default function App() {
       flash('Reset to defaults');
     }
   }, []);
+  const handleShare = useCallback(async () => {
+    const link = buildShareLink(state);
+    const ok = await copyToClipboard(link);
+    flash(ok ? 'Share link copied' : 'Could not copy link');
+  }, [state]);
 
   /* ── Render ─────────────────────────────────────────────────────────────── */
   return (
@@ -128,11 +165,10 @@ export default function App() {
       <TopBar
         shiftMode={shiftMode} onShiftModeChange={setShiftMode}
         theme={theme} onThemeChange={setTheme}
-        viewMode={viewMode} onViewModeChange={setViewMode}
         onImportCSV={handleCSVImport} onSave={handleSave}
         onExportJSON={handleExport} onImportJSON={handleImport}
         onReset={handleReset}
-        onToggleOperators={() => setShowOperatorMgmt(p => !p)}
+        onShare={handleShare}
       />
 
       {/* ── Main content ─────────────────────────────────────────────────── */}
@@ -144,36 +180,39 @@ export default function App() {
           onToggleMgmt={() => setShowOperatorMgmt(p => !p)}
           onAddOperator={addOperator} onRemoveOperator={removeOperator}
           onDownloadTemplate={downloadCSVTemplate}
+          collapsed={sidebarCollapsed}
+          onToggleCollapse={() => setSidebarCollapsed(p => !p)}
         />
 
-        {/* Center: Calendar */}
-        {viewMode === 'week' ? (
-          <CalendarGrid
-            operators={operators} vacationBlocks={vacationBlocks}
-            demand={demand} settings={settings} weeks={weeks}
-            holidayMap={holidayMap}
-            onAddBlock={addBlock} onUpdateBlock={updateBlock}
-            onDeleteBlock={deleteBlock} onSetBlockStatus={setBlockStatus}
-            shiftWeeks={shiftWeeks} showDemand={showDemand}
-            onToggleDemand={() => setShowDemand(p => !p)}
-            updateDemand={updateDemand}
-            onSwitchToDay={(week) => { setSelectedDay({ week }); setViewMode('day'); }}
-          />
-        ) : (
-          <DayView
-            week={selectedDay?.week || weeks[0]}
-            operators={operators} vacationBlocks={vacationBlocks}
-            demand={demand} shiftMode={shiftMode} holidayMap={holidayMap}
-            onBack={() => setViewMode('week')}
-            onWeekChange={w => setSelectedDay({ week: w })}
-          />
-        )}
+        {/* Center: Calendar (handles both zoom levels internally) */}
+        <CalendarGrid
+          operators={operators} vacationBlocks={vacationBlocks}
+          demand={demand} settings={settings} weeks={weeks}
+          holidayMap={holidayMap}
+          onAddBlock={addBlock} onUpdateBlock={updateBlock}
+          onDeleteBlock={deleteBlock} onSetBlockStatus={setBlockStatus}
+          setStartWeek={setStartWeek}
+          showDemand={showDemand}
+          onToggleDemand={() => setShowDemand(p => !p)}
+          updateDemand={updateDemand}
+          zoom={zoom}
+          onZoomChange={setZoom}
+        />
       </div>
 
-      {/* Toast */}
+      {/* Toast — Neo-Kinetic pill */}
       {toast && (
-        <div className="fixed bottom-4 right-4 z-50 px-4 py-2 rounded shadow-lg text-sm font-medium"
-          style={{ background: 'var(--accent)', color: '#fff', borderRadius: 'var(--border-radius)' }}>
+        <div
+          className="fixed bottom-5 right-5 z-50 px-5 py-3 text-sm font-bold"
+          style={{
+            background: 'var(--accent)',
+            color: '#fff',
+            borderRadius: '999px',
+            boxShadow: '0 8px 24px rgba(79,70,229,0.45)',
+            fontFamily: 'var(--font-body)',
+            letterSpacing: '-0.01em',
+          }}
+        >
           {toast}
         </div>
       )}

@@ -1,29 +1,32 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Epilogue:ital,wght@0,400;0,500;0,800;0,900;1,800;1,900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ── Default Theme ────────────────────────────────────────────────────────── */
+/* ── Default Theme — Neo-Kinetic Travelogue (Electric Horizon) ────────────── */
 :root {
-  --bg-primary: #fff;
-  --bg-secondary: #f3f4f6;
-  --bg-panel: #f9fafb;
-  --text-primary: #111827;
-  --text-secondary: #6b7280;
-  --accent: #3b82f6;
-  --accent-hover: #2563eb;
-  --accent-secondary: #8b5cf6;
-  --border: #e5e7eb;
+  --bg-primary: #f8fafc;
+  --bg-secondary: #f1f5f9;
+  --bg-panel: #ffffff;
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+  --accent: #4f46e5;
+  --accent-hover: #4338ca;
+  --accent-secondary: #3b82f6;
+  --accent-alert: #f43f5e;
+  --accent-reward: #fbbf24;
+  --border: #e2e8f0;
   --border-radius: 12px;
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  --font-body: 'Inter', system-ui, sans-serif;
-  --font-heading: 'Inter', system-ui, sans-serif;
-  --draft-bg: #d1d5db;
-  --draft-border: #9ca3af;
-  --pending-bg: #fef08a;
+  --shadow-sm: 0 1px 3px 0 rgba(0,0,0,0.1), 0 1px 2px -1px rgba(0,0,0,0.1);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.12), 0 4px 6px -4px rgba(0,0,0,0.08);
+  --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.12), 0 8px 10px -6px rgba(0,0,0,0.06);
+  --font-body: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-heading: 'Epilogue', system-ui, sans-serif;
+  --draft-bg: #e2e8f0;
+  --draft-border: #94a3b8;
+  --pending-bg: #fef9c3;
   --pending-border: #facc15;
   --approved-bg: #bbf7d0;
   --approved-border: #22c55e;
@@ -31,12 +34,12 @@
   --requested-border: #f59e0b;
   --coverage-green: #22c55e;
   --coverage-yellow: #eab308;
-  --coverage-red: #ef4444;
-  --topbar-bg: #1e293b;
+  --coverage-red: #f43f5e;
+  --topbar-bg: #1e1b4b;
   --topbar-text: #f8fafc;
-  --holiday-bg: #fef2f2;
-  --holiday-border: #fca5a5;
-  --holiday-text: #b91c1c;
+  --holiday-bg: #fff1f2;
+  --holiday-border: #fda4af;
+  --holiday-text: #be123c;
 }
 
 /* ── MotherDuck Theme ─────────────────────────────────────────────────────── */
@@ -49,9 +52,12 @@
   --accent: #2ba5ff;
   --accent-hover: #1a8fe0;
   --accent-secondary: #53dbc9;
+  --accent-alert: #ff7169;
+  --accent-reward: #ffde00;
   --border: #c8c0b8;
   --border-radius: 2px;
-  --font-body: 'Inter', system-ui, sans-serif;
+  --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.12), 0 8px 10px -6px rgba(0,0,0,0.06);
+  --font-body: 'Plus Jakarta Sans', system-ui, sans-serif;
   --font-heading: 'Space Mono', monospace;
   --draft-bg: #e0dbd5;
   --draft-border: #b8b0a8;
@@ -78,13 +84,16 @@
   --bg-panel: #1e293b;
   --text-primary: #f1f5f9;
   --text-secondary: #94a3b8;
-  --accent: #60a5fa;
-  --accent-hover: #93bbfd;
-  --accent-secondary: #a78bfa;
+  --accent: #818cf8;
+  --accent-hover: #a5b4fc;
+  --accent-secondary: #60a5fa;
+  --accent-alert: #fb7185;
+  --accent-reward: #fbbf24;
   --border: #334155;
   --border-radius: 6px;
-  --font-body: 'Inter', system-ui, sans-serif;
-  --font-heading: 'Inter', system-ui, sans-serif;
+  --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.5), 0 8px 10px -6px rgba(0,0,0,0.4);
+  --font-body: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-heading: 'Epilogue', system-ui, sans-serif;
   --draft-bg: #475569;
   --draft-border: #64748b;
   --pending-bg: #854d0e;
@@ -113,10 +122,13 @@
   --accent: #0284c7;
   --accent-hover: #0369a1;
   --accent-secondary: #06b6d4;
+  --accent-alert: #f43f5e;
+  --accent-reward: #fbbf24;
   --border: #bae6fd;
   --border-radius: 8px;
-  --font-body: 'Inter', system-ui, sans-serif;
-  --font-heading: 'Inter', system-ui, sans-serif;
+  --shadow-xl: 0 20px 25px -5px rgba(8,145,178,0.2), 0 8px 10px -6px rgba(8,145,178,0.1);
+  --font-body: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-heading: 'Epilogue', system-ui, sans-serif;
   --draft-bg: #cbd5e1;
   --draft-border: #94a3b8;
   --pending-bg: #fef9c3;
@@ -342,4 +354,29 @@ h1, h2, h3, h4, h5, h6 { font-family: var(--font-heading); }
 .grid-dragging, .grid-dragging * {
   user-select: none !important;
   -webkit-user-select: none !important;
+}
+
+/* ── Kinetic card — Neo-Kinetic Travelogue lift ───────────────────────────── */
+.kinetic-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-xl);
+  transition: box-shadow 200ms ease-out, transform 200ms ease-out;
+}
+.kinetic-card:hover {
+  box-shadow: 0 25px 50px -12px rgba(79, 70, 229, 0.15);
+  transform: translateY(-1px);
+}
+
+/* ── Impact heading — Epilogue italic gradient ────────────────────────────── */
+.impact-heading {
+  font-family: var(--font-heading);
+  font-weight: 900;
+  font-style: italic;
+  letter-spacing: -0.05em;
+  background: linear-gradient(135deg, #818CF8 0%, #C7D2FE 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
