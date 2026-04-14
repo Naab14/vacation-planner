@@ -19,11 +19,19 @@ let _uid = 0;
 const uid = () => `id_${++_uid}_${Date.now().toString(36)}`;
 
 function getDefaults() {
-  return loadState() || {
-    operators: seedOperators,
-    vacationBlocks: seedVacationBlocks,
-    demand: buildDefaultDemand(),
-    settings: defaultSettings,
+  const shared = loadStateFromUrl();
+  if (shared) {
+    clearShareHash();
+    return { state: shared, wasShared: true };
+  }
+  return {
+    state: loadState() || {
+      operators: seedOperators,
+      vacationBlocks: seedVacationBlocks,
+      demand: buildDefaultDemand(),
+      settings: defaultSettings,
+    },
+    wasShared: false,
   };
 }
 
@@ -34,9 +42,10 @@ const storedUI = loadUI();
 /* ═══════════════════════════════════════════════════════════════════════════ */
 
 export default function App() {
-  const [state, setState] = useState(getDefaults);
+  const [initResult] = useState(getDefaults);
+  const [state, setState] = useState(initResult.state);
   const [theme, setTheme] = useState(loadTheme);
-  const [toast, setToast] = useState(null);
+  const [toast, setToast] = useState(initResult.wasShared ? 'Loaded shared workspace' : null);
   const [showDemand, setShowDemand] = useState(false);
   const [showOperatorMgmt, setShowOperatorMgmt] = useState(false);
   const [zoom, setZoom] = useState(storedUI.zoom === 'day' ? 'day' : 'week');
@@ -50,17 +59,15 @@ export default function App() {
   );
 
   const holidayMap = useMemo(() => buildHolidayMap(), []);
+  const flash = msg => { setToast(msg); setTimeout(() => setToast(null), 3000); };
 
-  // Load shared state from URL hash on mount (#share=...)
+  // Auto-dismiss initial toast (shared workspace)
   useEffect(() => {
-    const shared = loadStateFromUrl();
-    if (shared) {
-      setState(shared);
-      clearShareHash();
-      flash('Loaded shared workspace');
+    if (initResult.wasShared) {
+      const t = setTimeout(() => setToast(null), 3000);
+      return () => clearTimeout(t);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [initResult.wasShared]);
 
   // Theme effect
   useEffect(() => {
@@ -76,8 +83,6 @@ export default function App() {
   useEffect(() => {
     saveUI({ zoom, sidebarCollapsed });
   }, [zoom, sidebarCollapsed]);
-
-  const flash = msg => { setToast(msg); setTimeout(() => setToast(null), 3000); };
 
   /* ── State updaters ─────────────────────────────────────────────────────── */
   const update = useCallback(patch => setState(s => ({ ...s, ...patch })), []);

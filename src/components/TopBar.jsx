@@ -1,48 +1,48 @@
+import { useState, useEffect, useRef } from 'react';
 import { themes } from '../data';
 
-export default function TopBar({ shiftMode, onShiftModeChange, theme, onThemeChange, viewMode, onViewModeChange, onImportCSV, onSave, onExportJSON, onImportJSON, onReset, onToggleOperators }) {
+export default function TopBar({ shiftMode, onShiftModeChange, theme, onThemeChange, onImportCSV, onSave, onExportJSON, onImportJSON, onReset, onShare }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleClick = e => { if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false); };
+    const handleKey = e => { if (e.key === 'Escape') setMenuOpen(false); };
+    document.addEventListener('mousedown', handleClick);
+    document.addEventListener('keydown', handleKey);
+    return () => { document.removeEventListener('mousedown', handleClick); document.removeEventListener('keydown', handleKey); };
+  }, [menuOpen]);
+
   const modes = [
     { value: 'separate', label: 'Separate' },
     { value: 'combined', label: 'Combined' },
     { value: 'summer', label: 'Summer' },
   ];
-  
-  // Use Tailwind utility classes for buttons
-  const btnClass = "px-4 py-1.5 text-sm font-medium rounded-lg transition-all duration-200 hover:scale-[1.02] active:scale-95 shadow-sm bg-white/10 backdrop-blur-sm text-white/90 hover:bg-white/20 hover:text-white border border-white/10";
-  const dangerBtnClass = "px-4 py-1.5 text-sm font-medium rounded-lg transition-all duration-200 hover:scale-[1.02] active:scale-95 shadow-sm bg-red-500/10 backdrop-blur-sm text-red-300 hover:bg-red-500/20 hover:text-red-200 border border-red-500/20";
 
   return (
-    <div className="flex items-center gap-4 px-6 py-3 flex-wrap shadow-md dark:shadow-none transition-colors duration-300 z-30 relative" style={{ background: 'var(--topbar-bg)', color: 'var(--topbar-text)' }}>
-      <h1 className="text-xl font-bold mr-6 whitespace-nowrap tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-300 drop-shadow-sm">Semester Planner</h1>
+    <div className="flex items-center gap-4 px-6 py-3 flex-wrap shadow-md z-30 relative" style={{ background: 'var(--topbar-bg)', color: 'var(--topbar-text)' }}>
+      <h1 className="impact-heading text-xl mr-4 whitespace-nowrap">Semester Planner</h1>
 
-      {/* Shift mode toggle */}
-      <div className="flex items-center gap-1.5 bg-black/20 p-1 rounded-xl backdrop-blur-md border border-white/5 mx-2 shadow-inner">
+      {/* Shift mode pill toggle — Neo-Kinetic indigo */}
+      <div className="flex items-center gap-0.5 p-1 rounded-full border border-white/10" style={{ background: 'rgba(0,0,0,0.25)' }}>
         {modes.map(m => (
           <button key={m.value} onClick={() => onShiftModeChange(m.value)}
-            className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-300 ${shiftMode === m.value ? 'bg-blue-500 text-white shadow-md' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}
-            >
+            className="px-3.5 py-1.5 text-sm font-semibold rounded-full transition-all duration-200"
+            style={shiftMode === m.value
+              ? { background: 'var(--accent)', color: '#fff', boxShadow: '0 0 12px rgba(79,70,229,0.5)' }
+              : { background: 'transparent', color: 'rgba(255,255,255,0.7)' }}>
             {m.label}
           </button>
         ))}
       </div>
 
-      {/* View mode toggle */}
-      <div className="flex items-center gap-1.5 bg-black/20 p-1 rounded-xl backdrop-blur-md border border-white/5 mx-2 shadow-inner">
-        {['week', 'day'].map(v => (
-          <button key={v} onClick={() => onViewModeChange(v)}
-            className={`px-4 py-1.5 text-sm font-medium rounded-lg transition-all duration-300 ${viewMode === v ? 'bg-blue-500 text-white shadow-md' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}
-            >
-            {v === 'week' ? 'Vecka' : 'Dag'}
-          </button>
-        ))}
-      </div>
-
-      {/* Theme */}
-      <div className="flex items-center gap-2 ml-4">
+      {/* Theme select */}
+      <div className="flex items-center gap-2 ml-2">
         <span className="text-xs uppercase tracking-wider font-semibold opacity-60">Theme</span>
         <div className="relative">
           <select value={theme} onChange={e => onThemeChange(e.target.value)}
-            className="appearance-none pl-3 pr-8 py-1.5 text-sm rounded-lg font-medium outline-none transition-all duration-200 cursor-pointer shadow-sm border"
+            className="appearance-none pl-3 pr-8 py-1.5 text-sm rounded-lg font-medium outline-none cursor-pointer shadow-sm border"
             style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', borderColor: 'var(--border)' }}>
             {themes.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
           </select>
@@ -52,14 +52,45 @@ export default function TopBar({ shiftMode, onShiftModeChange, theme, onThemeCha
         </div>
       </div>
 
-      {/* Actions */}
-      <div className="flex items-center gap-2.5 ml-auto flex-wrap">
-        <button onClick={onToggleOperators} className={btnClass}>Operators</button>
-        <div className="w-px h-5 bg-white/20 mx-1"></div>
-        <button onClick={onImportCSV} className={btnClass}>Import CSV</button>
-        <button onClick={onExportJSON} className={btnClass}>Export</button>
-        <button onClick={onSave} className={`${btnClass} !bg-blue-600/80 !border-blue-500/50 hover:!bg-blue-500/90`}>Save</button>
-        <button onClick={onReset} className={dangerBtnClass}>Reset</button>
+      {/* Right side actions */}
+      <div className="flex items-center gap-2.5 ml-auto">
+        {/* Share — prominent indigo button */}
+        <button onClick={onShare}
+          className="px-5 py-1.5 text-sm font-bold rounded-full transition-all duration-200 hover:scale-[1.03] active:scale-95"
+          style={{ background: 'var(--accent)', color: '#fff', boxShadow: '0 0 16px rgba(79,70,229,0.4)' }}>
+          Share
+        </button>
+
+        {/* Overflow menu */}
+        <div className="relative" ref={menuRef}>
+          <button onClick={() => setMenuOpen(o => !o)}
+            className="px-2.5 py-1.5 text-lg font-bold rounded-lg transition-all duration-200 hover:bg-white/10"
+            style={{ color: 'var(--topbar-text)' }}>
+            ⋮
+          </button>
+          {menuOpen && (
+            <div className="absolute right-0 top-full mt-1 py-1 min-w-[160px] rounded-lg shadow-xl z-50"
+              style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)' }}>
+              {[
+                { label: 'Import CSV', action: onImportCSV },
+                { label: 'Export', action: onExportJSON },
+                { label: 'Import JSON', action: onImportJSON },
+                { label: 'Save', action: onSave },
+              ].map(item => (
+                <button key={item.label} onClick={() => { item.action(); setMenuOpen(false); }}
+                  className="w-full text-left px-4 py-2 text-sm hover:opacity-80 transition-opacity"
+                  style={{ color: 'var(--text-primary)', background: 'transparent' }}>
+                  {item.label}
+                </button>
+              ))}
+              <hr style={{ borderColor: 'var(--border)' }} className="my-1" />
+              <button onClick={() => { onReset(); setMenuOpen(false); }}
+                className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors">
+                Reset
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

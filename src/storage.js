@@ -21,7 +21,7 @@ export function saveTheme(t) { localStorage.setItem(THEME_KEY, t); }
 export function loadTheme() { return localStorage.getItem(THEME_KEY) || 'default'; }
 
 export function saveUI(ui) {
-  try { localStorage.setItem(UI_KEY, JSON.stringify(ui)); } catch (e) { /* ignore */ }
+  try { localStorage.setItem(UI_KEY, JSON.stringify(ui)); } catch { /* ignore */ }
 }
 export function loadUI() {
   try { return JSON.parse(localStorage.getItem(UI_KEY)) || {}; } catch { return {}; }
