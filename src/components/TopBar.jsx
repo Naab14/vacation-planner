@@ -21,14 +21,14 @@ export default function TopBar({ shiftMode, onShiftModeChange, theme, onThemeCha
   ];
 
   return (
-    <div className="flex items-center gap-4 px-6 py-3 flex-wrap shadow-md z-30 relative" style={{ background: 'var(--topbar-bg)', color: 'var(--topbar-text)' }}>
-      <h1 className="impact-heading text-xl mr-4 whitespace-nowrap">Semester Planner</h1>
+    <div className="flex items-center gap-3 px-5 py-2 flex-wrap shadow-md z-30 relative" style={{ background: 'var(--topbar-bg)', color: 'var(--topbar-text)' }}>
+      <h1 className="impact-heading text-base mr-3 whitespace-nowrap">Semester Planner</h1>
 
       {/* Shift mode pill toggle — Neo-Kinetic indigo */}
       <div className="flex items-center gap-0.5 p-1 rounded-full border border-white/10" style={{ background: 'rgba(0,0,0,0.25)' }}>
         {modes.map(m => (
           <button key={m.value} onClick={() => onShiftModeChange(m.value)}
-            className="px-3.5 py-1.5 text-sm font-semibold rounded-full transition-all duration-200"
+            className="px-3 py-1 text-xs font-semibold rounded-full transition-all duration-200"
             style={shiftMode === m.value
               ? { background: 'var(--accent)', color: '#fff', boxShadow: '0 0 12px rgba(79,70,229,0.5)' }
               : { background: 'transparent', color: 'rgba(255,255,255,0.7)' }}>
@@ -56,7 +56,7 @@ export default function TopBar({ shiftMode, onShiftModeChange, theme, onThemeCha
       <div className="flex items-center gap-2.5 ml-auto">
         {/* Share — prominent indigo button */}
         <button onClick={onShare}
-          className="px-5 py-1.5 text-sm font-bold rounded-full transition-all duration-200 hover:scale-[1.03] active:scale-95"
+          className="px-4 py-1 text-xs font-bold rounded-full transition-all duration-200 hover:scale-[1.03] active:scale-95"
           style={{ background: 'var(--accent)', color: '#fff', boxShadow: '0 0 16px rgba(79,70,229,0.4)' }}>
           Share
         </button>
@@ -64,7 +64,7 @@ export default function TopBar({ shiftMode, onShiftModeChange, theme, onThemeCha
         {/* Overflow menu */}
         <div className="relative" ref={menuRef}>
           <button onClick={() => setMenuOpen(o => !o)}
-            className="px-2.5 py-1.5 text-lg font-bold rounded-lg transition-all duration-200 hover:bg-white/10"
+            className="px-2 py-1 text-base font-bold rounded-lg transition-all duration-200 hover:bg-white/10"
             style={{ color: 'var(--topbar-text)' }}>
             ⋮
           </button>
