@@ -8,7 +8,7 @@ import {
   buildShareLink, loadStateFromUrl, clearShareHash, copyToClipboard,
 } from './storage';
 import { parseCSV, mergeOperators, downloadCSVTemplate } from './csv';
-import { buildHolidayMap } from './holidays';
+import { buildHolidayMap, initHolidays } from './holidays';
 
 import TopBar from './components/TopBar';
 import OperatorPanel from './components/OperatorPanel';
@@ -58,8 +58,13 @@ export default function App() {
     [startWeek, visibleWeeks],
   );
 
-  const holidayMap = useMemo(() => buildHolidayMap(), []);
+  const [holidayMap, setHolidayMap] = useState(() => buildHolidayMap());
   const flash = msg => { setToast(msg); setTimeout(() => setToast(null), 3000); };
+
+  // Load holidays async (date-holidays is code-split)
+  useEffect(() => {
+    initHolidays().then(map => setHolidayMap(map));
+  }, []);
 
   // Auto-dismiss initial toast (shared workspace)
   useEffect(() => {

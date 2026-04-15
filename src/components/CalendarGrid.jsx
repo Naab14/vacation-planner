@@ -215,11 +215,14 @@ function BlockPopover({ x, y, block, onSetStatus, onDelete, onClose }) {
 
 /* ── Holiday abbrev map ───────────────────────────────────────────────────── */
 const HOLIDAY_ABBREV = {
-  'Annandag påsk': 'Annandag', 'Första maj': 'Första m', 'Kristi himmelsfärdsdag': 'Kristi h',
-  'Pingstdagen': 'Pingstda', 'Nationaldagen': 'Sveriges', 'Midsommarafton': 'Midsom.',
-  'Midsommardagen': 'Midsom.', 'Långfredagen': 'Långfre', 'Påskdagen': 'Påskdag',
+  'Annandag påsk': 'Annandag', 'Första maj': 'Första m', 'Första Maj': 'Första m',
+  'Kristi himmelsfärdsdag': 'Kristi h', 'Kristi himmelfärdsdag': 'Kristi h',
+  'Pingstdagen': 'Pingstda', 'Nationaldagen': 'Sveriges', 'Sveriges nationaldag': 'Sveriges',
+  'Midsommarafton': 'Midsom.', 'Midsommardagen': 'Midsom.',
+  'Långfredagen': 'Långfre', 'Påskdagen': 'Påskdag',
   'Trettondedag jul': 'Trett.', 'Nyårsdagen': 'Nyår', 'Julafton': 'Julaft',
-  'Juldagen': 'Juldag', 'Annandag jul': 'Ann.jul', 'Nyårsafton': 'Nyårsaf', 'Alla helgons dag': 'Alla h',
+  'Juldagen': 'Juldag', 'Annandag jul': 'Ann.jul', 'Nyårsafton': 'Nyårsaf',
+  'Alla helgons dag': 'Alla h', 'Alla Helgons dag': 'Alla h',
 };
 
 /* ══════════════════════════════════════════════════════════════════════════ */
