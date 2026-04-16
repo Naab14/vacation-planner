@@ -12,7 +12,7 @@ import { buildHolidayMap, initHolidays } from './holidays';
 
 import TopBar from './components/TopBar';
 import OperatorPanel from './components/OperatorPanel';
-import CalendarGrid from './components/CalendarGrid';
+import CalendarGrid from './components/calendar/CalendarGrid';
 
 /* ── Utility ──────────────────────────────────────────────────────────────── */
 let _uid = 0;
@@ -101,6 +101,24 @@ export default function App() {
     setState(s => ({ ...s, vacationBlocks: s.vacationBlocks.filter(b => b.id !== id) })), []);
   const setBlockStatus = useCallback((id, status) =>
     setState(s => ({ ...s, vacationBlocks: s.vacationBlocks.map(b => b.id === id ? { ...b, status } : b) })), []);
+  const setBlockDayStatus = useCallback((id, dateStr, status) =>
+    setState(s => ({
+      ...s,
+      vacationBlocks: s.vacationBlocks.map(b =>
+        b.id === id
+          ? { ...b, dayStatuses: { ...b.dayStatuses, [dateStr]: status } }
+          : b
+      ),
+    })), []);
+  const clearBlockDayStatus = useCallback((id, dateStr) =>
+    setState(s => ({
+      ...s,
+      vacationBlocks: s.vacationBlocks.map(b => {
+        if (b.id !== id) return b;
+        const { [dateStr]: _, ...rest } = b.dayStatuses || {};
+        return { ...b, dayStatuses: Object.keys(rest).length ? rest : undefined };
+      }),
+    })), []);
   const updateDemand = useCallback((proc, week, val) =>
     setState(s => ({ ...s, demand: { ...s.demand, [proc]: { ...s.demand[proc], [week]: val } } })), []);
   const setShiftMode = useCallback(m =>
@@ -201,6 +219,7 @@ export default function App() {
           holidayMap={holidayMap}
           onAddBlock={addBlock} onUpdateBlock={updateBlock}
           onDeleteBlock={deleteBlock} onSetBlockStatus={setBlockStatus}
+          onSetBlockDayStatus={setBlockDayStatus} onClearBlockDayStatus={clearBlockDayStatus}
           setStartWeek={setStartWeek}
           showDemand={showDemand}
           onToggleDemand={() => setShowDemand(p => !p)}
