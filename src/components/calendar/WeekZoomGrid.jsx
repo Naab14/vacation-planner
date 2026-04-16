@@ -48,6 +48,7 @@ export default function WeekZoomGrid({
                 </div>
                 {weeks.map(w => {
                   const block = vacationBlocks.find(b => b.operatorId === op.id && w >= b.startWeek && w <= b.endWeek);
+                  const hasDayOverrides = block && block.dayStatuses && Object.keys(block.dayStatuses).length > 0;
                   const isDrawing = drag?.type === 'drawing' && drag.opId === op.id && w >= Math.min(drag.startWeek, drag.endWeek) && w <= Math.max(drag.startWeek, drag.endWeek);
                   const isStart = block && w === block.startWeek;
                   const isEnd = block && w === block.endWeek;
@@ -102,6 +103,10 @@ export default function WeekZoomGrid({
                           style={{ color: 'var(--text-primary)' }}>
                           {block.startWeek === block.endWeek ? `v.${block.startWeek}` : `v.${block.startWeek}-${block.endWeek}`}
                         </span>
+                      )}
+                      {hasDayOverrides && isEnd && (
+                        <span className="absolute top-0 right-0.5 text-[8px] pointer-events-none"
+                          style={{ color: 'var(--accent)' }} title="Per-day overrides">●</span>
                       )}
                     </div>
                   );

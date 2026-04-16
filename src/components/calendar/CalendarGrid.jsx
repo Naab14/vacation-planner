@@ -7,6 +7,7 @@ import Legend from './Legend';
 export default function CalendarGrid({
   operators, vacationBlocks, demand, settings, weeks, holidayMap,
   onAddBlock, onUpdateBlock, onDeleteBlock, onSetBlockStatus,
+  onSetBlockDayStatus, onClearBlockDayStatus,
   setStartWeek, showDemand, onToggleDemand, updateDemand,
   zoom, onZoomChange,
 }) {
@@ -214,13 +215,16 @@ export default function CalendarGrid({
           settings={settings} weeks={weeks} holidayMap={holidayMap} groups={groups}
           showDayCoverage={showDayCoverage} onToggleDayCoverage={() => setShowDayCoverage(c => !c)}
           setPopover={setPopover}
+          onAddBlock={onAddBlock}
         />
       )}
 
       {/* Popover */}
       {popover && (
         <BlockPopover x={popover.x} y={popover.y} block={popover.block}
+          dateStr={popover.dateStr}
           onSetStatus={onSetBlockStatus} onDelete={onDeleteBlock}
+          onSetDayStatus={onSetBlockDayStatus} onClearDayStatus={onClearBlockDayStatus}
           onClose={() => setPopover(null)} />
       )}
     </div>

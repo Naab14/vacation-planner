@@ -1,8 +1,17 @@
 import CoverageRows from './CoverageRows';
-import { CELL_H, LABEL_W, STATUS_COLORS, SWEDISH_DAYS } from './constants';
+import { CELL_H, LABEL_W, STATUS_COLORS, STATUS_LABELS, SWEDISH_DAYS } from './constants';
 import { isoWeekDates, formatDateStr } from './dateUtils';
 
-export default function DayZoomGrid({ operators, vacationBlocks, demand, settings, weeks, holidayMap, groups, showDayCoverage, onToggleDayCoverage, setPopover }) {
+function getDayStatus(block, dateStr) {
+  if (!block) return null;
+  return block.dayStatuses?.[dateStr] || block.status;
+}
+
+export default function DayZoomGrid({
+  operators, vacationBlocks, demand, settings, weeks, holidayMap, groups,
+  showDayCoverage, onToggleDayCoverage, setPopover,
+  onAddBlock,
+}) {
   const focusWeek = weeks[0];
   const year = new Date().getFullYear();
   const dates = isoWeekDates(year, focusWeek);
@@ -14,9 +23,11 @@ export default function DayZoomGrid({ operators, vacationBlocks, demand, setting
     });
   }
 
-  const handleDayClick = (e, block) => {
+  const handleDayClick = (e, op, block, dateStr) => {
     if (block) {
-      setPopover({ x: e.clientX, y: e.clientY, block });
+      setPopover({ x: e.clientX, y: e.clientY, block, dateStr });
+    } else if (onAddBlock) {
+      onAddBlock(op.id, focusWeek, focusWeek);
     }
   };
 
@@ -67,13 +78,16 @@ export default function DayZoomGrid({ operators, vacationBlocks, demand, setting
                     const dateStr = formatDateStr(d);
                     const isHoliday = !!holidaysByDate[dateStr];
                     const isWeekend = i >= 5;
+                    const dayStatus = getDayStatus(block, dateStr);
+                    const hasOverride = block && block.dayStatuses?.[dateStr] && block.dayStatuses[dateStr] !== block.status;
 
                     let bgClass = isWeekend ? 'day-cell-off' : 'day-cell-working';
                     let cellStyle = {};
 
                     if (block) {
-                      const sc = STATUS_COLORS[block.status];
-                      if (block.status === 'requested') {
+                      const effectiveStatus = dayStatus;
+                      const sc = STATUS_COLORS[effectiveStatus];
+                      if (effectiveStatus === 'requested') {
                         cellStyle = {
                           background: 'repeating-linear-gradient(45deg, var(--requested-bg), var(--requested-bg) 4px, transparent 4px, transparent 8px)',
                           borderTop: '2px dashed var(--requested-border)', borderBottom: '2px dashed var(--requested-border)',
@@ -90,18 +104,24 @@ export default function DayZoomGrid({ operators, vacationBlocks, demand, setting
                     } else if (isHoliday) {
                       cellStyle = { background: 'var(--holiday-bg)' };
                       bgClass = '';
+                    } else {
+                      cellStyle.cursor = 'pointer';
                     }
 
                     return (
                       <div key={i}
-                        className={`flex items-center justify-center text-xs ${bgClass}`}
+                        className={`flex items-center justify-center text-xs relative ${bgClass}`}
                         style={{ width: 100, minWidth: 100, height: CELL_H, borderRight: '1px solid var(--border)', ...cellStyle }}
-                        onClick={e => block && handleDayClick(e, block)}>
-                        {block && i === 0 && (
-                          <span className="text-xs font-medium truncate pointer-events-none select-none"
-                            style={{ color: 'var(--text-primary)' }}>
-                            v.{block.startWeek}-{block.endWeek}
+                        onClick={e => handleDayClick(e, op, block, dateStr)}>
+                        {block && (
+                          <span className="text-[10px] font-medium truncate pointer-events-none select-none"
+                            style={{ color: 'var(--text-primary)', opacity: 0.8 }}>
+                            {STATUS_LABELS[dayStatus]}
                           </span>
+                        )}
+                        {hasOverride && (
+                          <span className="absolute top-0 right-0.5 text-[8px] pointer-events-none"
+                            style={{ color: 'var(--accent)' }}>●</span>
                         )}
                       </div>
                     );
