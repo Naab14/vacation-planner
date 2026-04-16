@@ -12,7 +12,7 @@ import { buildHolidayMap, initHolidays } from './holidays';
 
 import TopBar from './components/TopBar';
 import OperatorPanel from './components/OperatorPanel';
-import CalendarGrid from './components/CalendarGrid';
+import CalendarGrid from './components/calendar/CalendarGrid';
 
 /* ── Utility ──────────────────────────────────────────────────────────────── */
 let _uid = 0;

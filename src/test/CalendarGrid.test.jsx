@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import CalendarGrid from '../components/CalendarGrid';
+import CalendarGrid from '../components/calendar/CalendarGrid';
 import { buildDefaultDemand, defaultSettings, PROCESSES } from '../data';
 
 const makeOp = (id, shift = 'S1', active = true, certifications = PROCESSES) =>
