@@ -1,8 +1,9 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { STATUS_COLORS, STATUS_LABELS, STATUSES } from './constants';
 
-export default function BlockPopover({ x, y, block, dateStr, onSetStatus, onDelete, onSetDayStatus, onClearDayStatus, onClose }) {
+export default function BlockPopover({ x, y, block, dateStr, onSetStatus, onDelete, onSetDayStatus, onClearDayStatus, onSetNote, onClose }) {
   const ref = useRef(null);
+  const [noteDraft, setNoteDraft] = useState(block?.note || '');
 
   useEffect(() => {
     const handler = e => { if (ref.current && !ref.current.contains(e.target)) onClose(); };
@@ -13,6 +14,12 @@ export default function BlockPopover({ x, y, block, dateStr, onSetStatus, onDele
   }, [onClose]);
 
   if (!block) return null;
+
+  const commitNote = () => {
+    if (!onSetNote) return;
+    if (noteDraft === (block.note || '')) return;
+    onSetNote(block.id, noteDraft);
+  };
 
   const dayStatus = dateStr ? (block.dayStatuses?.[dateStr] || block.status) : null;
   const hasOverride = dateStr && block.dayStatuses?.[dateStr];
@@ -71,6 +78,33 @@ export default function BlockPopover({ x, y, block, dateStr, onSetStatus, onDele
           {STATUS_LABELS[s]}
         </button>
       ))}
+      {onSetNote && (
+        <>
+          <hr style={{ borderColor: 'var(--border)' }} className="my-1" />
+          <div className="px-3 py-1 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>
+            Note
+          </div>
+          <div className="px-3 pb-2">
+            <textarea
+              aria-label="Block note"
+              placeholder="Add a note…"
+              value={noteDraft}
+              onChange={e => setNoteDraft(e.target.value)}
+              onBlur={commitNote}
+              onKeyDown={e => {
+                if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                  e.preventDefault();
+                  commitNote();
+                  onClose();
+                }
+              }}
+              rows={3}
+              className="w-full text-sm rounded p-2"
+              style={{ background: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border)', resize: 'vertical', minHeight: 48 }}
+            />
+          </div>
+        </>
+      )}
       <hr style={{ borderColor: 'var(--border)' }} className="my-1" />
       <button onClick={() => { onDelete(block.id); onClose(); }}
         className="w-full text-left px-3 py-1.5 text-sm text-red-600 hover:bg-red-50">Delete</button>

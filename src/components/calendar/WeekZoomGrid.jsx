@@ -108,6 +108,10 @@ export default function WeekZoomGrid({
                         <span className="absolute top-0 right-0.5 text-[8px] pointer-events-none"
                           style={{ color: 'var(--accent)' }} title="Per-day overrides">●</span>
                       )}
+                      {block?.note && isStart && (
+                        <span className="absolute top-0 left-0.5 text-[9px] pointer-events-none"
+                          title={block.note} aria-label="Has note">💬</span>
+                      )}
                     </div>
                   );
                 })}
