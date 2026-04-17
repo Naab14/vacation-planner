@@ -5,12 +5,18 @@ export default function OperatorPanel({ operators, onUpdateOperator, showMgmt, o
   const [editId, setEditId] = useState(null);
   const [newName, setNewName] = useState('');
   const [newShift, setNewShift] = useState('S1');
+  const [search, setSearch] = useState('');
 
   const handleAdd = () => {
     if (!newName.trim()) return;
     onAddOperator(newName.trim(), newShift);
     setNewName('');
   };
+
+  const q = search.trim().toLowerCase();
+  const filteredOperators = q
+    ? operators.filter(op => op.name.toLowerCase().includes(q))
+    : operators;
 
   return (
     <div className={`w-[240px] min-w-[240px] overflow-y-auto h-full flex flex-col shadow-[4px_0_15px_-3px_rgba(0,0,0,0.05)] z-20 relative transition-all duration-200 ${collapsed ? 'sidebar-collapsed' : ''}`}
@@ -66,9 +72,34 @@ export default function OperatorPanel({ operators, onUpdateOperator, showMgmt, o
         </div>
       )}
 
+      {/* Search */}
+      <div className="sidebar-full-only px-3 pt-2 pb-1">
+        <div className="relative">
+          <input type="text" placeholder="Search operators" value={search}
+            aria-label="Search operators"
+            onChange={e => setSearch(e.target.value)}
+            className="w-full pl-3 pr-8 py-1.5 text-sm shadow-sm outline-none"
+            style={{ background: 'var(--bg-primary)', border: '1px solid var(--border)', borderRadius: 'var(--border-radius)', color: 'var(--text-primary)' }}
+            onFocus={e => { e.target.style.boxShadow = '0 0 0 2px var(--accent)'; }}
+            onBlur={e => { e.target.style.boxShadow = 'none'; }} />
+          {search && (
+            <button onClick={() => setSearch('')} aria-label="Clear search"
+              className="absolute right-1 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center text-xs rounded hover:bg-black/5"
+              style={{ color: 'var(--text-secondary)' }}>
+              ×
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Operator List */}
       <div className="sidebar-full-only flex-1 overflow-y-auto p-2 space-y-1">
-        {operators.map(op => (
+        {filteredOperators.length === 0 && (
+          <div className="px-3 py-4 text-xs text-center" style={{ color: 'var(--text-secondary)' }}>
+            No matches
+          </div>
+        )}
+        {filteredOperators.map(op => (
           <div key={op.id} className="rounded-lg transition-colors" style={{ background: editId === op.id ? 'var(--bg-secondary)' : 'transparent' }}>
             <div className="px-3 py-2.5 flex items-center gap-3 cursor-pointer rounded-md text-sm transition-all duration-200"
               style={{ opacity: op.active ? 1 : 0.4, color: 'var(--text-primary)' }}

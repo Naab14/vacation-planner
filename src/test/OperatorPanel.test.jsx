@@ -150,4 +150,47 @@ describe('OperatorPanel', () => {
     fireEvent.click(screen.getByText('CSV'));
     expect(props.onDownloadTemplate).toHaveBeenCalled();
   });
+
+  it('renders the search input', () => {
+    render(<OperatorPanel {...defaultProps()} />);
+    expect(screen.getByPlaceholderText('Search operators')).toBeInTheDocument();
+  });
+
+  it('filters operators by name (case-insensitive)', () => {
+    render(<OperatorPanel {...defaultProps()} />);
+    const searchInput = screen.getByPlaceholderText('Search operators');
+    fireEvent.change(searchInput, { target: { value: 'anna' } });
+    expect(screen.getByText('Anna Lindgren')).toBeInTheDocument();
+    expect(screen.queryByText('Erik Holm')).not.toBeInTheDocument();
+  });
+
+  it('matches substring anywhere in the name', () => {
+    render(<OperatorPanel {...defaultProps()} />);
+    fireEvent.change(screen.getByPlaceholderText('Search operators'), { target: { value: 'holm' } });
+    expect(screen.queryByText('Anna Lindgren')).not.toBeInTheDocument();
+    expect(screen.getByText('Erik Holm')).toBeInTheDocument();
+  });
+
+  it('shows "No matches" when nothing matches', () => {
+    render(<OperatorPanel {...defaultProps()} />);
+    fireEvent.change(screen.getByPlaceholderText('Search operators'), { target: { value: 'zzzz' } });
+    expect(screen.getByText('No matches')).toBeInTheDocument();
+    expect(screen.queryByText('Anna Lindgren')).not.toBeInTheDocument();
+    expect(screen.queryByText('Erik Holm')).not.toBeInTheDocument();
+  });
+
+  it('clear button resets the search', () => {
+    render(<OperatorPanel {...defaultProps()} />);
+    const searchInput = screen.getByPlaceholderText('Search operators');
+    fireEvent.change(searchInput, { target: { value: 'anna' } });
+    expect(screen.queryByText('Erik Holm')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByLabelText('Clear search'));
+    expect(searchInput.value).toBe('');
+    expect(screen.getByText('Erik Holm')).toBeInTheDocument();
+  });
+
+  it('clear button is hidden when search is empty', () => {
+    render(<OperatorPanel {...defaultProps()} />);
+    expect(screen.queryByLabelText('Clear search')).not.toBeInTheDocument();
+  });
 });
