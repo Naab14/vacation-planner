@@ -13,6 +13,10 @@ const defaultProps = () => ({
   onImportJSON: vi.fn(),
   onReset: vi.fn(),
   onShare: vi.fn(),
+  onUndo: vi.fn(),
+  onRedo: vi.fn(),
+  canUndo: true,
+  canRedo: true,
 });
 
 describe('TopBar', () => {
@@ -116,5 +120,26 @@ describe('TopBar', () => {
     expect(screen.getByText('Save')).toBeInTheDocument();
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(screen.queryByText('Save')).not.toBeInTheDocument();
+  });
+
+  it('renders Undo and Redo buttons', () => {
+    render(<TopBar {...defaultProps()} />);
+    expect(screen.getByLabelText('Undo')).toBeInTheDocument();
+    expect(screen.getByLabelText('Redo')).toBeInTheDocument();
+  });
+
+  it('disables Undo/Redo buttons when canUndo/canRedo are false', () => {
+    render(<TopBar {...defaultProps()} canUndo={false} canRedo={false} />);
+    expect(screen.getByLabelText('Undo')).toBeDisabled();
+    expect(screen.getByLabelText('Redo')).toBeDisabled();
+  });
+
+  it('calls onUndo and onRedo when respective buttons clicked', () => {
+    const props = defaultProps();
+    render(<TopBar {...props} />);
+    fireEvent.click(screen.getByLabelText('Undo'));
+    expect(props.onUndo).toHaveBeenCalled();
+    fireEvent.click(screen.getByLabelText('Redo'));
+    expect(props.onRedo).toHaveBeenCalled();
   });
 });

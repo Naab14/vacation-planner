@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useReducer } from 'react';
 import { seedOperators, seedVacationBlocks, buildDefaultDemand, defaultSettings } from './data';
 import {
   saveState, loadState, clearState,
@@ -9,6 +9,7 @@ import {
 } from './storage';
 import { parseCSV, mergeOperators, downloadCSVTemplate } from './csv';
 import { buildHolidayMap, initHolidays } from './holidays';
+import { historyReducer, initHistory } from './historyReducer';
 
 import TopBar from './components/TopBar';
 import OperatorPanel from './components/OperatorPanel';
@@ -43,7 +44,13 @@ const storedUI = loadUI();
 
 export default function App() {
   const [initResult] = useState(getDefaults);
-  const [state, setState] = useState(initResult.state);
+  const [history, dispatch] = useReducer(historyReducer, initResult.state, initHistory);
+  const { present: state, past, future } = history;
+  const canUndo = past.length > 0;
+  const canRedo = future.length > 0;
+  const setFn = useCallback(updater => dispatch({ type: 'SET', updater }), []);
+  const undo = useCallback(() => dispatch({ type: 'UNDO' }), []);
+  const redo = useCallback(() => dispatch({ type: 'REDO' }), []);
   const [theme, setTheme] = useState(loadTheme);
   const [toast, setToast] = useState(initResult.wasShared ? 'Loaded shared workspace' : null);
   const [showDemand, setShowDemand] = useState(false);
@@ -89,62 +96,75 @@ export default function App() {
     saveUI({ zoom, sidebarCollapsed });
   }, [zoom, sidebarCollapsed]);
 
+  // Keyboard shortcuts: Ctrl/Cmd+Z = undo, Ctrl/Cmd+Shift+Z = redo
+  useEffect(() => {
+    const handler = e => {
+      const t = e.target;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+      if (!(e.ctrlKey || e.metaKey) || e.key.toLowerCase() !== 'z') return;
+      e.preventDefault();
+      if (e.shiftKey) redo(); else undo();
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [undo, redo]);
+
   /* ── State updaters ─────────────────────────────────────────────────────── */
-  const update = useCallback(patch => setState(s => ({ ...s, ...patch })), []);
+  const update = useCallback(patch => setFn(s => ({ ...s, ...patch })), [setFn]);
   const updateOp = useCallback((id, patch) =>
-    setState(s => ({ ...s, operators: s.operators.map(o => o.id === id ? { ...o, ...patch } : o) })), []);
+    setFn(s => ({ ...s, operators: s.operators.map(o => o.id === id ? { ...o, ...patch } : o) })), [setFn]);
   const addBlock = useCallback((opId, sw, ew, status = 'draft') =>
-    setState(s => ({ ...s, vacationBlocks: [...s.vacationBlocks, { id: uid(), operatorId: opId, startWeek: sw, endWeek: ew, status }] })), []);
+    setFn(s => ({ ...s, vacationBlocks: [...s.vacationBlocks, { id: uid(), operatorId: opId, startWeek: sw, endWeek: ew, status }] })), [setFn]);
   const updateBlock = useCallback((id, patch) =>
-    setState(s => ({ ...s, vacationBlocks: s.vacationBlocks.map(b => b.id === id ? { ...b, ...patch } : b) })), []);
+    setFn(s => ({ ...s, vacationBlocks: s.vacationBlocks.map(b => b.id === id ? { ...b, ...patch } : b) })), [setFn]);
   const deleteBlock = useCallback(id =>
-    setState(s => ({ ...s, vacationBlocks: s.vacationBlocks.filter(b => b.id !== id) })), []);
+    setFn(s => ({ ...s, vacationBlocks: s.vacationBlocks.filter(b => b.id !== id) })), [setFn]);
   const setBlockStatus = useCallback((id, status) =>
-    setState(s => ({ ...s, vacationBlocks: s.vacationBlocks.map(b => b.id === id ? { ...b, status } : b) })), []);
+    setFn(s => ({ ...s, vacationBlocks: s.vacationBlocks.map(b => b.id === id ? { ...b, status } : b) })), [setFn]);
   const setBlockDayStatus = useCallback((id, dateStr, status) =>
-    setState(s => ({
+    setFn(s => ({
       ...s,
       vacationBlocks: s.vacationBlocks.map(b =>
         b.id === id
           ? { ...b, dayStatuses: { ...b.dayStatuses, [dateStr]: status } }
           : b
       ),
-    })), []);
+    })), [setFn]);
   const clearBlockDayStatus = useCallback((id, dateStr) =>
-    setState(s => ({
+    setFn(s => ({
       ...s,
       vacationBlocks: s.vacationBlocks.map(b => {
         if (b.id !== id) return b;
         const { [dateStr]: _, ...rest } = b.dayStatuses || {};
         return { ...b, dayStatuses: Object.keys(rest).length ? rest : undefined };
       }),
-    })), []);
+    })), [setFn]);
   const updateDemand = useCallback((proc, week, val) =>
-    setState(s => ({ ...s, demand: { ...s.demand, [proc]: { ...s.demand[proc], [week]: val } } })), []);
+    setFn(s => ({ ...s, demand: { ...s.demand, [proc]: { ...s.demand[proc], [week]: val } } })), [setFn]);
   const setShiftMode = useCallback(m =>
-    setState(s => ({ ...s, settings: { ...s.settings, shiftMode: m } })), []);
+    setFn(s => ({ ...s, settings: { ...s.settings, shiftMode: m } })), [setFn]);
   const setStartWeek = useCallback(w =>
-    setState(s => ({
+    setFn(s => ({
       ...s,
       settings: {
         ...s.settings,
         startWeek: Math.max(1, Math.min(52 - s.settings.visibleWeeks + 1, w)),
       },
-    })), []);
+    })), [setFn]);
 
   /* ── Operator management ────────────────────────────────────────────────── */
   const addOperator = useCallback((name, shift) => {
     const op = { id: uid(), name, shift, active: true, certifications: [] };
-    setState(s => ({ ...s, operators: [...s.operators, op] }));
+    setFn(s => ({ ...s, operators: [...s.operators, op] }));
     flash(`${name} tillagd`);
-  }, []);
+  }, [setFn]);
   const removeOperator = useCallback(id => {
-    setState(s => ({
+    setFn(s => ({
       ...s,
       operators: s.operators.filter(o => o.id !== id),
       vacationBlocks: s.vacationBlocks.filter(b => b.operatorId !== id),
     }));
-  }, []);
+  }, [setFn]);
 
   /* ── CSV import ─────────────────────────────────────────────────────────── */
   const handleCSVImport = useCallback(() => {
@@ -170,15 +190,15 @@ export default function App() {
   const handleExport = useCallback(() => { exportJSON(state); flash('Exported to file'); }, [state]);
   const handleImport = useCallback(async () => {
     const data = await importJSON();
-    if (data) { setState(data); flash('State imported'); }
-  }, []);
+    if (data) { setFn(() => data); flash('State imported'); }
+  }, [setFn]);
   const handleReset = useCallback(() => {
     if (confirm('Reset all data to defaults? This cannot be undone.')) {
       clearState();
-      setState({ operators: seedOperators, vacationBlocks: seedVacationBlocks, demand: buildDefaultDemand(), settings: defaultSettings });
+      setFn(() => ({ operators: seedOperators, vacationBlocks: seedVacationBlocks, demand: buildDefaultDemand(), settings: defaultSettings }));
       flash('Reset to defaults');
     }
-  }, []);
+  }, [setFn]);
   const handleShare = useCallback(async () => {
     const link = buildShareLink(state);
     const ok = await copyToClipboard(link);
@@ -197,6 +217,8 @@ export default function App() {
         onExportJSON={handleExport} onImportJSON={handleImport}
         onReset={handleReset}
         onShare={handleShare}
+        onUndo={undo} onRedo={redo}
+        canUndo={canUndo} canRedo={canRedo}
       />
 
       {/* ── Main content ─────────────────────────────────────────────────── */}
