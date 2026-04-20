@@ -404,3 +404,30 @@ h1, h2, h3, h4, h5, h6 { font-family: var(--font-heading); }
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
+
+/* ── Touch-device adjustments ──────────────────────────────────────────────
+ * Target both no-hover devices and coarse-pointer devices (hybrids/tablets)
+ * to avoid hover-flicker and stray transforms on tap.
+ */
+@media (hover: none), (pointer: coarse) {
+  .kinetic-card:hover,
+  .sidebar-collapsed button:hover,
+  button:hover {
+    transform: none !important;
+  }
+  .grid-cell, [data-week][data-op] {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+}
+
+/* ── Tablet (<=1024): narrow the collapsed sidebar footprint ─────────────── */
+@media (max-width: 1024px) {
+  .sidebar-collapsed { width: 40px !important; min-width: 40px !important; }
+}
+
+/* ── Mobile (<768): compact top bar, wider tap targets ─────────────────── */
+@media (max-width: 767px) {
+  [data-week][data-op] { min-height: 44px; }
+  .time-slider { width: 120px !important; }
+}
