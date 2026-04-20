@@ -126,8 +126,24 @@ describe('CalendarGrid', () => {
     const props = defaultProps();
     props.zoom = 'day';
     render(<CalendarGrid {...props} />);
-    expect(screen.getByText(/Mån/)).toBeInTheDocument();
-    expect(screen.getByText(/Sön/)).toBeInTheDocument();
+    expect(screen.getAllByText(/Mån/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Sön/).length).toBeGreaterThan(0);
+  });
+
+  it('day zoom spans 8 weeks (56 day columns per operator)', () => {
+    const props = defaultProps();
+    props.zoom = 'day';
+    render(<CalendarGrid {...props} />);
+    // 8 weeks × 7 days = 56 Mån-Sön instances across header row
+    expect(screen.getAllByText(/Mån/).length).toBe(8);
+  });
+
+  it('day zoom shows week labels v.15 .. v.22', () => {
+    const props = defaultProps();
+    props.zoom = 'day';
+    render(<CalendarGrid {...props} />);
+    expect(screen.getAllByText('v.15').length).toBeGreaterThan(0);
+    expect(screen.getByText('v.22')).toBeInTheDocument();
   });
 
   it('shows tools row when gear button clicked', () => {
