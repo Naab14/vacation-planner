@@ -1,7 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { themes } from '../data';
 
-export default function TopBar({ shiftMode, onShiftModeChange, theme, onThemeChange, onImportCSV, onSave, onExportJSON, onImportJSON, onReset, onShare }) {
+export default function TopBar({
+  shiftMode, onShiftModeChange, theme, onThemeChange,
+  onImportCSV, onSave, onExportJSON, onImportJSON, onReset, onShare,
+  onUndo, onRedo, canUndo, canRedo,
+}) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
 
@@ -23,6 +27,22 @@ export default function TopBar({ shiftMode, onShiftModeChange, theme, onThemeCha
   return (
     <div className="flex items-center gap-3 px-5 py-2 flex-wrap shadow-md z-30 relative" style={{ background: 'var(--topbar-bg)', color: 'var(--topbar-text)' }}>
       <h1 className="impact-heading text-base mr-3 whitespace-nowrap">Semester Planner</h1>
+
+      {/* Undo / Redo — history controls */}
+      <div className="flex items-center gap-1 mr-1">
+        <button onClick={onUndo} disabled={!canUndo}
+          title="Undo (Ctrl+Z)" aria-label="Undo"
+          className="px-2 py-1 text-base font-bold rounded-lg transition-all duration-200 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed"
+          style={{ color: 'var(--topbar-text)' }}>
+          ↶
+        </button>
+        <button onClick={onRedo} disabled={!canRedo}
+          title="Redo (Ctrl+Shift+Z)" aria-label="Redo"
+          className="px-2 py-1 text-base font-bold rounded-lg transition-all duration-200 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed"
+          style={{ color: 'var(--topbar-text)' }}>
+          ↷
+        </button>
+      </div>
 
       {/* Shift mode pill toggle — Neo-Kinetic indigo */}
       <div className="flex items-center gap-0.5 p-1 rounded-full border border-white/10" style={{ background: 'rgba(0,0,0,0.25)' }}>

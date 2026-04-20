@@ -152,4 +152,25 @@ describe('App', () => {
     expect(storage.buildShareLink).toHaveBeenCalled();
     expect(storage.copyToClipboard).toHaveBeenCalled();
   });
+
+  it('undo button reverts a shift-mode change', () => {
+    render(<App />);
+    // Default is 'separate' — coverage rows show S1/S2 labels
+    expect(screen.getByText('COVERAGE (S1)')).toBeInTheDocument();
+    expect(screen.queryByText('COVERAGE (All Operators)')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByText('Combined'));
+    expect(screen.getByText('COVERAGE (All Operators)')).toBeInTheDocument();
+    fireEvent.click(screen.getByLabelText('Undo'));
+    expect(screen.getByText('COVERAGE (S1)')).toBeInTheDocument();
+    expect(screen.queryByText('COVERAGE (All Operators)')).not.toBeInTheDocument();
+  });
+
+  it('Ctrl+Z keyboard shortcut fires undo', () => {
+    render(<App />);
+    fireEvent.click(screen.getByText('Combined'));
+    expect(screen.getByText('COVERAGE (All Operators)')).toBeInTheDocument();
+    fireEvent.keyDown(document, { key: 'z', ctrlKey: true });
+    expect(screen.queryByText('COVERAGE (All Operators)')).not.toBeInTheDocument();
+    expect(screen.getByText('COVERAGE (S1)')).toBeInTheDocument();
+  });
 });
