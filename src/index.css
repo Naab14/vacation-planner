@@ -189,6 +189,35 @@ h1, h2, h3, h4, h5, h6 { font-family: var(--font-heading); }
   border-left: 2px solid var(--holiday-border) !important;
 }
 
+/* ── Zoom transition overlay (day → week) ─────────────────────────────────── */
+.zoom-transition-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 40;
+  background:
+    linear-gradient(rgba(79, 70, 229, 0.08), rgba(79, 70, 229, 0.08)),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0,
+      transparent 99px,
+      rgba(79, 70, 229, 0.35) 99px,
+      rgba(79, 70, 229, 0.35) 100px
+    );
+  animation: zoomFade 0.25s ease-out forwards;
+}
+@keyframes zoomFade {
+  0% { opacity: 0; }
+  50% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Ghost zoom buttons — subtle hover */
+.zoom-btn:hover:not(:disabled) {
+  background: var(--bg-primary) !important;
+  color: var(--text-primary) !important;
+}
+
 /* ── Coverage tooltip ─────────────────────────────────────────────────────── */
 .coverage-tooltip {
   position: absolute;
