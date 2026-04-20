@@ -80,6 +80,7 @@ export default function DayZoomGrid({
                     const isWeekend = i >= 5;
                     const dayStatus = getDayStatus(block, dateStr);
                     const hasOverride = block && block.dayStatuses?.[dateStr] && block.dayStatuses[dateStr] !== block.status;
+                    const isFirstBlockDay = block && i === 0;
 
                     let bgClass = isWeekend ? 'day-cell-off' : 'day-cell-working';
                     let cellStyle = {};
@@ -122,6 +123,10 @@ export default function DayZoomGrid({
                         {hasOverride && (
                           <span className="absolute top-0 right-0.5 text-[8px] pointer-events-none"
                             style={{ color: 'var(--accent)' }}>●</span>
+                        )}
+                        {block?.note && isFirstBlockDay && (
+                          <span className="absolute top-0 left-0.5 text-[10px] pointer-events-none"
+                            title={block.note} aria-label="Has note">💬</span>
                         )}
                       </div>
                     );

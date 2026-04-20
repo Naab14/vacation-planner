@@ -101,6 +101,20 @@ describe('CalendarGrid', () => {
     expect(screen.getByText('v.16-18')).toBeInTheDocument();
   });
 
+  it('shows note indicator on blocks that have a note', () => {
+    const props = defaultProps();
+    props.vacationBlocks = [{ ...makeBlock('b1', '1', 16, 18), note: 'Parental leave' }];
+    render(<CalendarGrid {...props} />);
+    expect(screen.getByLabelText('Has note')).toBeInTheDocument();
+  });
+
+  it('does not show note indicator on blocks without a note', () => {
+    const props = defaultProps();
+    props.vacationBlocks = [makeBlock('b1', '1', 16, 18)];
+    render(<CalendarGrid {...props} />);
+    expect(screen.queryByLabelText('Has note')).not.toBeInTheDocument();
+  });
+
   it('renders day zoom when zoom=day', () => {
     const props = defaultProps();
     props.zoom = 'day';

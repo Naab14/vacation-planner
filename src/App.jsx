@@ -139,6 +139,17 @@ export default function App() {
         return { ...b, dayStatuses: Object.keys(rest).length ? rest : undefined };
       }),
     })), [setFn]);
+  const setBlockNote = useCallback((id, note) =>
+    setFn(s => ({
+      ...s,
+      vacationBlocks: s.vacationBlocks.map(b => {
+        if (b.id !== id) return b;
+        const trimmed = (note || '').trim();
+        if (trimmed === (b.note || '')) return b;
+        if (!trimmed) { const { note: _omit, ...rest } = b; return rest; }
+        return { ...b, note: trimmed };
+      }),
+    })), [setFn]);
   const updateDemand = useCallback((proc, week, val) =>
     setFn(s => ({ ...s, demand: { ...s.demand, [proc]: { ...s.demand[proc], [week]: val } } })), [setFn]);
   const setShiftMode = useCallback(m =>
@@ -242,6 +253,7 @@ export default function App() {
           onAddBlock={addBlock} onUpdateBlock={updateBlock}
           onDeleteBlock={deleteBlock} onSetBlockStatus={setBlockStatus}
           onSetBlockDayStatus={setBlockDayStatus} onClearBlockDayStatus={clearBlockDayStatus}
+          onSetBlockNote={setBlockNote}
           setStartWeek={setStartWeek}
           showDemand={showDemand}
           onToggleDemand={() => setShowDemand(p => !p)}
