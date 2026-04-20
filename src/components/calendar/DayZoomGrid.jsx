@@ -44,11 +44,13 @@ export default function DayZoomGrid({
             const dateStr = formatDateStr(d);
             const isHoliday = !!holidaysByDate[dateStr];
             const isWeekend = i >= 5;
+            const headerTitle = isHoliday ? `${holidaysByDate[dateStr].name} — ${dateStr}` : undefined;
             return (
               <div key={i} className="flex flex-col items-center justify-center text-xs font-medium"
                 style={{ width: 100, minWidth: 100, height: CELL_H + 4, borderRight: '1px solid var(--border)',
                   color: isHoliday ? 'var(--holiday-text)' : isWeekend ? 'var(--text-secondary)' : 'var(--text-primary)',
-                  background: isHoliday ? 'var(--holiday-bg)' : 'transparent' }}>
+                  background: isHoliday ? 'var(--holiday-pattern)' : 'transparent' }}
+                title={headerTitle}>
                 <span>{SWEDISH_DAYS[i]} {d.getDate()}/{d.getMonth() + 1}</span>
                 {isHoliday && <span className="text-[9px] italic opacity-80">{holidaysByDate[dateStr].name}</span>}
               </div>
@@ -103,16 +105,19 @@ export default function DayZoomGrid({
                       }
                       bgClass = '';
                     } else if (isHoliday) {
-                      cellStyle = { background: 'var(--holiday-bg)' };
+                      cellStyle = { background: 'var(--holiday-pattern)' };
                       bgClass = '';
                     } else {
                       cellStyle.cursor = 'pointer';
                     }
 
+                    const holidayTitle = !block && isHoliday ? `${holidaysByDate[dateStr].name} — ${dateStr}` : undefined;
+
                     return (
                       <div key={i}
                         className={`flex items-center justify-center text-xs relative ${bgClass}`}
                         style={{ width: 100, minWidth: 100, height: CELL_H, borderRight: '1px solid var(--border)', ...cellStyle }}
+                        title={holidayTitle}
                         onClick={e => handleDayClick(e, op, block, dateStr)}>
                         {block && (
                           <span className="text-[10px] font-medium truncate pointer-events-none select-none"
