@@ -10,6 +10,7 @@ import {
 import { parseCSV, mergeOperators, downloadCSVTemplate } from './csv';
 import { buildHolidayMap, initHolidays } from './holidays';
 import { historyReducer, initHistory } from './historyReducer';
+import { useBreakpoint } from './hooks/useBreakpoint';
 
 import TopBar from './components/TopBar';
 import OperatorPanel from './components/OperatorPanel';
@@ -57,6 +58,16 @@ export default function App() {
   const [showOperatorMgmt, setShowOperatorMgmt] = useState(false);
   const [zoom, setZoom] = useState(storedUI.zoom === 'day' ? 'day' : 'week');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(!!storedUI.sidebarCollapsed);
+  const { isMobile, isTablet, isDesktop } = useBreakpoint();
+
+  // Auto-collapse sidebar on tablet/mobile; restore user preference on desktop
+  useEffect(() => {
+    if (isMobile || isTablet) {
+      setSidebarCollapsed(true);
+    } else if (isDesktop) {
+      setSidebarCollapsed(!!storedUI.sidebarCollapsed);
+    }
+  }, [isMobile, isTablet, isDesktop]);
 
   const { operators, vacationBlocks, demand, settings } = state;
   const { startWeek, visibleWeeks, shiftMode } = settings;
