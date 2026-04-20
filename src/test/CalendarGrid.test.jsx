@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import CalendarGrid from '../components/calendar/CalendarGrid';
 import { buildDefaultDemand, defaultSettings, PROCESSES } from '../data';
 
@@ -56,23 +56,30 @@ describe('CalendarGrid', () => {
     expect(props.setStartWeek).toHaveBeenCalledWith(20);
   });
 
-  it('renders zoom buttons', () => {
+  it('renders zoom buttons with aria-labels', () => {
     const props = defaultProps();
     render(<CalendarGrid {...props} />);
-    const buttons = screen.getAllByRole('button');
-    const minusBtn = buttons.find(b => b.textContent === '−');
-    const plusBtn = buttons.find(b => b.textContent === '+');
-    expect(minusBtn).toBeDefined();
-    expect(plusBtn).toBeDefined();
+    expect(screen.getByLabelText('Zoom in')).toBeInTheDocument();
+    expect(screen.getByLabelText('Zoom out')).toBeInTheDocument();
   });
 
-  it('calls onZoomChange when zoom buttons clicked', () => {
+  it('+ button zooms into day view (from week)', () => {
     const props = defaultProps();
     render(<CalendarGrid {...props} />);
-    const buttons = screen.getAllByRole('button');
-    const minusBtn = buttons.find(b => b.textContent === '−');
-    fireEvent.click(minusBtn);
+    fireEvent.click(screen.getByLabelText('Zoom in'));
     expect(props.onZoomChange).toHaveBeenCalledWith('day');
+  });
+
+  it('zoom out button is disabled in week view', () => {
+    const props = defaultProps();
+    render(<CalendarGrid {...props} />);
+    expect(screen.getByLabelText('Zoom out')).toBeDisabled();
+  });
+
+  it('zoom in button is disabled in day view', () => {
+    const props = { ...defaultProps(), zoom: 'day' };
+    render(<CalendarGrid {...props} />);
+    expect(screen.getByLabelText('Zoom in')).toBeDisabled();
   });
 
   it('shows week label in week zoom', () => {
@@ -139,5 +146,97 @@ describe('CalendarGrid', () => {
     const demandBtn = screen.getByText('Demand');
     fireEvent.click(demandBtn);
     expect(props.onToggleDemand).toHaveBeenCalled();
+  });
+});
+
+describe('CalendarGrid — scroll zoom & keyboard', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('scroll up zooms into day view when in week zoom', () => {
+    const props = defaultProps();
+    render(<CalendarGrid {...props} />);
+    const wrapper = screen.getByTestId('grid-wrapper');
+    fireEvent.wheel(wrapper, { deltaY: -50 });
+    expect(props.onZoomChange).toHaveBeenCalledWith('day');
+  });
+
+  it('scroll down from day view triggers transition overlay and delayed week switch', () => {
+    vi.useFakeTimers();
+    const props = { ...defaultProps(), zoom: 'day' };
+    render(<CalendarGrid {...props} />);
+    const wrapper = screen.getByTestId('grid-wrapper');
+    fireEvent.wheel(wrapper, { deltaY: 50 });
+    expect(screen.getByTestId('zoom-transition-overlay')).toBeInTheDocument();
+    expect(props.onZoomChange).not.toHaveBeenCalled();
+    act(() => { vi.advanceTimersByTime(260); });
+    expect(props.onZoomChange).toHaveBeenCalledWith('week');
+  });
+
+  it('debounces repeated wheel events within 120ms', () => {
+    vi.useFakeTimers();
+    const props = defaultProps();
+    render(<CalendarGrid {...props} />);
+    const wrapper = screen.getByTestId('grid-wrapper');
+    fireEvent.wheel(wrapper, { deltaY: -50 });
+    fireEvent.wheel(wrapper, { deltaY: -50 });
+    fireEvent.wheel(wrapper, { deltaY: -50 });
+    expect(props.onZoomChange).toHaveBeenCalledTimes(1);
+    act(() => { vi.advanceTimersByTime(125); });
+    fireEvent.wheel(wrapper, { deltaY: -50 });
+    expect(props.onZoomChange).toHaveBeenCalledTimes(2);
+  });
+
+  it('ignores wheel when horizontal scroll dominates', () => {
+    const props = defaultProps();
+    render(<CalendarGrid {...props} />);
+    const wrapper = screen.getByTestId('grid-wrapper');
+    fireEvent.wheel(wrapper, { deltaY: 5, deltaX: 80 });
+    expect(props.onZoomChange).not.toHaveBeenCalled();
+  });
+
+  it('+ key zooms into day view', () => {
+    const props = defaultProps();
+    render(<CalendarGrid {...props} />);
+    fireEvent.keyDown(document, { key: '+' });
+    expect(props.onZoomChange).toHaveBeenCalledWith('day');
+  });
+
+  it('= key also zooms into day view', () => {
+    const props = defaultProps();
+    render(<CalendarGrid {...props} />);
+    fireEvent.keyDown(document, { key: '=' });
+    expect(props.onZoomChange).toHaveBeenCalledWith('day');
+  });
+
+  it('- key zooms out to week view (through transition)', () => {
+    vi.useFakeTimers();
+    const props = { ...defaultProps(), zoom: 'day' };
+    render(<CalendarGrid {...props} />);
+    fireEvent.keyDown(document, { key: '-' });
+    expect(screen.getByTestId('zoom-transition-overlay')).toBeInTheDocument();
+    act(() => { vi.advanceTimersByTime(260); });
+    expect(props.onZoomChange).toHaveBeenCalledWith('week');
+  });
+
+  it('does not trigger keyboard zoom when typing in an input', () => {
+    const props = defaultProps();
+    render(
+      <>
+        <input data-testid="input" />
+        <CalendarGrid {...props} />
+      </>,
+    );
+    const input = screen.getByTestId('input');
+    fireEvent.keyDown(input, { key: '+' });
+    expect(props.onZoomChange).not.toHaveBeenCalled();
+  });
+
+  it('does not trigger keyboard zoom with Ctrl/Cmd modifier', () => {
+    const props = defaultProps();
+    render(<CalendarGrid {...props} />);
+    fireEvent.keyDown(document, { key: '+', ctrlKey: true });
+    expect(props.onZoomChange).not.toHaveBeenCalled();
   });
 });

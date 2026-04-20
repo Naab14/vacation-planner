@@ -4,6 +4,9 @@ import DayZoomGrid from './DayZoomGrid';
 import BlockPopover from './BlockPopover';
 import Legend from './Legend';
 
+const ZOOM_DEBOUNCE_MS = 120;
+const ZOOM_TRANSITION_MS = 250;
+
 export default function CalendarGrid({
   operators, vacationBlocks, demand, settings, weeks, holidayMap,
   onAddBlock, onUpdateBlock, onDeleteBlock, onSetBlockStatus,
@@ -13,12 +16,60 @@ export default function CalendarGrid({
 }) {
   const { shiftMode, startWeek, visibleWeeks } = settings;
   const scrollRef = useRef(null);
+  const gridWrapperRef = useRef(null);
+  const wheelLockRef = useRef(false);
   const [showTools, setShowTools] = useState(false);
   const [popover, setPopover] = useState(null);
   const [drag, setDrag] = useState(null);
   const longPressTimer = useRef(null);
   const pointerMoved = useRef(false);
   const [showDayCoverage, setShowDayCoverage] = useState(false);
+  const [zoomTransition, setZoomTransition] = useState(false);
+
+  const zoomIn = useCallback(() => {
+    if (zoom !== 'week') return;
+    onZoomChange('day');
+  }, [zoom, onZoomChange]);
+
+  const zoomOut = useCallback(() => {
+    if (zoom !== 'day') return;
+    setZoomTransition(true);
+    setTimeout(() => {
+      onZoomChange('week');
+      setZoomTransition(false);
+    }, ZOOM_TRANSITION_MS);
+  }, [zoom, onZoomChange]);
+
+  // Scroll-wheel zoom with debounce
+  useEffect(() => {
+    const el = gridWrapperRef.current;
+    if (!el) return;
+    const handleWheel = e => {
+      if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+      if (Math.abs(e.deltaY) < 4) return;
+      e.preventDefault();
+      if (wheelLockRef.current) return;
+      wheelLockRef.current = true;
+      setTimeout(() => { wheelLockRef.current = false; }, ZOOM_DEBOUNCE_MS);
+      if (e.deltaY < 0) zoomIn();
+      else zoomOut();
+    };
+    el.addEventListener('wheel', handleWheel, { passive: false });
+    return () => el.removeEventListener('wheel', handleWheel);
+  }, [zoomIn, zoomOut]);
+
+  // Keyboard zoom: + / = zooms in, - zooms out
+  useEffect(() => {
+    const handler = e => {
+      const t = e.target;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.key === '+' || e.key === '=') { e.preventDefault(); zoomIn(); }
+      else if (e.key === '-') { e.preventDefault(); zoomOut(); }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [zoomIn, zoomOut]);
 
   const isOverlapping = useCallback((opId, start, end, ignoreId = null) => {
     const sw = Math.min(start, end);
@@ -169,14 +220,16 @@ export default function CalendarGrid({
           {zoom === 'day' ? `v.${weeks[0]}` : `v.${weeks[0]} — v.${weeks[weeks.length - 1]}`}
         </span>
         <div className="flex items-center gap-1 ml-2">
-          <button onClick={() => onZoomChange('day')}
-            className="px-2 py-1 text-sm font-bold rounded"
-            style={{ background: zoom === 'day' ? 'var(--accent)' : 'var(--bg-primary)', color: zoom === 'day' ? '#fff' : 'var(--text-primary)', border: '1px solid var(--border)' }}>
+          <button onClick={zoomOut} disabled={zoom === 'week'}
+            aria-label="Zoom out" title="Zoom out (-)"
+            className="zoom-btn px-2 py-1 text-sm font-bold rounded disabled:opacity-40 disabled:cursor-not-allowed"
+            style={{ background: 'transparent', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
             −
           </button>
-          <button onClick={() => onZoomChange('week')}
-            className="px-2 py-1 text-sm font-bold rounded"
-            style={{ background: zoom === 'week' ? 'var(--accent)' : 'var(--bg-primary)', color: zoom === 'week' ? '#fff' : 'var(--text-primary)', border: '1px solid var(--border)' }}>
+          <button onClick={zoomIn} disabled={zoom === 'day'}
+            aria-label="Zoom in" title="Zoom in (+)"
+            className="zoom-btn px-2 py-1 text-sm font-bold rounded disabled:opacity-40 disabled:cursor-not-allowed"
+            style={{ background: 'transparent', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
             +
           </button>
         </div>
@@ -199,25 +252,30 @@ export default function CalendarGrid({
       )}
 
       {/* Grid */}
-      {zoom === 'week' ? (
-        <WeekZoomGrid
-          ref={scrollRef}
-          operators={operators} vacationBlocks={vacationBlocks} demand={demand}
-          settings={settings} weeks={weeks} holidayMap={holidayMap}
-          groups={groups} drag={drag} showDemand={showDemand} updateDemand={updateDemand}
-          onCellPointerDown={handleCellPointerDown}
-          onCellPointerUp={handleCellPointerUp}
-          onResizePointerDown={handleResizePointerDown}
-        />
-      ) : (
-        <DayZoomGrid
-          operators={operators} vacationBlocks={vacationBlocks} demand={demand}
-          settings={settings} weeks={weeks} holidayMap={holidayMap} groups={groups}
-          showDayCoverage={showDayCoverage} onToggleDayCoverage={() => setShowDayCoverage(c => !c)}
-          setPopover={setPopover}
-          onAddBlock={onAddBlock}
-        />
-      )}
+      <div ref={gridWrapperRef} data-testid="grid-wrapper" className="flex-1 relative flex flex-col overflow-hidden">
+        {zoom === 'week' ? (
+          <WeekZoomGrid
+            ref={scrollRef}
+            operators={operators} vacationBlocks={vacationBlocks} demand={demand}
+            settings={settings} weeks={weeks} holidayMap={holidayMap}
+            groups={groups} drag={drag} showDemand={showDemand} updateDemand={updateDemand}
+            onCellPointerDown={handleCellPointerDown}
+            onCellPointerUp={handleCellPointerUp}
+            onResizePointerDown={handleResizePointerDown}
+          />
+        ) : (
+          <DayZoomGrid
+            operators={operators} vacationBlocks={vacationBlocks} demand={demand}
+            settings={settings} weeks={weeks} holidayMap={holidayMap} groups={groups}
+            showDayCoverage={showDayCoverage} onToggleDayCoverage={() => setShowDayCoverage(c => !c)}
+            setPopover={setPopover}
+            onAddBlock={onAddBlock}
+          />
+        )}
+        {zoomTransition && (
+          <div className="zoom-transition-overlay" aria-hidden="true" data-testid="zoom-transition-overlay" />
+        )}
+      </div>
 
       {/* Popover */}
       {popover && (
