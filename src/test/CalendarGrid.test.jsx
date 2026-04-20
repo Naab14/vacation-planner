@@ -140,4 +140,41 @@ describe('CalendarGrid', () => {
     fireEvent.click(demandBtn);
     expect(props.onToggleDemand).toHaveBeenCalled();
   });
+
+  it('shows holiday tooltip with name and date on week column header', () => {
+    const props = defaultProps();
+    props.holidayMap = { 17: { holidays: [{ name: 'Långfredagen', dateStr: '2026-04-03', year: 2026 }] } };
+    render(<CalendarGrid {...props} />);
+    const header = document.querySelector('[title*="Långfredagen"]');
+    expect(header).toBeInTheDocument();
+    expect(header.getAttribute('title')).toContain('2026-04-03');
+  });
+
+  it('applies holiday stripe pattern to empty holiday cells in week zoom', () => {
+    const props = defaultProps();
+    props.holidayMap = { 17: { holidays: [{ name: 'Långfredagen', dateStr: '2026-04-03', year: 2026 }] } };
+    render(<CalendarGrid {...props} />);
+    const cell = document.querySelector('[data-week="17"][data-op="1"]');
+    expect(cell).toBeInTheDocument();
+    expect(cell.style.background).toContain('holiday-pattern');
+  });
+
+  it('holiday cell tooltip includes name + date in week zoom', () => {
+    const props = defaultProps();
+    props.holidayMap = { 17: { holidays: [{ name: 'Långfredagen', dateStr: '2026-04-03', year: 2026 }] } };
+    render(<CalendarGrid {...props} />);
+    const cell = document.querySelector('[data-week="17"][data-op="1"]');
+    expect(cell.getAttribute('title')).toContain('Långfredagen');
+    expect(cell.getAttribute('title')).toContain('2026-04-03');
+  });
+
+  it('vacation block overrides holiday stripe (block styling wins)', () => {
+    const props = defaultProps();
+    props.holidayMap = { 17: { holidays: [{ name: 'Långfredagen', dateStr: '2026-04-03', year: 2026 }] } };
+    props.vacationBlocks = [makeBlock('b1', '1', 17, 17, 'approved')];
+    render(<CalendarGrid {...props} />);
+    const cell = document.querySelector('[data-week="17"][data-op="1"]');
+    expect(cell.style.background).not.toContain('holiday-pattern');
+    expect(cell.getAttribute('title')).toBeNull();
+  });
 });

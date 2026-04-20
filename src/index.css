@@ -36,6 +36,8 @@
   --holiday-bg: #fff1f2;
   --holiday-border: #fda4af;
   --holiday-text: #be123c;
+  --holiday-stripe-color: rgba(217, 119, 6, 0.22);
+  --holiday-pattern: repeating-linear-gradient(45deg, var(--holiday-stripe-color), var(--holiday-stripe-color) 6px, transparent 6px, transparent 12px), var(--holiday-bg);
 }
 
 /* ── MotherDuck Theme ─────────────────────────────────────────────────────── */
@@ -69,6 +71,7 @@
   --holiday-bg: #ffe0de;
   --holiday-border: #ff7169;
   --holiday-text: #cc4040;
+  --holiday-stripe-color: rgba(204, 64, 64, 0.22);
 }
 
 /* ── Dark Theme ───────────────────────────────────────────────────────────── */
@@ -102,6 +105,7 @@
   --holiday-bg: #450a0a;
   --holiday-border: #991b1b;
   --holiday-text: #fca5a5;
+  --holiday-stripe-color: rgba(251, 191, 36, 0.28);
 }
 
 /* ── Ocean Theme ──────────────────────────────────────────────────────────── */
@@ -135,6 +139,7 @@
   --holiday-bg: #fef2f2;
   --holiday-border: #f87171;
   --holiday-text: #dc2626;
+  --holiday-stripe-color: rgba(220, 38, 38, 0.2);
 }
 
 /* ── Base ─────────────────────────────────────────────────────────────────── */

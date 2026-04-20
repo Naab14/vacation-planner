@@ -19,10 +19,11 @@ export default function WeekZoomGrid({
           {weeks.map(w => {
             const isHoliday = holidayMap[w]?.holidays?.length > 0;
             const holidayAbbrevs = isHoliday ? holidayMap[w].holidays.map(h => HOLIDAY_ABBREV[h.name] || h.name.slice(0, 7)) : [];
+            const holidayTitle = isHoliday ? holidayMap[w].holidays.map(h => `${h.name} — ${h.dateStr}`).join(', ') : undefined;
             return (
               <div key={w} className="flex flex-col items-center justify-center text-xs font-medium"
-                style={{ width: CELL_W, minWidth: CELL_W, height: isHoliday ? CELL_H + 12 : CELL_H, color: isHoliday ? 'var(--holiday-text)' : 'var(--text-secondary)', background: isHoliday ? 'var(--holiday-bg)' : 'transparent', borderRight: '1px solid var(--border)', lineHeight: 1.1 }}
-                title={isHoliday ? holidayMap[w].holidays.map(h => h.name).join(', ') : undefined}>
+                style={{ width: CELL_W, minWidth: CELL_W, height: isHoliday ? CELL_H + 12 : CELL_H, color: isHoliday ? 'var(--holiday-text)' : 'var(--text-secondary)', background: isHoliday ? 'var(--holiday-pattern)' : 'transparent', borderRight: '1px solid var(--border)', lineHeight: 1.1 }}
+                title={holidayTitle}>
                 <span>v.{w}</span>
                 {isHoliday && <span className="text-[9px] italic opacity-80 truncate w-full text-center" style={{ color: 'var(--holiday-text)' }}>{holidayAbbrevs[0]}</span>}
               </div>
@@ -80,14 +81,19 @@ export default function WeekZoomGrid({
                   } else if (isDrawing) {
                     cellStyle = { background: 'var(--draft-bg)', opacity: 0.5 };
                   } else if (isHoliday) {
-                    cellStyle = { background: 'var(--holiday-bg)' };
+                    cellStyle = { background: 'var(--holiday-pattern)' };
                   }
+
+                  const cellTitle = !block && isHoliday
+                    ? holidayMap[w].holidays.map(h => `${h.name} — ${h.dateStr}`).join(', ')
+                    : undefined;
 
                   return (
                     <div key={w}
                       data-week={w} data-op={op.id}
                       className={`flex items-center justify-center text-xs relative ${isDrag ? 'block-dragging' : ''}`}
                       style={{ width: CELL_W, minWidth: CELL_W, height: CELL_H, borderRight: '1px solid var(--border)', cursor: block ? 'grab' : 'crosshair', touchAction: 'none', ...cellStyle }}
+                      title={cellTitle}
                       onPointerDown={e => onCellPointerDown(e, op.id, w)}
                       onPointerUp={e => onCellPointerUp(e, op.id, w)}>
                       {block && isStart && (
