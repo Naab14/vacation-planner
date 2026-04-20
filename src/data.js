@@ -58,10 +58,15 @@ export const defaultSettings = {
   startWeek: 15,
 };
 
-// ── Themes ───────────────────────────────────────────────────────────────────
+// ── Themes (Neo-Kinetic Travelogue) ─────────────────────────────────────────
+// Palette + dark/light mapping lives in src/theme/themes.js.
 export const themes = [
-  { id: 'default', label: 'Default' },
-  { id: 'motherduck', label: 'MotherDuck' },
-  { id: 'dark', label: 'Dark' },
-  { id: 'ocean', label: 'Ocean' },
+  { id: 'neo-kinetic', label: 'Neo-Kinetic' },
+  { id: 'duck-pond', label: 'Duck Pond' },
+  { id: 'citrus-grove', label: 'Citrus Grove' },
+  { id: 'electric-plum', label: 'Electric Plum' },
+  { id: 'harbor', label: 'Harbor' },
+  { id: 'monochrome', label: 'Monochrome' },
+  { id: 'lumina', label: 'Lumina' },
+  { id: 'playful', label: 'Playful' },
 ];

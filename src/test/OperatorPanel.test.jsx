@@ -47,15 +47,15 @@ describe('OperatorPanel', () => {
   it('shows add form when showMgmt is true', () => {
     const props = { ...defaultProps(), showMgmt: true };
     render(<OperatorPanel {...props} />);
-    expect(screen.getByPlaceholderText('Name')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Namn')).toBeInTheDocument();
     expect(screen.getByText('Add')).toBeInTheDocument();
-    expect(screen.getByText('Done')).toBeInTheDocument();
+    expect(screen.getByText('Klar')).toBeInTheDocument();
   });
 
   it('calls onAddOperator with name and shift', () => {
     const props = { ...defaultProps(), showMgmt: true };
     render(<OperatorPanel {...props} />);
-    const input = screen.getByPlaceholderText('Name');
+    const input = screen.getByPlaceholderText('Namn');
     fireEvent.change(input, { target: { value: 'New Person' } });
     fireEvent.click(screen.getByText('Add'));
     expect(props.onAddOperator).toHaveBeenCalledWith('New Person', 'S1');
@@ -71,7 +71,7 @@ describe('OperatorPanel', () => {
   it('calls onAddOperator on Enter key', () => {
     const props = { ...defaultProps(), showMgmt: true };
     render(<OperatorPanel {...props} />);
-    const input = screen.getByPlaceholderText('Name');
+    const input = screen.getByPlaceholderText('Namn');
     fireEvent.change(input, { target: { value: 'Enter Person' } });
     fireEvent.keyDown(input, { key: 'Enter' });
     expect(props.onAddOperator).toHaveBeenCalledWith('Enter Person', 'S1');
@@ -85,7 +85,7 @@ describe('OperatorPanel', () => {
     // Name edit input should appear
     expect(screen.getByDisplayValue('Anna Lindgren')).toBeInTheDocument();
     // Active checkbox should appear
-    expect(screen.getByLabelText('Active')).toBeInTheDocument();
+    expect(screen.getByLabelText('Aktiv')).toBeInTheDocument();
   });
 
   it('shows certification checkboxes in expanded view', () => {
@@ -111,7 +111,7 @@ describe('OperatorPanel', () => {
     const props = defaultProps();
     render(<OperatorPanel {...props} />);
     fireEvent.click(screen.getByText('Anna Lindgren'));
-    const activeCheckbox = screen.getByLabelText('Active');
+    const activeCheckbox = screen.getByLabelText('Aktiv');
     fireEvent.click(activeCheckbox);
     expect(props.onUpdateOperator).toHaveBeenCalledWith('1', { active: false });
   });
@@ -120,14 +120,14 @@ describe('OperatorPanel', () => {
     const props = { ...defaultProps(), showMgmt: true };
     render(<OperatorPanel {...props} />);
     fireEvent.click(screen.getByText('Anna Lindgren'));
-    expect(screen.getByText('Remove Operator')).toBeInTheDocument();
+    expect(screen.getByText('Ta bort operatör')).toBeInTheDocument();
   });
 
   it('does not show Remove button when management is closed', () => {
     const props = defaultProps();
     render(<OperatorPanel {...props} />);
     fireEvent.click(screen.getByText('Anna Lindgren'));
-    expect(screen.queryByText('Remove Operator')).not.toBeInTheDocument();
+    expect(screen.queryByText('Ta bort operatör')).not.toBeInTheDocument();
   });
 
   it('calls onToggleCollapse when collapse button clicked', () => {
@@ -153,12 +153,12 @@ describe('OperatorPanel', () => {
 
   it('renders the search input', () => {
     render(<OperatorPanel {...defaultProps()} />);
-    expect(screen.getByPlaceholderText('Search operators')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Sök operatör…')).toBeInTheDocument();
   });
 
   it('filters operators by name (case-insensitive)', () => {
     render(<OperatorPanel {...defaultProps()} />);
-    const searchInput = screen.getByPlaceholderText('Search operators');
+    const searchInput = screen.getByPlaceholderText('Sök operatör…');
     fireEvent.change(searchInput, { target: { value: 'anna' } });
     expect(screen.getByText('Anna Lindgren')).toBeInTheDocument();
     expect(screen.queryByText('Erik Holm')).not.toBeInTheDocument();
@@ -166,22 +166,22 @@ describe('OperatorPanel', () => {
 
   it('matches substring anywhere in the name', () => {
     render(<OperatorPanel {...defaultProps()} />);
-    fireEvent.change(screen.getByPlaceholderText('Search operators'), { target: { value: 'holm' } });
+    fireEvent.change(screen.getByPlaceholderText('Sök operatör…'), { target: { value: 'holm' } });
     expect(screen.queryByText('Anna Lindgren')).not.toBeInTheDocument();
     expect(screen.getByText('Erik Holm')).toBeInTheDocument();
   });
 
-  it('shows "No matches" when nothing matches', () => {
+  it('shows "Inga träffar" when nothing matches', () => {
     render(<OperatorPanel {...defaultProps()} />);
-    fireEvent.change(screen.getByPlaceholderText('Search operators'), { target: { value: 'zzzz' } });
-    expect(screen.getByText('No matches')).toBeInTheDocument();
+    fireEvent.change(screen.getByPlaceholderText('Sök operatör…'), { target: { value: 'zzzz' } });
+    expect(screen.getByText('Inga träffar')).toBeInTheDocument();
     expect(screen.queryByText('Anna Lindgren')).not.toBeInTheDocument();
     expect(screen.queryByText('Erik Holm')).not.toBeInTheDocument();
   });
 
   it('clear button resets the search', () => {
     render(<OperatorPanel {...defaultProps()} />);
-    const searchInput = screen.getByPlaceholderText('Search operators');
+    const searchInput = screen.getByPlaceholderText('Sök operatör…');
     fireEvent.change(searchInput, { target: { value: 'anna' } });
     expect(screen.queryByText('Erik Holm')).not.toBeInTheDocument();
     fireEvent.click(screen.getByLabelText('Clear search'));
@@ -192,5 +192,11 @@ describe('OperatorPanel', () => {
   it('clear button is hidden when search is empty', () => {
     render(<OperatorPanel {...defaultProps()} />);
     expect(screen.queryByLabelText('Clear search')).not.toBeInTheDocument();
+  });
+
+  it('groups operators by shift', () => {
+    render(<OperatorPanel {...defaultProps()} />);
+    expect(screen.getByText('Skift 1')).toBeInTheDocument();
+    expect(screen.getByText('Skift 2')).toBeInTheDocument();
   });
 });

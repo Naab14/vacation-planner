@@ -16,7 +16,7 @@ vi.mock('../storage', async (importOriginal) => {
     loadState: vi.fn(() => null),
     clearState: vi.fn(),
     saveTheme: vi.fn(),
-    loadTheme: vi.fn(() => 'default'),
+    loadTheme: vi.fn(() => 'neo-kinetic'),
     saveUI: vi.fn(),
     loadUI: vi.fn(() => ({})),
     debouncedSave: vi.fn(),
@@ -37,7 +37,8 @@ describe('App', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.clearAllMocks();
-    document.documentElement.removeAttribute('data-theme');
+    document.body.removeAttribute('data-theme');
+    document.body.removeAttribute('data-mode');
   });
 
   afterEach(() => {
@@ -54,9 +55,11 @@ describe('App', () => {
     });
   });
 
-  it('renders the top bar title', () => {
+  it('renders the top bar brand', () => {
     render(<App />);
-    expect(screen.getByText('Semester Planner')).toBeInTheDocument();
+    expect(screen.getByText('Uppsala · Works Planning')).toBeInTheDocument();
+    const wordmark = document.querySelector('.nk-brand-wordmark');
+    expect(wordmark?.textContent).toContain('Semester');
   });
 
   it('renders the calendar grid with week headers', () => {
@@ -66,21 +69,16 @@ describe('App', () => {
 
   it('applies theme on change', async () => {
     render(<App />);
-    const themeSelect = screen.getByDisplayValue('Default');
-    fireEvent.change(themeSelect, { target: { value: 'dark' } });
-    expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
-    expect(storage.saveTheme).toHaveBeenCalledWith('dark');
+    const themeSelect = screen.getByDisplayValue('Neo-Kinetic');
+    fireEvent.change(themeSelect, { target: { value: 'harbor' } });
+    expect(document.body.getAttribute('data-theme')).toBe('harbor');
+    expect(storage.saveTheme).toHaveBeenCalledWith('harbor');
   });
 
-  it('removes data-theme when default selected', () => {
+  it('applies Neo-Kinetic theme by default', () => {
     render(<App />);
-    // Switch to dark first
-    const themeSelect = screen.getByDisplayValue('Default');
-    fireEvent.change(themeSelect, { target: { value: 'dark' } });
-    expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
-    // Switch back to default
-    fireEvent.change(screen.getByDisplayValue('Dark'), { target: { value: 'default' } });
-    expect(document.documentElement.hasAttribute('data-theme')).toBe(false);
+    expect(document.body.getAttribute('data-theme')).toBe('neo-kinetic');
+    expect(document.body.getAttribute('data-mode')).toBe('light');
   });
 
   it('calls debouncedSave on state changes', () => {
@@ -147,7 +145,7 @@ describe('App', () => {
   it('share calls copyToClipboard', async () => {
     render(<App />);
     await act(async () => {
-      fireEvent.click(screen.getByText('Share'));
+      fireEvent.click(screen.getByText('Share link'));
     });
     expect(storage.buildShareLink).toHaveBeenCalled();
     expect(storage.copyToClipboard).toHaveBeenCalled();

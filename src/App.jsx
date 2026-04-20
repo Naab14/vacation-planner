@@ -11,6 +11,7 @@ import { parseCSV, mergeOperators, downloadCSVTemplate, downloadOperatorsCSV } f
 import { buildHolidayMap, initHolidays } from './holidays';
 import { historyReducer, initHistory } from './historyReducer';
 import { useBreakpoint } from './hooks/useBreakpoint';
+import { applyTheme, THEMES, DEFAULT_THEME, DEFAULT_MODE } from './theme/themes';
 
 import TopBar from './components/TopBar';
 import OperatorPanel from './components/OperatorPanel';
@@ -52,7 +53,11 @@ export default function App() {
   const setFn = useCallback(updater => dispatch({ type: 'SET', updater }), []);
   const undo = useCallback(() => dispatch({ type: 'UNDO' }), []);
   const redo = useCallback(() => dispatch({ type: 'REDO' }), []);
-  const [theme, setTheme] = useState(loadTheme);
+  const [theme, setTheme] = useState(() => {
+    const t = loadTheme();
+    return THEMES[t] ? t : DEFAULT_THEME;
+  });
+  const [mode, setMode] = useState(() => storedUI.mode === 'dark' ? 'dark' : DEFAULT_MODE);
   const [toast, setToast] = useState(initResult.wasShared ? 'Loaded shared workspace' : null);
   const [showDemand, setShowDemand] = useState(false);
   const [showOperatorMgmt, setShowOperatorMgmt] = useState(false);
@@ -92,20 +97,20 @@ export default function App() {
     }
   }, [initResult.wasShared]);
 
-  // Theme effect
+  // Theme + mode effect — writes Neo-Kinetic tokens + legacy aliases to :root
   useEffect(() => {
-    if (theme === 'default') document.documentElement.removeAttribute('data-theme');
-    else document.documentElement.setAttribute('data-theme', theme);
+    applyTheme(theme, mode);
+    document.body.classList.add('nk-on');
     saveTheme(theme);
-  }, [theme]);
+  }, [theme, mode]);
 
   // Auto-save core state
   useEffect(() => { debouncedSave(state); }, [state]);
 
-  // Persist UI preferences (zoom + sidebar)
+  // Persist UI preferences (zoom + sidebar + mode)
   useEffect(() => {
-    saveUI({ zoom, sidebarCollapsed });
-  }, [zoom, sidebarCollapsed]);
+    saveUI({ zoom, sidebarCollapsed, mode });
+  }, [zoom, sidebarCollapsed, mode]);
 
   // Keyboard shortcuts: Ctrl/Cmd+Z = undo, Ctrl/Cmd+Shift+Z = redo
   useEffect(() => {
@@ -241,6 +246,7 @@ export default function App() {
       <TopBar
         shiftMode={shiftMode} onShiftModeChange={setShiftMode}
         theme={theme} onThemeChange={setTheme}
+        mode={mode} onToggleMode={() => setMode(m => m === 'dark' ? 'light' : 'dark')}
         onImportCSV={handleCSVImport} onExportCSV={handleCSVExport} onSave={handleSave}
         onExportJSON={handleExport} onImportJSON={handleImport}
         onReset={handleReset}
