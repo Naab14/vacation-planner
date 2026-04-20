@@ -3,7 +3,7 @@ import { themes } from '../data';
 
 export default function TopBar({
   shiftMode, onShiftModeChange, theme, onThemeChange,
-  onImportCSV, onSave, onExportJSON, onImportJSON, onReset, onShare,
+  onImportCSV, onExportCSV, onSave, onExportJSON, onImportJSON, onReset, onShare,
   onUndo, onRedo, canUndo, canRedo,
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -93,10 +93,11 @@ export default function TopBar({
               style={{ background: 'var(--bg-panel)', border: '1px solid var(--border)' }}>
               {[
                 { label: 'Import CSV', action: onImportCSV },
+                { label: 'Export CSV', action: onExportCSV },
                 { label: 'Export', action: onExportJSON },
                 { label: 'Import JSON', action: onImportJSON },
                 { label: 'Save', action: onSave },
-              ].map(item => (
+              ].filter(item => item.action).map(item => (
                 <button key={item.label} onClick={() => { item.action(); setMenuOpen(false); }}
                   className="w-full text-left px-4 py-2 text-sm hover:opacity-80 transition-opacity"
                   style={{ color: 'var(--text-primary)', background: 'transparent' }}>

@@ -7,7 +7,7 @@ import {
   exportJSON, importJSON, debouncedSave,
   buildShareLink, loadStateFromUrl, clearShareHash, copyToClipboard,
 } from './storage';
-import { parseCSV, mergeOperators, downloadCSVTemplate } from './csv';
+import { parseCSV, mergeOperators, downloadCSVTemplate, downloadOperatorsCSV } from './csv';
 import { buildHolidayMap, initHolidays } from './holidays';
 import { historyReducer, initHistory } from './historyReducer';
 
@@ -186,16 +186,22 @@ export default function App() {
       if (!file) return;
       const reader = new FileReader();
       reader.onload = ev => {
-        const { operators: parsed, error } = parseCSV(ev.target.result);
+        const { operators: parsed, error, warnings } = parseCSV(ev.target.result);
         if (error) { flash(error); return; }
         const { operators: merged, added, updated } = mergeOperators(operators, parsed);
         update({ operators: merged });
-        flash(`${added} operators imported, ${updated} updated`);
+        const firstWarning = warnings && warnings.length ? ` • ${warnings[0]}` : '';
+        const more = warnings && warnings.length > 1 ? ` (+${warnings.length - 1} till)` : '';
+        flash(`${added} importerade, ${updated} uppdaterade${firstWarning}${more}`);
       };
       reader.readAsText(file);
     };
     input.click();
   }, [operators, update]);
+  const handleCSVExport = useCallback(() => {
+    downloadOperatorsCSV(operators);
+    flash('Personalexport nedladdad');
+  }, [operators]);
 
   const handleSave = useCallback(() => { saveState(state); flash('State saved'); }, [state]);
   const handleExport = useCallback(() => { exportJSON(state); flash('Exported to file'); }, [state]);
@@ -224,7 +230,7 @@ export default function App() {
       <TopBar
         shiftMode={shiftMode} onShiftModeChange={setShiftMode}
         theme={theme} onThemeChange={setTheme}
-        onImportCSV={handleCSVImport} onSave={handleSave}
+        onImportCSV={handleCSVImport} onExportCSV={handleCSVExport} onSave={handleSave}
         onExportJSON={handleExport} onImportJSON={handleImport}
         onReset={handleReset}
         onShare={handleShare}
