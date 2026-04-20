@@ -60,12 +60,12 @@ export default function App() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(!!storedUI.sidebarCollapsed);
   const { isMobile, isTablet, isDesktop } = useBreakpoint();
 
-  // Auto-collapse sidebar on tablet/mobile; restore user preference on desktop
+  // Auto-collapse sidebar on tablet/mobile; restore latest persisted preference on desktop
   useEffect(() => {
     if (isMobile || isTablet) {
       setSidebarCollapsed(true);
     } else if (isDesktop) {
-      setSidebarCollapsed(!!storedUI.sidebarCollapsed);
+      setSidebarCollapsed(!!loadUI().sidebarCollapsed);
     }
   }, [isMobile, isTablet, isDesktop]);
 

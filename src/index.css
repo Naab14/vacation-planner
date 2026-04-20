@@ -372,10 +372,10 @@ h1, h2, h3, h4, h5, h6 { font-family: var(--font-heading); }
 }
 
 /* ── Touch-device adjustments ──────────────────────────────────────────────
- * On devices without hover capability (mobile/touch), disable transform
- * effects that depend on hover and suppress tap highlights.
+ * Target both no-hover devices and coarse-pointer devices (hybrids/tablets)
+ * to avoid hover-flicker and stray transforms on tap.
  */
-@media (hover: none) {
+@media (hover: none), (pointer: coarse) {
   .kinetic-card:hover,
   .sidebar-collapsed button:hover,
   button:hover {
