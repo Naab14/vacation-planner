@@ -54,7 +54,7 @@ describe('SettingsPanel', () => {
     render(<SettingsPanel {...defaultProps()} />);
     expect(screen.getByText('Separate')).toBeInTheDocument();
     expect(screen.getByText('Combined')).toBeInTheDocument();
-    expect(screen.getByText('Summer')).toBeInTheDocument();
+    expect(screen.queryByText('Summer')).not.toBeInTheDocument();
   });
 
   it('calls onShiftModeChange with combined value', () => {
@@ -62,13 +62,6 @@ describe('SettingsPanel', () => {
     render(<SettingsPanel {...props} />);
     fireEvent.click(screen.getByText('Combined'));
     expect(props.onShiftModeChange).toHaveBeenCalledWith('combined');
-  });
-
-  it('calls onShiftModeChange with summer value', () => {
-    const props = defaultProps();
-    render(<SettingsPanel {...props} />);
-    fireEvent.click(screen.getByText('Summer'));
-    expect(props.onShiftModeChange).toHaveBeenCalledWith('summer');
   });
 
   it('renders theme select with correct value', () => {

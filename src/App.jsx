@@ -66,7 +66,7 @@ export default function App() {
   const [toast, setToast] = useState(initResult.wasShared ? 'Loaded shared workspace' : null);
   const [showDemand, setShowDemand] = useState(false);
   const [showOperatorMgmt, setShowOperatorMgmt] = useState(false);
-  const [zoom, setZoom] = useState(storedUI.zoom === 'day' ? 'day' : 'week');
+  const [selectedOperatorId, setSelectedOperatorId] = useState(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(!!storedUI.sidebarCollapsed);
   const { isMobile, isTablet, isDesktop } = useBreakpoint();
 
@@ -120,8 +120,8 @@ export default function App() {
 
   // Persist UI preferences
   useEffect(() => {
-    saveUI({ zoom, sidebarCollapsed, mode, density, grain, asym, settingsPanelCollapsed });
-  }, [zoom, sidebarCollapsed, mode, density, grain, asym, settingsPanelCollapsed]);
+    saveUI({ sidebarCollapsed, mode, density, grain, asym, settingsPanelCollapsed });
+  }, [sidebarCollapsed, mode, density, grain, asym, settingsPanelCollapsed]);
 
   // Keyboard shortcuts: Ctrl/Cmd+Z = undo, Ctrl/Cmd+Shift+Z = redo
   useEffect(() => {
@@ -296,9 +296,11 @@ export default function App() {
           onDownloadTemplate={downloadCSVTemplate}
           collapsed={sidebarCollapsed}
           onToggleCollapse={() => setSidebarCollapsed(p => !p)}
+          selectedOperatorId={selectedOperatorId}
+          onSelectOperator={setSelectedOperatorId}
         />
 
-        {/* Center: Calendar (handles both zoom levels internally) */}
+        {/* Center: Calendar */}
         <CalendarGrid
           operators={operators} vacationBlocks={vacationBlocks}
           demand={demand} settings={settings} weeks={weeks}
@@ -308,11 +310,12 @@ export default function App() {
           onSetBlockDayStatus={setBlockDayStatus} onClearBlockDayStatus={clearBlockDayStatus}
           onSetBlockNote={setBlockNote}
           setStartWeek={setStartWeek}
+          setVisibleWeeks={setVisibleWeeks}
           showDemand={showDemand}
           onToggleDemand={() => setShowDemand(p => !p)}
           updateDemand={updateDemand}
-          zoom={zoom}
-          onZoomChange={setZoom}
+          selectedOperatorId={selectedOperatorId}
+          onSelectOperator={setSelectedOperatorId}
         />
       </div>
 

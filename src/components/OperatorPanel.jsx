@@ -1,7 +1,21 @@
 import { useState, useMemo } from 'react';
 import { PROCESSES } from '../data';
 
-export default function OperatorPanel({ operators, onUpdateOperator, showMgmt, onToggleMgmt, onAddOperator, onRemoveOperator, onDownloadTemplate, collapsed, onToggleCollapse }) {
+const CERT_COLORS = {
+  'Avsyning':                  'var(--coral)',
+  'Kapselresaren':             'var(--indigo)',
+  'Serialisering':             '#2DD4BF',
+  'Etikettering':              'var(--yellow)',
+  'Granskning/uttag av dok':   '#60A5FA',
+};
+
+const firstInitial = name => (name.trim().split(/\s+/)[0]?.[0] || '').toUpperCase();
+
+export default function OperatorPanel({
+  operators, onUpdateOperator, showMgmt, onToggleMgmt, onAddOperator, onRemoveOperator,
+  onDownloadTemplate, collapsed, onToggleCollapse,
+  selectedOperatorId, onSelectOperator,
+}) {
   const [editId, setEditId] = useState(null);
   const [newName, setNewName] = useState('');
   const [newShift, setNewShift] = useState('S1');
@@ -15,7 +29,10 @@ export default function OperatorPanel({ operators, onUpdateOperator, showMgmt, o
 
   const q = search.trim().toLowerCase();
   const filteredOperators = q
-    ? operators.filter(op => op.name.toLowerCase().includes(q))
+    ? operators.filter(op =>
+        op.name.toLowerCase().includes(q) ||
+        op.certifications.some(c => c.toLowerCase().includes(q))
+      )
     : operators;
 
   const groups = useMemo(() => {
@@ -26,13 +43,6 @@ export default function OperatorPanel({ operators, onUpdateOperator, showMgmt, o
       { label: 'Skift 2', shift: 'S2', ops: s2 },
     ].filter(g => g.ops.length > 0);
   }, [filteredOperators]);
-
-  const initialsOf = name => {
-    const parts = name.trim().split(/\s+/);
-    const first = parts[0]?.[0] || '';
-    const last = parts.length > 1 ? parts[parts.length - 1][0] : '';
-    return (first + last).toUpperCase();
-  };
 
   return (
     <div className={`w-[260px] min-w-[260px] overflow-y-auto h-full flex flex-col z-20 relative transition-all duration-200 ${collapsed ? 'sidebar-collapsed' : ''}`}
@@ -92,11 +102,11 @@ export default function OperatorPanel({ operators, onUpdateOperator, showMgmt, o
         </div>
       )}
 
-      {/* Search (nk-op-filter) */}
+      {/* Search */}
       <div className="sidebar-full-only pt-3">
         <div className="nk-op-filter">
           <span className="nk-glyph" aria-hidden="true">⌕</span>
-          <input type="text" placeholder="Sök operatör…" value={search}
+          <input type="text" placeholder="Sök operatör eller certifiering…" value={search}
             aria-label="Search operators"
             onChange={e => setSearch(e.target.value)} />
           {search && (
@@ -124,18 +134,38 @@ export default function OperatorPanel({ operators, onUpdateOperator, showMgmt, o
 
             {group.ops.map(op => {
               const isOpen = editId === op.id;
+              const isSelected = selectedOperatorId === op.id;
               const shiftClass = op.shift === 'S2' ? 's2' : 's1';
               return (
                 <div key={op.id}>
-                  <div className={`nk-op-card ${isOpen ? 'open' : ''}`}
+                  <div
+                    className={`nk-op-card ${isOpen ? 'open' : ''} ${isSelected ? 'selected' : ''}`}
                     style={{ opacity: op.active ? 1 : 0.45 }}
-                    onClick={() => setEditId(isOpen ? null : op.id)}
+                    aria-label={op.name}
+                    onClick={() => {
+                      setEditId(isOpen ? null : op.id);
+                      if (onSelectOperator) onSelectOperator(isSelected ? null : op.id);
+                    }}
                     role="button"
                     tabIndex={0}
-                    onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setEditId(isOpen ? null : op.id); } }}>
-                    <div className={`nk-op-avatar ${shiftClass}`}>{initialsOf(op.name)}</div>
-                    <span className="nk-op-name" title={op.name}>{op.name}</span>
-                    <span className={`nk-op-shift ${shiftClass}`}>{op.shift}</span>
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setEditId(isOpen ? null : op.id);
+                        if (onSelectOperator) onSelectOperator(isSelected ? null : op.id);
+                      }
+                    }}>
+                    <div className={`nk-op-avatar ${shiftClass}`}>{firstInitial(op.name)}</div>
+                    <div className="flex items-center gap-1 flex-1 min-w-0">
+                      {op.certifications.map(cert => (
+                        <span
+                          key={cert}
+                          className="nk-cert-dot"
+                          style={{ background: CERT_COLORS[cert] || 'var(--ink-mute)' }}
+                          title={cert}
+                        />
+                      ))}
+                    </div>
                   </div>
 
                   {isOpen && (

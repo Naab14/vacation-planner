@@ -64,7 +64,8 @@ describe('App', () => {
 
   it('renders the calendar grid with week headers', () => {
     render(<App />);
-    expect(screen.getByText('v.15')).toBeInTheDocument();
+    // v.15 appears in toolbar label and day-view week header strip
+    expect(screen.getAllByText('v.15').length).toBeGreaterThan(0);
   });
 
   it('applies theme on change', async () => {
@@ -153,22 +154,21 @@ describe('App', () => {
 
   it('undo button reverts a shift-mode change', () => {
     render(<App />);
-    // Default is 'separate' — coverage rows show S1/S2 labels
-    expect(screen.getByText('COVERAGE (S1)')).toBeInTheDocument();
-    expect(screen.queryByText('COVERAGE (All Operators)')).not.toBeInTheDocument();
+    // Default separate mode — S1/S2 group titles show in day grid
+    expect(screen.getAllByText('S1').length).toBeGreaterThan(0);
+    // Switch to combined — S1 group title disappears
     fireEvent.click(screen.getByText('Combined'));
-    expect(screen.getByText('COVERAGE (All Operators)')).toBeInTheDocument();
+    expect(screen.queryAllByText('S1').length).toBe(0);
+    // Undo — S1 group title returns
     fireEvent.click(screen.getByLabelText('Undo'));
-    expect(screen.getByText('COVERAGE (S1)')).toBeInTheDocument();
-    expect(screen.queryByText('COVERAGE (All Operators)')).not.toBeInTheDocument();
+    expect(screen.getAllByText('S1').length).toBeGreaterThan(0);
   });
 
   it('Ctrl+Z keyboard shortcut fires undo', () => {
     render(<App />);
     fireEvent.click(screen.getByText('Combined'));
-    expect(screen.getByText('COVERAGE (All Operators)')).toBeInTheDocument();
+    expect(screen.queryAllByText('S1').length).toBe(0);
     fireEvent.keyDown(document, { key: 'z', ctrlKey: true });
-    expect(screen.queryByText('COVERAGE (All Operators)')).not.toBeInTheDocument();
-    expect(screen.getByText('COVERAGE (S1)')).toBeInTheDocument();
+    expect(screen.getAllByText('S1').length).toBeGreaterThan(0);
   });
 });

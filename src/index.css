@@ -618,6 +618,17 @@ body.nk-on[data-theme='lumina']::before { display: none; }
   box-shadow: 3px 3px 0 0 var(--indigo);
   transform: none;
 }
+.nk-op-card.selected {
+  border-color: var(--indigo);
+  background: color-mix(in srgb, var(--indigo) 10%, var(--paper-2));
+}
+.nk-cert-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  border: 1px solid rgba(0,0,0,0.15);
+  flex-shrink: 0;
+  display: inline-block;
+}
 .nk-op-avatar {
   width: 28px; height: 28px; flex-shrink: 0;
   border-radius: 50%;

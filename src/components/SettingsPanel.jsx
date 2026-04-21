@@ -3,7 +3,6 @@ import { themes } from '../data';
 const SHIFT_MODES = [
   { value: 'separate', label: 'Separate' },
   { value: 'combined', label: 'Combined' },
-  { value: 'summer',   label: 'Summer' },
 ];
 
 const DENSITY_OPTS = [
