@@ -459,6 +459,12 @@ h1, h2, h3, h4, h5, h6 { font-family: var(--font-heading); }
   --nk-label-w: 188px;
   --asym: 0.7;
   --grain: 0.45;
+
+  /* ── Direction A: Elevation Stack — depth hierarchy tokens ──────────────── */
+  --elev-topbar:      0 4px 16px rgba(0,0,0,0.12), 0 2px 4px rgba(0,0,0,0.06);
+  --elev-panel-right: 3px 0 12px rgba(0,0,0,0.08);
+  --elev-block:       0 2px 5px rgba(0,0,0,0.10);
+  --elev-block-hover: 0 4px 10px rgba(0,0,0,0.16), 0 1px 3px rgba(0,0,0,0.06);
 }
 
 /* Grain overlay — printed-matter texture. Skipped in Lumina for its airy feel. */
@@ -713,3 +719,187 @@ body[data-theme='playful'] .nk-op-filter { border-radius: var(--r-pill); box-sha
   font-family: var(--f-mono); font-size: 10px; font-weight: 700;
   letter-spacing: .16em; text-transform: uppercase; color: var(--ink-mute);
 }
+
+/* ── Block cell elevation (Direction A) ───────────────────────────────────── */
+/* Applied to vacation-block cells in WeekZoomGrid + DayZoomGrid */
+.nk-block-cell {
+  transition: transform 0.10s ease, box-shadow 0.10s ease;
+}
+.nk-block-cell:not(.block-dragging):hover {
+  transform: translateY(-1px);
+  box-shadow: var(--elev-block-hover) !important;
+}
+
+/* ── Settings panel ─────────────────────────────────────────────────────────
+ * Collapsible left panel housing all planning settings (moved from TopBar).
+ * Expanded: 224px. Collapsed: 40px icon rail.
+ ──────────────────────────────────────────────────────────────────────────── */
+.nk-sp {
+  display: flex; flex-direction: column;
+  flex-shrink: 0;
+  background: var(--paper-2);
+  border-right: 2px solid var(--ink);
+  box-shadow: var(--elev-panel-right);
+  overflow: hidden;
+  transition: width 0.2s ease, min-width 0.2s ease;
+  z-index: 20; position: relative;
+}
+.nk-sp.expanded  { width: 224px; min-width: 224px; }
+.nk-sp.collapsed { width: 40px;  min-width: 40px;  }
+
+/* Header row — always visible */
+.nk-sp-header {
+  display: flex; align-items: center;
+  padding: 0 8px;
+  min-height: 48px; flex-shrink: 0;
+  border-bottom: 2px solid var(--ink);
+  gap: 8px;
+}
+.nk-sp-title {
+  font-family: var(--f-mono); font-size: 9px; font-weight: 700;
+  letter-spacing: .20em; text-transform: uppercase;
+  color: var(--ink-mute); flex: 1; white-space: nowrap; overflow: hidden;
+}
+.nk-sp-toggle {
+  appearance: none; border: 0; cursor: pointer;
+  width: 24px; height: 24px; flex-shrink: 0;
+  border-radius: var(--r-s);
+  background: rgba(0,0,0,0.06); color: var(--ink);
+  font-family: var(--f-mono); font-size: 12px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s ease;
+}
+.nk-sp-toggle:hover { background: rgba(0,0,0,0.12); }
+
+/* Section divider */
+.nk-sp-divider { border: none; border-top: 1px solid var(--paper-3); margin: 2px 10px; }
+
+/* Section inside the panel */
+.nk-sp-section { padding: 10px 10px 4px; }
+.nk-sp-section-lbl {
+  font-family: var(--f-mono); font-size: 9px; font-weight: 700;
+  letter-spacing: .16em; text-transform: uppercase;
+  color: var(--ink-mute); display: block; margin-bottom: 6px;
+}
+
+/* Segmented shift pill (light-surface variant, used in SettingsPanel) */
+.nk-sp-pill {
+  display: flex; gap: 2px;
+  padding: 3px;
+  background: var(--paper-3);
+  border-radius: var(--r-pill);
+  border: 1.5px solid var(--ink);
+  width: 100%;
+}
+.nk-sp-pill button {
+  flex: 1; appearance: none; border: 0; cursor: pointer;
+  padding: 5px 6px;
+  font-family: var(--f-mono); font-weight: 700;
+  font-size: 9px; letter-spacing: .10em; text-transform: uppercase;
+  color: var(--ink-soft);
+  background: transparent;
+  border-radius: var(--r-pill);
+  transition: color .12s ease, background .12s ease;
+  white-space: nowrap;
+}
+.nk-sp-pill button.active { background: var(--indigo); color: #fff; }
+.nk-sp-pill button:not(.active):hover { color: var(--ink); }
+
+/* Density buttons */
+.nk-sp-density { display: flex; gap: 4px; }
+.nk-sp-density button {
+  flex: 1; appearance: none; cursor: pointer;
+  padding: 5px 4px;
+  font-family: var(--f-mono); font-size: 9px; font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase;
+  border: 1.5px solid var(--paper-3);
+  border-radius: var(--r-s);
+  background: transparent; color: var(--ink-soft);
+  transition: all .12s ease;
+}
+.nk-sp-density button.active { background: var(--indigo); color: #fff; border-color: var(--indigo); }
+.nk-sp-density button:not(.active):hover { border-color: var(--ink); color: var(--ink); }
+
+/* Theme select inside panel */
+.nk-sp-select {
+  width: 100%; appearance: none;
+  padding: 6px 8px;
+  font-family: var(--f-mono); font-size: 10px; font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase;
+  background: var(--panel); color: var(--ink);
+  border: 1.5px solid var(--paper-3);
+  border-radius: var(--r-s);
+  cursor: pointer; outline: none;
+  transition: border-color .12s ease;
+}
+.nk-sp-select:focus, .nk-sp-select:hover { border-color: var(--ink); }
+
+/* Compact range slider for the panel */
+.nk-sp-range {
+  -webkit-appearance: none; appearance: none;
+  width: 100%; height: 4px;
+  border-radius: 999px;
+  background: var(--paper-3);
+  outline: none; cursor: pointer;
+}
+.nk-sp-range::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--indigo);
+  border: 2px solid var(--paper);
+  box-shadow: 1px 1px 0 0 var(--ink);
+  cursor: grab;
+}
+.nk-sp-range::-moz-range-thumb {
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--indigo);
+  border: 2px solid var(--paper);
+  cursor: grab;
+}
+
+/* Toggle row (asym, mode) */
+.nk-sp-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 4px 0;
+}
+.nk-sp-row-lbl {
+  flex: 1;
+  font-family: var(--f-body); font-size: 12px; font-weight: 600;
+  color: var(--ink-soft);
+}
+.nk-sp-check {
+  width: 32px; height: 18px; position: relative;
+  appearance: none; background: var(--paper-3); border-radius: 999px;
+  border: 1.5px solid var(--paper-3);
+  cursor: pointer; transition: background .15s ease, border-color .15s ease;
+  flex-shrink: 0;
+}
+.nk-sp-check::after {
+  content: ''; position: absolute; top: 1px; left: 1px;
+  width: 12px; height: 12px;
+  border-radius: 50%; background: var(--panel);
+  transition: transform .15s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+.nk-sp-check:checked { background: var(--indigo); border-color: var(--indigo); }
+.nk-sp-check:checked::after { transform: translateX(14px); }
+
+/* Density overrides — applied to <body> via data attribute */
+body[data-density='compact'] .nk-op-card { padding: 6px 8px; }
+body[data-density='compact'] .nk-op-group-title { padding: 8px 6px 4px; }
+body[data-density='spacious'] .nk-op-card { padding: 12px 14px; }
+body[data-density='spacious'] .nk-op-group-title { padding: 16px 6px 8px; }
+
+/* Dark mode mode-toggle button in panel */
+.nk-sp-mode-btn {
+  appearance: none; border: 1.5px solid var(--paper-3); cursor: pointer;
+  padding: 5px 10px;
+  font-family: var(--f-mono); font-size: 11px; font-weight: 700;
+  border-radius: var(--r-s);
+  background: transparent; color: var(--ink-soft);
+  transition: all .12s ease; white-space: nowrap;
+}
+.nk-sp-mode-btn:hover { border-color: var(--ink); color: var(--ink); }
+.nk-sp-mode-btn.dark-active { background: var(--ink); color: var(--paper); border-color: var(--ink); }

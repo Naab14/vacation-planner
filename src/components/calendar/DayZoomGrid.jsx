@@ -216,7 +216,7 @@ export default function DayZoomGrid({
 
                   return (
                     <div key={idx}
-                      className={`flex items-center justify-center relative ${bgClass}`}
+                      className={`flex items-center justify-center relative ${bgClass} ${block ? 'nk-block-cell' : ''}`}
                       title={holidayTitle}
                       style={{ width: DAY_COL_W, minWidth: DAY_COL_W, height: CELL_H, borderRight, ...cellStyle }}
                       onClick={e => handleDayClick(e, op, block, c.dateStr, c.week)}>

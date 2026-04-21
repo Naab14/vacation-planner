@@ -149,7 +149,7 @@ export default function WeekZoomGrid({
                   return (
                     <div key={w}
                       data-week={w} data-op={op.id}
-                      className={`flex items-center justify-center text-xs relative ${isDrag ? 'block-dragging' : ''}`}
+                      className={`flex items-center justify-center text-xs relative ${isDrag ? 'block-dragging' : ''} ${block ? 'nk-block-cell' : ''}`}
                       style={{
                         width: CELL_W, minWidth: CELL_W, height: CELL_H,
                         borderRight: isEnd ? undefined : '1px solid var(--paper-3)',

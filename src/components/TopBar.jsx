@@ -1,9 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { themes } from '../data';
 
 export default function TopBar({
-  shiftMode, onShiftModeChange, theme, onThemeChange,
-  mode, onToggleMode,
   onImportCSV, onExportCSV, onSave, onExportJSON, onImportJSON, onReset, onShare,
   onUndo, onRedo, canUndo, canRedo,
 }) {
@@ -19,15 +16,13 @@ export default function TopBar({
     return () => { document.removeEventListener('mousedown', handleClick); document.removeEventListener('keydown', handleKey); };
   }, [menuOpen]);
 
-  const modes = [
-    { value: 'separate', label: 'Separate' },
-    { value: 'combined', label: 'Combined' },
-    { value: 'summer', label: 'Summer' },
-  ];
-
   return (
     <div className="flex items-center gap-4 px-5 py-3 flex-wrap z-30 relative"
-      style={{ background: 'var(--ink)', color: 'var(--paper)', borderBottom: '3px solid var(--ink)' }}>
+      style={{
+        background: 'var(--ink)', color: 'var(--paper)',
+        borderBottom: '3px solid var(--ink)',
+        boxShadow: 'var(--elev-topbar)',
+      }}>
 
       {/* Brand block — Neo-Kinetic wordmark */}
       <div className="nk-brand mr-2">
@@ -54,37 +49,8 @@ export default function TopBar({
         </button>
       </div>
 
-      {/* Shift mode pill */}
-      <div className="nk-shift-pill" role="tablist" aria-label="Shift mode">
-        {modes.map(m => (
-          <button key={m.value} role="tab" aria-selected={shiftMode === m.value}
-            onClick={() => onShiftModeChange(m.value)}
-            className={shiftMode === m.value ? 'active' : ''}>
-            {m.label}
-          </button>
-        ))}
-      </div>
-
       {/* Spacer */}
       <div className="flex-1" />
-
-      {/* Theme select */}
-      <div className="relative">
-        <select value={theme} onChange={e => onThemeChange(e.target.value)}
-          aria-label="Theme"
-          className="appearance-none pl-3 pr-8 py-1.5 text-xs font-mono font-bold tracking-widest uppercase rounded-full cursor-pointer outline-none"
-          style={{ background: 'rgba(255,255,255,0.08)', color: 'var(--paper)', border: '1px solid rgba(255,255,255,0.18)' }}>
-          {themes.map(t => <option key={t.id} value={t.id} style={{ color: '#000' }}>{t.label}</option>)}
-        </select>
-        <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center opacity-60">▾</div>
-      </div>
-
-      {/* Light/Dark toggle */}
-      <button onClick={onToggleMode} className="nk-mode-toggle"
-        title={mode === 'dark' ? 'Switch to light' : 'Switch to dark'}
-        aria-label={mode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
-        {mode === 'dark' ? '☀' : '☾'}
-      </button>
 
       {/* Share — primary game-piece button */}
       <button onClick={onShare} className="nk-btn primary sm">

@@ -3,12 +3,6 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import TopBar from '../components/TopBar';
 
 const defaultProps = () => ({
-  shiftMode: 'separate',
-  onShiftModeChange: vi.fn(),
-  theme: 'neo-kinetic',
-  onThemeChange: vi.fn(),
-  mode: 'light',
-  onToggleMode: vi.fn(),
   onImportCSV: vi.fn(),
   onExportCSV: vi.fn(),
   onSave: vi.fn(),
@@ -26,46 +20,10 @@ describe('TopBar', () => {
   it('renders the brand wordmark', () => {
     render(<TopBar {...defaultProps()} />);
     expect(screen.getByText('Uppsala · Works Planning')).toBeInTheDocument();
-    // Wordmark is split across spans; match by container text content
     const wordmark = document.querySelector('.nk-brand-wordmark');
     expect(wordmark).not.toBeNull();
     expect(wordmark.textContent).toContain('Semester');
     expect(wordmark.textContent).toContain('Planner');
-  });
-
-  it('renders shift mode buttons', () => {
-    render(<TopBar {...defaultProps()} />);
-    expect(screen.getByText('Separate')).toBeInTheDocument();
-    expect(screen.getByText('Combined')).toBeInTheDocument();
-    expect(screen.getByText('Summer')).toBeInTheDocument();
-  });
-
-  it('calls onShiftModeChange when clicking a mode button', () => {
-    const props = defaultProps();
-    render(<TopBar {...props} />);
-    fireEvent.click(screen.getByText('Combined'));
-    expect(props.onShiftModeChange).toHaveBeenCalledWith('combined');
-  });
-
-  it('calls onShiftModeChange with summer', () => {
-    const props = defaultProps();
-    render(<TopBar {...props} />);
-    fireEvent.click(screen.getByText('Summer'));
-    expect(props.onShiftModeChange).toHaveBeenCalledWith('summer');
-  });
-
-  it('renders the theme select with correct value', () => {
-    render(<TopBar {...defaultProps()} />);
-    const select = screen.getByDisplayValue('Neo-Kinetic');
-    expect(select).toBeInTheDocument();
-  });
-
-  it('calls onThemeChange when changing theme', () => {
-    const props = defaultProps();
-    render(<TopBar {...props} />);
-    const select = screen.getByDisplayValue('Neo-Kinetic');
-    fireEvent.change(select, { target: { value: 'harbor' } });
-    expect(props.onThemeChange).toHaveBeenCalledWith('harbor');
   });
 
   it('renders the Share button', () => {
@@ -78,18 +36,6 @@ describe('TopBar', () => {
     render(<TopBar {...props} />);
     fireEvent.click(screen.getByText('Share link'));
     expect(props.onShare).toHaveBeenCalled();
-  });
-
-  it('renders the mode toggle', () => {
-    render(<TopBar {...defaultProps()} />);
-    expect(screen.getByLabelText('Switch to dark mode')).toBeInTheDocument();
-  });
-
-  it('calls onToggleMode when mode toggle clicked', () => {
-    const props = defaultProps();
-    render(<TopBar {...props} />);
-    fireEvent.click(screen.getByLabelText('Switch to dark mode'));
-    expect(props.onToggleMode).toHaveBeenCalled();
   });
 
   it('opens overflow menu and shows actions', () => {
