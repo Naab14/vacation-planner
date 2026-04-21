@@ -1,0 +1,66 @@
+/*
+ * Direction A — Elevation Stack
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Clear depth through ink-tinted ambient shadows. Each surface sits at a
+ * distinct elevation level — no offset angles, just progressive lift.
+ *
+ * Hierarchy (highest → lowest elevation):
+ *   Topbar     z=4  →  ambient shadow downward
+ *   Left panels z=3  →  ambient shadow rightward
+ *   Grid plate  z=2  →  very subtle inset at top (slightly sunken)
+ *   Blocks      z=1  →  small bottom shadow + hover lift
+ *
+ * Rationale: suits long planning sessions. Depth is legible but quiet — you
+ * perceive the layers without consciously reading the shadows. No skew, no
+ * perspective, just clean stacking. Works across all 8 themes.
+ *
+ * To test in isolation: add class .dir-a to <body>.
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+
+.dir-a {
+  --elev-topbar:       0 4px 16px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.08);
+  --elev-panel-right:  3px 0 12px rgba(0, 0, 0, 0.08);
+  --elev-grid-inset:   inset 0 3px 8px rgba(0, 0, 0, 0.05);
+  --elev-block:        0 2px 4px rgba(0, 0, 0, 0.10);
+  --elev-block-hover:  0 4px 10px rgba(0, 0, 0, 0.16), 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* TopBar — top-most surface, casts shadow downward onto panels */
+.dir-a .nk-topbar {
+  box-shadow: var(--elev-topbar);
+  position: relative;
+  z-index: 30;
+}
+
+/* Settings + Operator panels — elevated over grid, shadow rightward */
+.dir-a .nk-left-panels {
+  box-shadow: var(--elev-panel-right);
+  position: relative;
+  z-index: 20;
+}
+
+/* Grid plate — slightly sunken, receives shadow from panels above */
+.dir-a .nk-grid-plate {
+  box-shadow: var(--elev-grid-inset);
+  background: color-mix(in srgb, var(--paper) 96%, var(--ink));
+}
+
+/* Vacation block cells — float slightly above grid */
+.dir-a .nk-block-cell {
+  box-shadow: var(--elev-block);
+  transition: transform 0.10s ease, box-shadow 0.10s ease;
+}
+.dir-a .nk-block-cell:not(.block-dragging):hover {
+  transform: translateY(-1px);
+  box-shadow: var(--elev-block-hover);
+}
+
+/*
+ * CHOSEN for main app — see direction applied in:
+ *   src/index.css      (tokens --elev-* added to :root)
+ *   TopBar.jsx         (box-shadow on container)
+ *   App.jsx            (left panels wrapper shadow)
+ *   WeekZoomGrid.jsx   (.nk-block-cell class on block cells)
+ *   DayZoomGrid.jsx    (.nk-block-cell class on block cells)
+ */

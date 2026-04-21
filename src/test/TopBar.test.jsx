@@ -3,11 +3,8 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import TopBar from '../components/TopBar';
 
 const defaultProps = () => ({
-  shiftMode: 'separate',
-  onShiftModeChange: vi.fn(),
-  theme: 'default',
-  onThemeChange: vi.fn(),
   onImportCSV: vi.fn(),
+  onExportCSV: vi.fn(),
   onSave: vi.fn(),
   onExportJSON: vi.fn(),
   onImportJSON: vi.fn(),
@@ -20,55 +17,24 @@ const defaultProps = () => ({
 });
 
 describe('TopBar', () => {
-  it('renders the title', () => {
+  it('renders the brand wordmark', () => {
     render(<TopBar {...defaultProps()} />);
-    expect(screen.getByText('Semester Planner')).toBeInTheDocument();
-  });
-
-  it('renders shift mode buttons', () => {
-    render(<TopBar {...defaultProps()} />);
-    expect(screen.getByText('Separate')).toBeInTheDocument();
-    expect(screen.getByText('Combined')).toBeInTheDocument();
-    expect(screen.getByText('Summer')).toBeInTheDocument();
-  });
-
-  it('calls onShiftModeChange when clicking a mode button', () => {
-    const props = defaultProps();
-    render(<TopBar {...props} />);
-    fireEvent.click(screen.getByText('Combined'));
-    expect(props.onShiftModeChange).toHaveBeenCalledWith('combined');
-  });
-
-  it('calls onShiftModeChange with summer', () => {
-    const props = defaultProps();
-    render(<TopBar {...props} />);
-    fireEvent.click(screen.getByText('Summer'));
-    expect(props.onShiftModeChange).toHaveBeenCalledWith('summer');
-  });
-
-  it('renders the theme select with correct value', () => {
-    render(<TopBar {...defaultProps()} />);
-    const select = screen.getByDisplayValue('Default');
-    expect(select).toBeInTheDocument();
-  });
-
-  it('calls onThemeChange when changing theme', () => {
-    const props = defaultProps();
-    render(<TopBar {...props} />);
-    const select = screen.getByDisplayValue('Default');
-    fireEvent.change(select, { target: { value: 'dark' } });
-    expect(props.onThemeChange).toHaveBeenCalledWith('dark');
+    expect(screen.getByText('Uppsala · Works Planning')).toBeInTheDocument();
+    const wordmark = document.querySelector('.nk-brand-wordmark');
+    expect(wordmark).not.toBeNull();
+    expect(wordmark.textContent).toContain('Semester');
+    expect(wordmark.textContent).toContain('Planner');
   });
 
   it('renders the Share button', () => {
     render(<TopBar {...defaultProps()} />);
-    expect(screen.getByText('Share')).toBeInTheDocument();
+    expect(screen.getByText('Share link')).toBeInTheDocument();
   });
 
   it('calls onShare when Share clicked', () => {
     const props = defaultProps();
     render(<TopBar {...props} />);
-    fireEvent.click(screen.getByText('Share'));
+    fireEvent.click(screen.getByText('Share link'));
     expect(props.onShare).toHaveBeenCalled();
   });
 
@@ -76,7 +42,8 @@ describe('TopBar', () => {
     render(<TopBar {...defaultProps()} />);
     fireEvent.click(screen.getByText('⋮'));
     expect(screen.getByText('Import CSV')).toBeInTheDocument();
-    expect(screen.getByText('Export')).toBeInTheDocument();
+    expect(screen.getByText('Export CSV')).toBeInTheDocument();
+    expect(screen.getByText('Export JSON')).toBeInTheDocument();
     expect(screen.getByText('Import JSON')).toBeInTheDocument();
     expect(screen.getByText('Save')).toBeInTheDocument();
     expect(screen.getByText('Reset')).toBeInTheDocument();
@@ -94,7 +61,7 @@ describe('TopBar', () => {
     const props = defaultProps();
     render(<TopBar {...props} />);
     fireEvent.click(screen.getByText('⋮'));
-    fireEvent.click(screen.getByText('Export'));
+    fireEvent.click(screen.getByText('Export JSON'));
     expect(props.onExportJSON).toHaveBeenCalled();
   });
 
