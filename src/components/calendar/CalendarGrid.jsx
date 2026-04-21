@@ -160,40 +160,40 @@ export default function CalendarGrid({
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       {/* Toolbar */}
-      <div className="flex items-center gap-3 px-3 py-2 flex-wrap" style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-secondary)' }}>
+      <div className="flex items-center gap-3 px-3 py-2 flex-wrap" style={{ borderBottom: '1px solid var(--paper-3)', background: 'var(--paper-2)' }}>
         <input type="range" className="time-slider" style={{ width: 180 }}
           value={startWeek} min={1} max={sliderMax}
           onChange={e => setStartWeek(+e.target.value)} />
-        <span className="text-sm font-medium whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>
+        <span className="text-sm font-medium whitespace-nowrap" style={{ color: 'var(--ink)' }}>
           v.{weeks[0]}
         </span>
         <div className="flex items-center gap-1 ml-2">
           <button onClick={() => setVisibleWeeks(visibleWeeks + 4)} disabled={!canZoomOut}
             aria-label="Zoom out" title="Zoom out (more weeks)"
             className="zoom-btn px-2 py-1 text-sm font-bold rounded disabled:opacity-40 disabled:cursor-not-allowed"
-            style={{ background: 'transparent', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
+            style={{ background: 'transparent', color: 'var(--ink-mute)', border: '1px solid var(--paper-3)' }}>
             −
           </button>
           <button onClick={() => setVisibleWeeks(visibleWeeks - 4)} disabled={!canZoomIn}
             aria-label="Zoom in" title="Zoom in (fewer weeks)"
             className="zoom-btn px-2 py-1 text-sm font-bold rounded disabled:opacity-40 disabled:cursor-not-allowed"
-            style={{ background: 'transparent', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
+            style={{ background: 'transparent', color: 'var(--ink-mute)', border: '1px solid var(--paper-3)' }}>
             +
           </button>
         </div>
         <button onClick={() => setShowTools(t => !t)}
           className="px-2 py-1 text-sm rounded ml-auto"
-          style={{ background: showTools ? 'var(--accent)' : 'var(--bg-primary)', color: showTools ? '#fff' : 'var(--text-primary)', border: '1px solid var(--border)' }}>
+          style={{ background: showTools ? 'var(--indigo)' : 'var(--paper)', color: showTools ? '#fff' : 'var(--ink)', border: '1px solid var(--paper-3)' }}>
           ⚙
         </button>
       </div>
 
       {/* Secondary tools row */}
       {showTools && (
-        <div className="flex items-center gap-3 px-3 py-1.5 flex-wrap" style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-secondary)' }}>
+        <div className="flex items-center gap-3 px-3 py-1.5 flex-wrap" style={{ borderBottom: '1px solid var(--paper-3)', background: 'var(--paper-2)' }}>
           <Legend />
           <button onClick={onToggleDemand} className="px-2 py-1 text-xs ml-auto"
-            style={{ background: showDemand ? 'var(--accent)' : 'var(--bg-primary)', color: showDemand ? '#fff' : 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 'var(--border-radius)' }}>
+            style={{ background: showDemand ? 'var(--indigo)' : 'var(--paper)', color: showDemand ? '#fff' : 'var(--ink)', border: '1px solid var(--paper-3)', borderRadius: 'var(--r-s)' }}>
             Demand
           </button>
         </div>

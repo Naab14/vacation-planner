@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import CoverageRows from './CoverageRows';
 import { CELL_H, LABEL_W, STATUS_LABELS, SWEDISH_DAYS, stToken, getInitials, indexBlocksByOp } from './constants';
 import { isoWeekDates, formatDateStr } from './dateUtils';
@@ -21,21 +22,27 @@ export default function DayZoomGrid({
   const todayStr = formatDateStr(today);
   const year = today.getFullYear();
 
-  const cells = [];
-  weeks.forEach(w => {
-    isoWeekDates(year, w).forEach((d, i) => {
-      cells.push({ week: w, date: d, dayIndex: i, dateStr: formatDateStr(d) });
+  const cells = useMemo(() => {
+    const result = [];
+    weeks.forEach(w => {
+      isoWeekDates(year, w).forEach((d, i) => {
+        result.push({ week: w, date: d, dayIndex: i, dateStr: formatDateStr(d) });
+      });
     });
-  });
+    return result;
+  }, [weeks, year]);
 
-  const holidaysByDate = {};
-  if (holidayMap) {
-    Object.values(holidayMap).forEach(wk => {
-      wk.holidays.forEach(h => { holidaysByDate[h.dateStr] = h; });
-    });
-  }
+  const holidaysByDate = useMemo(() => {
+    const hbd = {};
+    if (holidayMap) {
+      Object.values(holidayMap).forEach(wk => {
+        wk.holidays.forEach(h => { hbd[h.dateStr] = h; });
+      });
+    }
+    return hbd;
+  }, [holidayMap]);
 
-  const blocksByOp = indexBlocksByOp(vacationBlocks);
+  const blocksByOp = useMemo(() => indexBlocksByOp(vacationBlocks), [vacationBlocks]);
   const weekCellW = DAY_COL_W * 7;
   const totalWidth = LABEL_W + cells.length * DAY_COL_W;
 
@@ -51,7 +58,6 @@ export default function DayZoomGrid({
     <div className={`flex-1 overflow-auto select-none ${drag ? 'grid-dragging' : ''}`}>
       <div style={{ minWidth: totalWidth }}>
 
-        {/* ── Week header row ───────────────────────────────────────────────── */}
         <div className="flex sticky top-0 z-30"
           style={{ background: 'var(--ink)', height: WEEK_HDR_H }}>
           <div className="sticky left-0 z-10 flex items-center justify-center"
@@ -78,7 +84,6 @@ export default function DayZoomGrid({
           })}
         </div>
 
-        {/* ── Day header row ──────────────────────────────────────────────── */}
         <div className="flex sticky z-20"
           style={{ top: WEEK_HDR_H, background: 'var(--paper-2)', borderBottom: '2px solid var(--ink)' }}>
           <div className="sticky left-0 z-10"
@@ -113,7 +118,6 @@ export default function DayZoomGrid({
           })}
         </div>
 
-        {/* ── Row groups ──────────────────────────────────────────────────── */}
         {groups.map(group => (
           <div key={group.label}>
             {groups.length > 1 && (
@@ -139,7 +143,6 @@ export default function DayZoomGrid({
                     background: rowBg,
                   }}>
 
-                  {/* Operator label */}
                   <div className="sticky left-0 z-10 flex items-center gap-1.5 px-2"
                     style={{
                       width: LABEL_W, minWidth: LABEL_W,
@@ -150,14 +153,7 @@ export default function DayZoomGrid({
                       cursor: 'pointer',
                     }}
                     onClick={() => onSelectOperator && onSelectOperator(isSelected ? null : op.id)}>
-                    <span style={{
-                      flexShrink: 0, width: 20, height: 20, borderRadius: '50%',
-                      background: op.shift === 'S2' ? 'var(--coral)' : 'var(--yellow)',
-                      color: op.shift === 'S2' ? '#fff' : 'var(--ink)',
-                      fontFamily: 'var(--f-head)', fontWeight: 900, fontStyle: 'italic',
-                      fontSize: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      border: '1px solid var(--ink)',
-                    }}>
+                    <span className={`nk-op-avatar sm${op.shift === 'S2' ? ' s2' : ''}`}>
                       {getInitials(op.name)}
                     </span>
                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
@@ -165,7 +161,6 @@ export default function DayZoomGrid({
                     </span>
                   </div>
 
-                  {/* Day cells */}
                   {cells.map((c, idx) => {
                     const block = (blocksByOp[op.id] || []).find(b =>
                       c.week >= b.startWeek && c.week <= b.endWeek,

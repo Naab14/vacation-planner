@@ -28,12 +28,15 @@ export default function OperatorPanel({
   };
 
   const q = search.trim().toLowerCase();
-  const filteredOperators = q
-    ? operators.filter(op =>
-        op.name.toLowerCase().includes(q) ||
-        op.certifications.some(c => c.toLowerCase().includes(q))
-      )
-    : operators;
+  const filteredOperators = useMemo(
+    () => q
+      ? operators.filter(op =>
+          op.name.toLowerCase().includes(q) ||
+          op.certifications.some(c => c.toLowerCase().includes(q))
+        )
+      : operators,
+    [q, operators],
+  );
 
   const groups = useMemo(() => {
     const s1 = filteredOperators.filter(o => o.shift === 'S1');

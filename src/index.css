@@ -639,6 +639,7 @@ body.nk-on[data-theme='lumina']::before { display: none; }
   border: 1.5px solid var(--ink);
 }
 .nk-op-avatar.s2 { background: var(--coral); color: #fff; }
+.nk-op-avatar.sm { width: 20px; height: 20px; font-size: 8px; border-width: 1px; }
 .nk-op-name {
   flex: 1; font-weight: 600; font-size: 13px;
   letter-spacing: -0.01em;
