@@ -1,10 +1,11 @@
 import CoverageRows from './CoverageRows';
-import { CELL_H, LABEL_W, STATUS_COLORS, STATUS_LABELS, SWEDISH_DAYS } from './constants';
+import { CELL_H, LABEL_W, STATUS_LABELS, SWEDISH_DAYS, stToken, getInitials, indexBlocksByOp } from './constants';
 import { isoWeekDates, formatDateStr } from './dateUtils';
 
 const DAY_ZOOM_WEEKS = 8;
 const DAY_COL_W = 38;
-const BOLD_RULE_EVERY = 5;
+const WEEK_HDR_H = 28;
+const DAY_HDR_H = 40;
 
 function getDayStatus(block, dateStr) {
   if (!block) return null;
@@ -16,13 +17,14 @@ export default function DayZoomGrid({
   showDayCoverage, onToggleDayCoverage, setPopover,
   onAddBlock,
 }) {
-  const year = new Date().getFullYear();
+  const today = new Date();
+  const todayStr = formatDateStr(today);
+  const year = today.getFullYear();
   const visibleWeeks = weeks.slice(0, DAY_ZOOM_WEEKS);
 
   const cells = [];
   visibleWeeks.forEach(w => {
-    const weekDates = isoWeekDates(year, w);
-    weekDates.forEach((d, i) => {
+    isoWeekDates(year, w).forEach((d, i) => {
       cells.push({ week: w, date: d, dayIndex: i, dateStr: formatDateStr(d) });
     });
   });
@@ -34,7 +36,9 @@ export default function DayZoomGrid({
     });
   }
 
+  const blocksByOp = indexBlocksByOp(vacationBlocks);
   const weekCellW = DAY_COL_W * 7;
+  const totalWidth = LABEL_W + cells.length * DAY_COL_W;
 
   const handleDayClick = (e, op, block, dateStr, week) => {
     if (block) {
@@ -44,16 +48,21 @@ export default function DayZoomGrid({
     }
   };
 
-  const totalWidth = LABEL_W + cells.length * DAY_COL_W;
-
   return (
     <div className="flex-1 overflow-auto select-none">
       <div style={{ minWidth: totalWidth }}>
-        {/* Week header row */}
-        <div className="flex sticky top-0 z-30" style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border)' }}>
-          <div className="sticky left-0 z-10 flex items-center px-2 text-xs font-semibold"
-            style={{ width: LABEL_W, minWidth: LABEL_W, height: 22, background: 'var(--bg-secondary)', color: 'var(--text-secondary)', borderRight: '1px solid var(--border)' }}>
-            Operator
+
+        {/* ── Week header row (dark ink strip) ───────────────────────────── */}
+        <div className="flex sticky top-0 z-30"
+          style={{ background: 'var(--ink)', height: WEEK_HDR_H }}>
+          <div className="sticky left-0 z-10 flex items-center justify-center"
+            style={{
+              width: LABEL_W, minWidth: LABEL_W, height: WEEK_HDR_H,
+              background: 'var(--ink)', borderRight: '1px solid rgba(255,255,255,0.10)',
+            }}>
+            <span style={{ fontFamily: 'var(--f-mono)', fontSize: 9, fontWeight: 700, letterSpacing: '.18em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)' }}>
+              Dag-vy
+            </span>
           </div>
           {visibleWeeks.map(w => {
             const isHolWeek = !!holidayMap?.[w]?.isHoliday;
@@ -61,131 +70,170 @@ export default function DayZoomGrid({
               ? holidayMap[w].holidays.map(h => `${h.name} — ${h.dateStr}`).join(', ')
               : undefined;
             return (
-              <div key={w}
-                className="flex items-center justify-center text-xs font-semibold"
+              <div key={w} className="flex items-center justify-center"
                 title={holidayTitle}
-                style={{
-                  width: weekCellW, minWidth: weekCellW, height: 22,
-                  borderRight: '2px solid var(--border)',
-                  color: isHolWeek ? 'var(--holiday-text)' : 'var(--text-primary)',
-                  background: isHolWeek ? 'var(--holiday-pattern)' : 'transparent',
-                }}>
-                v.{w}
+                style={{ width: weekCellW, minWidth: weekCellW, height: WEEK_HDR_H, borderRight: '1px solid rgba(255,255,255,0.08)' }}>
+                <span className={`nk-week-chip${isHolWeek ? ' hol' : ''}`}>v.{w}</span>
               </div>
             );
           })}
         </div>
 
-        {/* Day header row */}
-        <div className="flex sticky top-[22px] z-20" style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border)' }}>
-          <div className="sticky left-0 z-10 flex items-center px-2 text-xs font-semibold"
-            style={{ width: LABEL_W, minWidth: LABEL_W, height: CELL_H, background: 'var(--bg-secondary)', color: 'var(--text-secondary)', borderRight: '1px solid var(--border)' }}>
-            &nbsp;
-          </div>
+        {/* ── Day header row ──────────────────────────────────────────────── */}
+        <div className="flex sticky z-20"
+          style={{ top: WEEK_HDR_H, background: 'var(--paper-2)', borderBottom: '2px solid var(--ink)' }}>
+          <div className="sticky left-0 z-10"
+            style={{
+              width: LABEL_W, minWidth: LABEL_W, height: DAY_HDR_H,
+              background: 'var(--paper-2)', borderRight: '2px solid var(--ink)',
+            }} />
           {cells.map((c, idx) => {
             const isHoliday = !!holidaysByDate[c.dateStr];
             const isWeekend = c.dayIndex >= 5;
+            const isToday = c.dateStr === todayStr;
             const isWeekBoundary = c.dayIndex === 6;
-            const isBoldRule = (idx + 1) % BOLD_RULE_EVERY === 0 && !isWeekBoundary;
-            const headerTitle = isHoliday
-              ? `${holidaysByDate[c.dateStr].name} — ${c.dateStr}`
-              : undefined;
+            const headerTitle = isHoliday ? `${holidaysByDate[c.dateStr].name} — ${c.dateStr}` : undefined;
+
+            let hdrBg = 'var(--paper-2)';
+            let hdrColor = isWeekend ? 'var(--ink-mute)' : 'var(--ink-soft)';
+            if (isToday) { hdrBg = 'var(--yellow)'; hdrColor = 'var(--ink)'; }
+            else if (isHoliday) { hdrBg = 'var(--hol-bg)'; hdrColor = 'var(--hol-text)'; }
+
             return (
-              <div key={idx} className="flex flex-col items-center justify-center text-[10px] font-medium"
+              <div key={idx} className="nk-day-hdr"
                 title={headerTitle}
                 style={{
-                  width: DAY_COL_W, minWidth: DAY_COL_W, height: CELL_H,
-                  borderRight: isWeekBoundary ? '2px solid var(--border)' : isBoldRule ? '2px solid var(--border)' : '1px solid var(--border)',
-                  color: isHoliday ? 'var(--holiday-text)' : isWeekend ? 'var(--text-secondary)' : 'var(--text-primary)',
-                  background: isHoliday ? 'var(--holiday-pattern)' : 'transparent',
+                  width: DAY_COL_W, minWidth: DAY_COL_W, height: DAY_HDR_H,
+                  borderRight: isWeekBoundary ? '2px solid var(--ink)' : '1px solid var(--paper-3)',
+                  background: hdrBg, color: hdrColor,
                 }}>
-                <span className="leading-tight">{SWEDISH_DAYS[c.dayIndex]}</span>
-                <span className="leading-tight">{c.date.getDate()}/{c.date.getMonth() + 1}</span>
+                <span style={{ fontSize: 9, opacity: isWeekend ? 0.7 : 1 }}>{SWEDISH_DAYS[c.dayIndex]}</span>
+                <span style={{ fontSize: 11, fontWeight: 800 }}>{c.date.getDate()}</span>
               </div>
             );
           })}
         </div>
 
-        {/* Row groups */}
+        {/* ── Row groups ──────────────────────────────────────────────────── */}
         {groups.map(group => (
           <div key={group.label}>
             {groups.length > 1 && (
-              <div className="flex items-center text-xs font-semibold uppercase tracking-wider px-2"
-                style={{ height: 24, background: 'var(--bg-secondary)', color: 'var(--text-secondary)', borderBottom: '1px solid var(--border)' }}>
+              <div className="nk-op-group-title"
+                style={{ height: 26, padding: '0 10px', background: 'var(--paper-2)', borderBottom: '1px solid var(--paper-3)' }}>
                 {group.label}
+                <span className="nk-count">{group.ops.length}</span>
               </div>
             )}
 
             {group.ops.map(op => (
-              <div key={op.id} className="flex relative" style={{ height: CELL_H, borderBottom: '1px solid var(--border)', opacity: op.active ? 1 : 0.4 }}>
-                <div className="sticky left-0 z-10 flex items-center px-2 text-xs truncate"
-                  style={{ width: LABEL_W, minWidth: LABEL_W, background: 'var(--bg-primary)', borderRight: '1px solid var(--border)', color: 'var(--text-primary)' }}>
-                  {op.name}
+              <div key={op.id} className="flex relative"
+                style={{ height: CELL_H, borderBottom: '1px solid var(--paper-3)', opacity: op.active ? 1 : 0.45 }}>
+
+                {/* Operator label */}
+                <div className="sticky left-0 z-10 flex items-center gap-1.5 px-2"
+                  style={{
+                    width: LABEL_W, minWidth: LABEL_W,
+                    background: 'var(--paper)', borderRight: '2px solid var(--ink)',
+                    color: 'var(--ink)', fontFamily: 'var(--f-body)', fontWeight: 600, fontSize: 12,
+                    overflow: 'hidden',
+                  }}>
+                  <span style={{
+                    flexShrink: 0, width: 20, height: 20, borderRadius: '50%',
+                    background: op.shift === 'S2' ? 'var(--coral)' : 'var(--yellow)',
+                    color: op.shift === 'S2' ? '#fff' : 'var(--ink)',
+                    fontFamily: 'var(--f-head)', fontWeight: 900, fontStyle: 'italic',
+                    fontSize: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    border: '1px solid var(--ink)',
+                  }}>
+                    {getInitials(op.name)}
+                  </span>
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
+                    {op.name}
+                  </span>
                 </div>
+
+                {/* Day cells */}
                 {cells.map((c, idx) => {
-                  const block = vacationBlocks.find(b =>
-                    b.operatorId === op.id && c.week >= b.startWeek && c.week <= b.endWeek,
+                  const block = (blocksByOp[op.id] || []).find(b =>
+                    c.week >= b.startWeek && c.week <= b.endWeek,
                   );
                   const isHoliday = !!holidaysByDate[c.dateStr];
                   const isWeekend = c.dayIndex >= 5;
                   const isWeekBoundary = c.dayIndex === 6;
-                  const isBoldRule = (idx + 1) % BOLD_RULE_EVERY === 0 && !isWeekBoundary;
+                  const isToday = c.dateStr === todayStr;
                   const dayStatus = getDayStatus(block, c.dateStr);
                   const hasOverride = block && block.dayStatuses?.[c.dateStr] && block.dayStatuses[c.dateStr] !== block.status;
-                  const isBlockStart = block && c.week === block.startWeek && c.dayIndex === 0;
+                  const isAbsStart = block && c.week === block.startWeek && c.dayIndex === 0;
+                  const isAbsEnd = block && c.week === block.endWeek && c.dayIndex === 6;
                   const holidayTitle = !block && isHoliday
                     ? `${holidaysByDate[c.dateStr].name} — ${c.dateStr}`
                     : undefined;
 
-                  let bgClass = isWeekend ? 'day-cell-off' : 'day-cell-working';
+                  let bgClass = isWeekend ? 'day-cell-off' : '';
                   let cellStyle = {};
+                  let borderRight;
 
                   if (block) {
-                    const sc = STATUS_COLORS[dayStatus];
-                    if (dayStatus === 'requested') {
-                      cellStyle = {
-                        background: 'repeating-linear-gradient(45deg, var(--requested-bg), var(--requested-bg) 4px, transparent 4px, transparent 8px)',
-                        borderTop: '2px dashed var(--requested-border)', borderBottom: '2px dashed var(--requested-border)',
-                        opacity: 0.65, cursor: 'pointer',
-                      };
+                    const st = stToken(dayStatus);
+                    const bgVar = `var(--st-${st}-bg)`;
+                    const bdVar = `var(--st-${st}-bd)`;
+                    const isDashed = dayStatus === 'requested';
+                    const bStyle = isDashed ? 'dashed' : 'solid';
+                    cellStyle = {
+                      background: bgVar,
+                      borderTop: `2px ${bStyle} ${bdVar}`,
+                      borderBottom: `2px ${bStyle} ${bdVar}`,
+                      cursor: 'pointer', zIndex: 1,
+                      ...(isAbsStart && {
+                        borderLeft: `2px ${bStyle} ${bdVar}`,
+                        borderTopLeftRadius: 'var(--r-s)',
+                        borderBottomLeftRadius: 'var(--r-s)',
+                      }),
+                      ...(isAbsEnd && {
+                        borderTopRightRadius: 'var(--r-s)',
+                        borderBottomRightRadius: 'var(--r-s)',
+                      }),
+                    };
+                    bgClass = '';
+                    if (isAbsEnd) {
+                      borderRight = `2px ${bStyle} ${bdVar}`;
+                    } else if (isWeekBoundary) {
+                      borderRight = '1.5px solid var(--paper-3)';
                     } else {
-                      cellStyle = {
-                        background: sc.bg,
-                        borderTop: `2px solid ${sc.border}`, borderBottom: `2px solid ${sc.border}`,
-                        cursor: 'pointer',
-                      };
+                      borderRight = '1px solid rgba(0,0,0,0.07)';
                     }
-                    bgClass = '';
                   } else if (isHoliday) {
-                    cellStyle = { background: 'var(--holiday-pattern)' };
+                    cellStyle = { background: 'var(--holiday-pattern)', cursor: 'pointer' };
                     bgClass = '';
+                    borderRight = isWeekBoundary ? '2px solid var(--ink)' : '1px solid var(--paper-3)';
                   } else {
-                    cellStyle.cursor = 'pointer';
+                    cellStyle = {
+                      cursor: 'pointer',
+                      ...(isToday && { background: 'rgba(255,214,10,0.10)' }),
+                    };
+                    borderRight = isWeekBoundary ? '2px solid var(--ink)' : '1px solid var(--paper-3)';
                   }
-
-                  const borderRight = isWeekBoundary
-                    ? '2px solid var(--border)'
-                    : isBoldRule
-                      ? '2px solid var(--border)'
-                      : '1px solid var(--border)';
 
                   return (
                     <div key={idx}
-                      className={`flex items-center justify-center text-[9px] relative ${bgClass}`}
+                      className={`flex items-center justify-center relative ${bgClass}`}
                       title={holidayTitle}
                       style={{ width: DAY_COL_W, minWidth: DAY_COL_W, height: CELL_H, borderRight, ...cellStyle }}
                       onClick={e => handleDayClick(e, op, block, c.dateStr, c.week)}>
-                      {block && (
-                        <span className="font-medium truncate pointer-events-none select-none"
-                          style={{ color: 'var(--text-primary)', opacity: 0.8 }}>
+                      {block && isAbsStart && (
+                        <span className="nk-status-chip"
+                          style={{
+                            background: `var(--st-${stToken(dayStatus)}-bd)`,
+                            color: dayStatus === 'approved' ? 'var(--ink)' : '#fff',
+                          }}>
                           {STATUS_LABELS[dayStatus]?.slice(0, 3)}
                         </span>
                       )}
                       {hasOverride && (
                         <span className="absolute top-0 right-0.5 text-[7px] pointer-events-none"
-                          style={{ color: 'var(--accent)' }}>●</span>
+                          style={{ color: 'var(--indigo)' }}>●</span>
                       )}
-                      {block?.note && isBlockStart && (
+                      {block?.note && isAbsStart && (
                         <span className="absolute top-0 left-0.5 text-[8px] pointer-events-none"
                           title={block.note} aria-label="Has note">💬</span>
                       )}
@@ -204,9 +252,14 @@ export default function DayZoomGrid({
           </div>
         ))}
 
-        <div className="flex items-center px-3 py-1.5" style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border)' }}>
-          <button onClick={onToggleDayCoverage} className="text-xs px-2 py-1"
-            style={{ background: showDayCoverage ? 'var(--accent)' : 'var(--bg-primary)', color: showDayCoverage ? '#fff' : 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 'var(--border-radius)' }}>
+        {/* Coverage toggle */}
+        <div className="flex items-center px-3 py-2"
+          style={{ background: 'var(--paper-2)', borderTop: '1px solid var(--paper-3)' }}>
+          <button onClick={onToggleDayCoverage}
+            className="nk-btn sm"
+            style={showDayCoverage
+              ? { background: 'var(--indigo)', color: '#fff', borderColor: 'var(--indigo)', boxShadow: '2px 2px 0 0 var(--yellow)' }
+              : {}}>
             {showDayCoverage ? 'Hide Coverage' : 'Show Coverage'}
           </button>
         </div>

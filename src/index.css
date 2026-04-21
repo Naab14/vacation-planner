@@ -38,6 +38,12 @@
   --holiday-text: #be123c;
   --holiday-stripe-color: rgba(217, 119, 6, 0.22);
   --holiday-pattern: repeating-linear-gradient(45deg, var(--holiday-stripe-color), var(--holiday-stripe-color) 6px, transparent 6px, transparent 12px), var(--holiday-bg);
+  /* NK status tokens — also written at runtime by applyTheme() */
+  --st-draft-bg: #EDE6D6;    --st-draft-bd: #B8AE95;
+  --st-pending-bg: #FFE4E9;  --st-pending-bd: #FF4D6D;
+  --st-approved-bg: #FFD60A; --st-approved-bd: #0B0A1F;
+  --st-req-bg: #EEEBFF;      --st-req-bd: #4F46E5;
+  --hol-bg: #FFE4E9;         --hol-text: #FF4D6D;
 }
 
 /* ── MotherDuck Theme ─────────────────────────────────────────────────────── */
@@ -660,3 +666,50 @@ body[data-theme='playful'] .nk-btn { border-width: 2.5px; box-shadow: 6px 6px 0 
 body[data-theme='playful'] .nk-btn.primary { box-shadow: 6px 6px 0 0 var(--yellow); }
 body[data-theme='playful'] .nk-op-card { border-radius: 14px; }
 body[data-theme='playful'] .nk-op-filter { border-radius: var(--r-pill); box-shadow: 4px 4px 0 0 var(--ink); }
+
+/* ── NK grid plate & day-view primitives ──────────────────────────────────── */
+
+/* Week chip inside the dark ink header bar (day-zoom) */
+.nk-week-chip {
+  font-family: var(--f-mono); font-size: 11px; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase;
+  color: var(--paper); padding: 3px 8px;
+  border-radius: var(--r-s); background: rgba(255,255,255,0.14);
+}
+.nk-week-chip.hol { background: var(--coral); color: #fff; }
+
+/* Day-header cell in day-zoom */
+.nk-day-hdr {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  font-family: var(--f-mono); font-size: 10px; font-weight: 700;
+  background: var(--paper-2); color: var(--ink-soft); line-height: 1.2;
+}
+
+/* Status-chip at block start cell */
+.nk-status-chip {
+  display: inline-flex; align-items: center;
+  padding: 1px 4px; border-radius: var(--r-s);
+  font-family: var(--f-mono); font-size: 8px; font-weight: 700;
+  letter-spacing: .04em; text-transform: uppercase;
+  pointer-events: none; user-select: none; overflow: hidden; white-space: nowrap;
+  max-width: 100%;
+}
+
+/* NK BlockPopover — game-piece shadow */
+.nk-popover {
+  position: fixed; z-index: 100;
+  background: var(--panel);
+  border: 2px solid var(--ink);
+  border-radius: var(--r-m);
+  box-shadow: 4px 4px 0 0 var(--ink);
+  padding: 6px 0; min-width: 220px;
+}
+.nk-popover-divider {
+  border: none; border-top: 1px dashed var(--paper-3); margin: 4px 0;
+}
+.nk-delete-btn { color: var(--coral) !important; font-family: var(--f-body); font-weight: 700; }
+.nk-delete-btn:hover { background: color-mix(in srgb, var(--coral) 10%, transparent) !important; }
+.nk-popover-lbl {
+  font-family: var(--f-mono); font-size: 10px; font-weight: 700;
+  letter-spacing: .16em; text-transform: uppercase; color: var(--ink-mute);
+}
