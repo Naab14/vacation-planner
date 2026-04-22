@@ -11,8 +11,10 @@ import { parseCSV, mergeOperators, downloadCSVTemplate, downloadOperatorsCSV } f
 import { buildHolidayMap, initHolidays } from './holidays';
 import { historyReducer, initHistory } from './historyReducer';
 import { useBreakpoint } from './hooks/useBreakpoint';
+import { applyTheme, THEMES, DEFAULT_THEME, DEFAULT_MODE } from './theme/themes';
 
 import TopBar from './components/TopBar';
+import SettingsPanel from './components/SettingsPanel';
 import OperatorPanel from './components/OperatorPanel';
 import CalendarGrid from './components/calendar/CalendarGrid';
 
@@ -52,11 +54,19 @@ export default function App() {
   const setFn = useCallback(updater => dispatch({ type: 'SET', updater }), []);
   const undo = useCallback(() => dispatch({ type: 'UNDO' }), []);
   const redo = useCallback(() => dispatch({ type: 'REDO' }), []);
-  const [theme, setTheme] = useState(loadTheme);
+  const [theme, setTheme] = useState(() => {
+    const t = loadTheme();
+    return THEMES[t] ? t : DEFAULT_THEME;
+  });
+  const [mode, setMode] = useState(() => storedUI.mode === 'dark' ? 'dark' : DEFAULT_MODE);
+  const [density, setDensity] = useState(() => storedUI.density || 'normal');
+  const [grain, setGrain] = useState(() => storedUI.grain ?? 0.45);
+  const [asym, setAsym] = useState(() => storedUI.asym !== false);
+  const [settingsPanelCollapsed, setSettingsPanelCollapsed] = useState(!!storedUI.settingsPanelCollapsed);
   const [toast, setToast] = useState(initResult.wasShared ? 'Loaded shared workspace' : null);
   const [showDemand, setShowDemand] = useState(false);
   const [showOperatorMgmt, setShowOperatorMgmt] = useState(false);
-  const [zoom, setZoom] = useState(storedUI.zoom === 'day' ? 'day' : 'week');
+  const [selectedOperatorId, setSelectedOperatorId] = useState(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(!!storedUI.sidebarCollapsed);
   const { isMobile, isTablet, isDesktop } = useBreakpoint();
 
@@ -92,20 +102,26 @@ export default function App() {
     }
   }, [initResult.wasShared]);
 
-  // Theme effect
+  // Theme + mode effect — writes Neo-Kinetic tokens + legacy aliases to :root
   useEffect(() => {
-    if (theme === 'default') document.documentElement.removeAttribute('data-theme');
-    else document.documentElement.setAttribute('data-theme', theme);
+    applyTheme(theme, mode);
+    document.body.classList.add('nk-on');
     saveTheme(theme);
-  }, [theme]);
+  }, [theme, mode]);
+
+  useEffect(() => {
+    document.body.setAttribute('data-density', density);
+    document.documentElement.style.setProperty('--grain', grain);
+    document.documentElement.style.setProperty('--asym', asym ? '0.7' : '0');
+  }, [density, grain, asym]);
 
   // Auto-save core state
   useEffect(() => { debouncedSave(state); }, [state]);
 
-  // Persist UI preferences (zoom + sidebar)
+  // Persist UI preferences
   useEffect(() => {
-    saveUI({ zoom, sidebarCollapsed });
-  }, [zoom, sidebarCollapsed]);
+    saveUI({ sidebarCollapsed, mode, density, grain, asym, settingsPanelCollapsed });
+  }, [sidebarCollapsed, mode, density, grain, asym, settingsPanelCollapsed]);
 
   // Keyboard shortcuts: Ctrl/Cmd+Z = undo, Ctrl/Cmd+Shift+Z = redo
   useEffect(() => {
@@ -171,6 +187,15 @@ export default function App() {
       settings: {
         ...s.settings,
         startWeek: Math.max(1, Math.min(52 - s.settings.visibleWeeks + 1, w)),
+      },
+    })), [setFn]);
+  const setVisibleWeeks = useCallback(n =>
+    setFn(s => ({
+      ...s,
+      settings: {
+        ...s.settings,
+        visibleWeeks: Math.max(4, Math.min(26, n)),
+        startWeek: Math.max(1, Math.min(52 - n + 1, s.settings.startWeek)),
       },
     })), [setFn]);
 
@@ -239,8 +264,6 @@ export default function App() {
 
       {/* ── Top Bar ──────────────────────────────────────────────────────── */}
       <TopBar
-        shiftMode={shiftMode} onShiftModeChange={setShiftMode}
-        theme={theme} onThemeChange={setTheme}
         onImportCSV={handleCSVImport} onExportCSV={handleCSVExport} onSave={handleSave}
         onExportJSON={handleExport} onImportJSON={handleImport}
         onReset={handleReset}
@@ -251,6 +274,19 @@ export default function App() {
 
       {/* ── Main content ─────────────────────────────────────────────────── */}
       <div className="flex flex-1 overflow-hidden">
+        {/* Left: Settings Panel */}
+        <SettingsPanel
+          shiftMode={shiftMode} onShiftModeChange={setShiftMode}
+          theme={theme} onThemeChange={setTheme}
+          mode={mode} onToggleMode={() => setMode(m => m === 'dark' ? 'light' : 'dark')}
+          visibleWeeks={visibleWeeks} onVisibleWeeksChange={setVisibleWeeks}
+          density={density} onDensityChange={setDensity}
+          grain={grain} onGrainChange={setGrain}
+          asym={asym} onAsymChange={setAsym}
+          collapsed={settingsPanelCollapsed}
+          onToggleCollapse={() => setSettingsPanelCollapsed(p => !p)}
+        />
+
         {/* Left: Operator Panel */}
         <OperatorPanel
           operators={operators} onUpdateOperator={updateOp}
@@ -260,9 +296,11 @@ export default function App() {
           onDownloadTemplate={downloadCSVTemplate}
           collapsed={sidebarCollapsed}
           onToggleCollapse={() => setSidebarCollapsed(p => !p)}
+          selectedOperatorId={selectedOperatorId}
+          onSelectOperator={setSelectedOperatorId}
         />
 
-        {/* Center: Calendar (handles both zoom levels internally) */}
+        {/* Center: Calendar */}
         <CalendarGrid
           operators={operators} vacationBlocks={vacationBlocks}
           demand={demand} settings={settings} weeks={weeks}
@@ -272,11 +310,12 @@ export default function App() {
           onSetBlockDayStatus={setBlockDayStatus} onClearBlockDayStatus={clearBlockDayStatus}
           onSetBlockNote={setBlockNote}
           setStartWeek={setStartWeek}
+          setVisibleWeeks={setVisibleWeeks}
           showDemand={showDemand}
           onToggleDemand={() => setShowDemand(p => !p)}
           updateDemand={updateDemand}
-          zoom={zoom}
-          onZoomChange={setZoom}
+          selectedOperatorId={selectedOperatorId}
+          onSelectOperator={setSelectedOperatorId}
         />
       </div>
 

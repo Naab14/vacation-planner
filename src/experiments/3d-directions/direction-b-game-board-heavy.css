@@ -1,0 +1,70 @@
+/*
+ * Direction B — Game Board Heavy
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Fully committed to the Neo-Brutalist offset shadow vocabulary already used
+ * for buttons and cards. Every major surface gets the same treatment: solid
+ * ink-colored offsets at larger distances (6px topbar, 4px panels, 3px blocks).
+ *
+ * Hierarchy:
+ *   Topbar      →  6px downward ink shadow (bold separator)
+ *   Left panels →  5px rightward ink shadow (panels punch through)
+ *   Blocks      →  3px offset ink shadow (game-piece aesthetic)
+ *   Hover       →  blocks gain extra rotation + taller shadow (chess-piece pop)
+ *
+ * Rationale: visually exciting, very on-brand for Neo-Kinetic Travelogue. But
+ * the constant shadow offsets add visual weight that accumulates over a long
+ * session — good for a 30-minute demo, potentially tiring after 90 minutes of
+ * real planning work. Would pair best with the Playful or Electric-Plum themes.
+ *
+ * To test in isolation: add class .dir-b to <body>.
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+
+.dir-b {
+  --gb-shadow-topbar:  0 6px 0 0 var(--ink);
+  --gb-shadow-panel:   5px 0 0 0 var(--ink);
+  --gb-shadow-block:   3px 3px 0 0 var(--ink);
+  --gb-shadow-hover:   4px 4px 0 0 var(--ink);
+}
+
+/* TopBar — thick hard shadow punches it off the page */
+.dir-b .nk-topbar {
+  box-shadow: var(--gb-shadow-topbar);
+  position: relative;
+  z-index: 30;
+}
+
+/* Left panels — hard right-side shadow separates them from grid */
+.dir-b .nk-left-panels {
+  box-shadow: var(--gb-shadow-panel);
+  position: relative;
+  z-index: 20;
+}
+
+/* Block cells — chess-piece offset shadow */
+.dir-b .nk-block-cell {
+  box-shadow: var(--gb-shadow-block);
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+.dir-b .nk-block-cell:not(.block-dragging):hover {
+  transform: rotate(calc(-0.5deg * var(--asym))) translateY(-2px);
+  box-shadow: var(--gb-shadow-hover);
+}
+
+/* Operator panel group titles get bold left border accent */
+.dir-b .nk-op-group-title {
+  border-left: 3px solid var(--indigo);
+  padding-left: 9px;
+}
+
+/* Sticky headers in grid get extra bottom shadow */
+.dir-b [class*="sticky"] {
+  box-shadow: 0 3px 0 0 var(--ink);
+}
+
+/*
+ * NOT chosen — visually punchy but risks fatigue in long sessions.
+ * Recommended for: demo mode, Playful/Electric-Plum themes, or if the user
+ * prefers a more aggressive game-board aesthetic.
+ * Sandbox file: src/experiments/3d-directions/direction-b-game-board-heavy.css
+ */

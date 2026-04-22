@@ -1,0 +1,76 @@
+/*
+ * Direction C — Parallax Depth
+ * ─────────────────────────────────────────────────────────────────────────────
+ * CSS 3D perspective applied to the grid container. Elements appear to float in
+ * a shallow 3D space. Hovering over blocks pops them toward the viewer with
+ * translateZ. The grain texture rides at 50% scroll speed (parallax effect),
+ * reinforcing the sense of depth layers.
+ *
+ * Hierarchy:
+ *   Grid container  →  perspective: 1200px, transform-style: preserve-3d
+ *   Week header row →  translateZ(6px) — floats at the top of the 3D space
+ *   Block cells     →  translateZ(2px) base; translateZ(8px) on hover
+ *   Grid background →  subtle radial gradient simulating a light source above-left
+ *
+ * Rationale: the most dramatic of the three. The perspective effect is legible
+ * when interacting (hovering over blocks feels tactile), but the constant 3D
+ * transforms make scrolling performance-sensitive on lower-end hardware. Also,
+ * `transform-style: preserve-3d` on the grid breaks `position: sticky` in some
+ * browsers (Chrome 118+, Safari 17+), which would break the sticky week header
+ * and operator label column — a blocking compatibility issue.
+ *
+ * To test in isolation: add class .dir-c to <body>.
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+
+/* Grid container — enable perspective */
+.dir-c .nk-grid-plate {
+  perspective: 1200px;
+  /* NOTE: preserve-3d conflicts with sticky headers — this is the blocking issue */
+  /* transform-style: preserve-3d; */
+}
+
+/* Background depth gradient */
+.dir-c .nk-grid-plate::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse 80% 60% at 20% 10%,
+    color-mix(in srgb, var(--indigo) 4%, transparent),
+    transparent 70%
+  );
+}
+
+/* Sticky week header row — front plane */
+.dir-c .nk-week-header {
+  position: relative;
+  transform: translateZ(6px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+/* Block cells — mid plane with hover pop */
+.dir-c .nk-block-cell {
+  transform: translateZ(2px);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.10);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.dir-c .nk-block-cell:not(.block-dragging):hover {
+  transform: translateZ(8px) scale(1.01);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18), 0 2px 6px rgba(0, 0, 0, 0.10);
+}
+
+/* Grain overlay parallax simulation (grain is position:fixed, inherently parallax) */
+body.dir-c.nk-on::before {
+  /* Grain layer already at fixed position, naturally creates parallax */
+  opacity: calc(var(--grain) * 0.45);
+}
+
+/*
+ * NOT chosen — blocking issue: position:sticky conflicts with preserve-3d,
+ * which would break the sticky week-header and operator-label column.
+ * The hover-translateZ effect works in isolation but requires a non-sticky
+ * grid architecture to apply safely.
+ * Sandbox file: src/experiments/3d-directions/direction-c-parallax-depth.css
+ */

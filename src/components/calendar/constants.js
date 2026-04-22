@@ -3,14 +3,28 @@ export const CELL_H = 32;
 export const LABEL_W = 130;
 
 export const STATUS_COLORS = {
-  draft: { bg: 'var(--draft-bg)', border: 'var(--draft-border)' },
-  pending: { bg: 'var(--pending-bg)', border: 'var(--pending-border)' },
-  approved: { bg: 'var(--approved-bg)', border: 'var(--approved-border)' },
-  requested: { bg: 'var(--requested-bg)', border: 'var(--requested-border)' },
+  draft:     { bg: 'var(--st-draft-bg)',    border: 'var(--st-draft-bd)' },
+  pending:   { bg: 'var(--st-pending-bg)',  border: 'var(--st-pending-bd)' },
+  approved:  { bg: 'var(--st-approved-bg)', border: 'var(--st-approved-bd)' },
+  requested: { bg: 'var(--st-req-bg)',      border: 'var(--st-req-bd)' },
 };
 
 export const STATUS_LABELS = { draft: 'Utkast', pending: 'Väntande', approved: 'Godkänd', requested: 'Begärd' };
 export const STATUSES = ['draft', 'pending', 'approved', 'requested'];
+
+export function stToken(status) {
+  return status === 'requested' ? 'req' : status;
+}
+
+export function getInitials(name) {
+  return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+}
+
+export function indexBlocksByOp(vacationBlocks) {
+  const map = {};
+  vacationBlocks.forEach(b => { (map[b.operatorId] ??= []).push(b); });
+  return map;
+}
 export const SWEDISH_DAYS = ['Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör', 'Sön'];
 
 export const HOLIDAY_ABBREV = {
