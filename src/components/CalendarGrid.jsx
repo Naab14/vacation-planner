@@ -1,61 +1,62 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { PROCESSES } from '../data';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { PROCESSES, defaultLeaveTypes } from '../data';
 import { getCoverage } from '../coverage';
+import {
+  getISOWeek, isoWeekDates, getISOWeekMonday, getISOWeekFriday,
+  blockCoversWeek, getWorkdaysInWeek, datesOverlap, blockCoversDate, formatDateLabel,
+} from '../dateUtils';
 
 const CELL_W = 68;
 const CELL_H = 32;
+const DAY_W = 100;
 const LABEL_W = 130;
 
-const STATUS_COLORS = {
-  draft: { bg: 'var(--draft-bg)', border: 'var(--draft-border)' },
-  pending: { bg: 'var(--pending-bg)', border: 'var(--pending-border)' },
-  approved: { bg: 'var(--approved-bg)', border: 'var(--approved-border)' },
-  requested: { bg: 'var(--requested-bg)', border: 'var(--requested-border)' },
+const WORKFLOW_STYLES = {
+  draft:    { borderStyle: 'dotted', opacity: 0.55 },
+  ansökt:   { borderStyle: 'dashed', opacity: 0.75 },
+  beviljad: { borderStyle: 'solid',  opacity: 1.0 },
 };
+const WORKFLOW_LABELS = { draft: 'Utkast', ansökt: 'Ansökt', beviljad: 'Beviljad' };
+const WORKFLOWS = ['draft', 'ansökt', 'beviljad'];
 
-const STATUS_LABELS = { draft: 'Utkast', pending: 'Väntande', approved: 'Godkänd', requested: 'Begärd' };
-const STATUSES = ['draft', 'pending', 'approved', 'requested'];
 const SWEDISH_DAYS = ['Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör', 'Sön'];
 
-function isoWeekDates(year, week) {
-  const jan4 = new Date(year, 0, 4);
-  const jan4Dow = jan4.getDay() || 7;
-  const week1Monday = new Date(jan4);
-  week1Monday.setDate(jan4.getDate() - jan4Dow + 1);
-  const monday = new Date(week1Monday);
-  monday.setDate(week1Monday.getDate() + (week - 1) * 7);
-  return Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(monday);
-    d.setDate(monday.getDate() + i);
-    return d;
-  });
+function fmtDate(dt) {
+  const y = dt.getUTCFullYear();
+  const m = String(dt.getUTCMonth() + 1).padStart(2, '0');
+  const d = String(dt.getUTCDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
 }
 
-function formatDateStr(d) {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
+function parseDateUTC(dateStr) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d));
 }
 
 /* ── Legend ────────────────────────────────────────────────────────────────── */
-function Legend() {
-  const items = [
-    { label: 'Utkast', bg: 'var(--draft-bg)', border: 'var(--draft-border)', style: {} },
-    { label: 'Väntande', bg: 'var(--pending-bg)', border: 'var(--pending-border)', style: {} },
-    { label: 'Godkänd', bg: 'var(--approved-bg)', border: 'var(--approved-border)', style: {} },
-    { label: 'Begärd', bg: 'var(--requested-bg)', border: 'var(--requested-border)',
-      style: { backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(0,0,0,0.1) 2px, rgba(0,0,0,0.1) 4px)', borderStyle: 'dashed', opacity: 0.65 } },
-    { label: 'Helgdag', bg: 'var(--holiday-bg)', border: 'var(--holiday-border)', style: {} },
-  ];
+function Legend({ leaveTypes }) {
+  const types = leaveTypes || defaultLeaveTypes;
   return (
-    <div className="flex items-center gap-3 px-2 py-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
-      {items.map(i => (
-        <div key={i.label} className="flex items-center gap-1">
-          <span className="w-4 h-3 rounded-sm inline-block" style={{ background: i.bg, border: `1px solid ${i.border}`, ...i.style }} />
-          {i.label}
+    <div className="flex items-center gap-3 px-2 py-1 text-xs flex-wrap" style={{ color: 'var(--text-secondary)' }}>
+      {types.map(lt => (
+        <div key={lt.id} className="flex items-center gap-1">
+          <span className="w-4 h-3 rounded-sm inline-block" style={{ background: lt.color, border: `1px solid ${lt.color}` }} />
+          {lt.label}
         </div>
       ))}
+      <span className="mx-1" style={{ color: 'var(--border)' }}>|</span>
+      {WORKFLOWS.map(w => (
+        <div key={w} className="flex items-center gap-1">
+          <span className="w-4 h-3 rounded-sm inline-block"
+            style={{ background: 'var(--bg-secondary)', border: `2px ${WORKFLOW_STYLES[w].borderStyle} var(--text-secondary)`, opacity: WORKFLOW_STYLES[w].opacity }} />
+          {WORKFLOW_LABELS[w]}
+        </div>
+      ))}
+      <span className="mx-1" style={{ color: 'var(--border)' }}>|</span>
+      <div className="flex items-center gap-1">
+        <span className="w-4 h-3 rounded-sm inline-block" style={{ background: 'var(--holiday-bg)', border: '1px solid var(--holiday-border)' }} />
+        Helgdag
+      </div>
     </div>
   );
 }
@@ -179,8 +180,16 @@ function DemandEditor({ demand, weeks, updateDemand }) {
 }
 
 /* ── Block Popover ────────────────────────────────────────────────────────── */
-function BlockPopover({ x, y, block, onSetStatus, onDelete, onClose }) {
+function BlockPopover({ x, y, block, leaveTypes, onUpdate, onDelete, onClose }) {
   const ref = useRef(null);
+  const [comment, setComment] = useState(block?.comment || '');
+  const [blockId, setBlockId] = useState(block?.id);
+  const types = leaveTypes || defaultLeaveTypes;
+
+  if (block && block.id !== blockId) {
+    setBlockId(block.id);
+    setComment(block.comment || '');
+  }
 
   useEffect(() => {
     const handler = e => { if (ref.current && !ref.current.contains(e.target)) onClose(); };
@@ -192,23 +201,55 @@ function BlockPopover({ x, y, block, onSetStatus, onDelete, onClose }) {
 
   if (!block) return null;
 
+  const saveComment = () => {
+    if (comment !== (block.comment || '')) {
+      onUpdate(block.id, { comment });
+    }
+  };
+
   return (
     <div ref={ref} className="block-popover" style={{ left: x, top: y }}>
+      <div className="px-3 py-1 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>
+        {formatDateLabel(block.startDate)} – {formatDateLabel(block.endDate)}
+      </div>
+
+      <div className="px-3 py-1 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>Typ</div>
+      <div className="flex gap-1 px-3 pb-1 flex-wrap">
+        {types.map(lt => (
+          <button key={lt.id} onClick={() => { onUpdate(block.id, { type: lt.id }); }}
+            className="px-2 py-1 text-xs rounded flex items-center gap-1"
+            style={{
+              background: block.type === lt.id ? lt.color : 'var(--bg-primary)',
+              color: block.type === lt.id ? '#fff' : 'var(--text-primary)',
+              border: `1px solid ${lt.color}`,
+            }}>
+            {lt.label}
+          </button>
+        ))}
+      </div>
+
       <div className="px-3 py-1 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>Status</div>
-      {STATUSES.map(s => (
-        <button key={s} onClick={() => { onSetStatus(block.id, s); onClose(); }}
+      {WORKFLOWS.map(s => (
+        <button key={s} onClick={() => { onUpdate(block.id, { status: s }); }}
           className="w-full text-left px-3 py-1.5 text-sm hover:opacity-80 flex items-center gap-2"
           style={{ background: block.status === s ? 'var(--bg-secondary)' : 'transparent', color: 'var(--text-primary)' }}>
           <span className="w-3 h-3 rounded-sm inline-block"
-            style={{ background: STATUS_COLORS[s].bg, border: `1px solid ${STATUS_COLORS[s].border}`,
-              ...(s === 'requested' ? { backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(0,0,0,0.1) 2px, rgba(0,0,0,0.1) 4px)', borderStyle: 'dashed' } : {})
-            }} />
-          {STATUS_LABELS[s]}
+            style={{ background: 'var(--bg-secondary)', border: `2px ${WORKFLOW_STYLES[s].borderStyle} var(--text-secondary)`, opacity: WORKFLOW_STYLES[s].opacity }} />
+          {WORKFLOW_LABELS[s]}
         </button>
       ))}
+
+      <div className="px-3 py-1 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>Kommentar</div>
+      <div className="px-3 pb-2">
+        <textarea value={comment} onChange={e => setComment(e.target.value)} onBlur={saveComment}
+          rows={2} className="w-full text-xs p-1.5 rounded"
+          style={{ background: 'var(--bg-primary)', border: '1px solid var(--border)', color: 'var(--text-primary)', resize: 'vertical' }}
+          placeholder="Lägg till kommentar..." />
+      </div>
+
       <hr style={{ borderColor: 'var(--border)' }} className="my-1" />
       <button onClick={() => { onDelete(block.id); onClose(); }}
-        className="w-full text-left px-3 py-1.5 text-sm text-red-600 hover:bg-red-50">Delete</button>
+        className="w-full text-left px-3 py-1.5 text-sm text-red-600 hover:bg-red-50">Ta bort</button>
     </div>
   );
 }
@@ -225,13 +266,19 @@ const HOLIDAY_ABBREV = {
   'Alla helgons dag': 'Alla h', 'Alla Helgons dag': 'Alla h',
 };
 
+function getLeaveColor(block, leaveTypes) {
+  const types = leaveTypes || defaultLeaveTypes;
+  const lt = types.find(t => t.id === block.type);
+  return lt?.color || '#94a3b8';
+}
+
 /* ══════════════════════════════════════════════════════════════════════════ */
 /*  MAIN COMPONENT                                                          */
 /* ══════════════════════════════════════════════════════════════════════════ */
 
 export default function CalendarGrid({
   operators, vacationBlocks, demand, settings, weeks, holidayMap,
-  onAddBlock, onUpdateBlock, onDeleteBlock, onSetBlockStatus,
+  leaveTypes, onAddBlock, onUpdateBlock, onDeleteBlock,
   setStartWeek, showDemand, onToggleDemand, updateDemand,
   zoom, onZoomChange,
 }) {
@@ -243,76 +290,125 @@ export default function CalendarGrid({
   const longPressTimer = useRef(null);
   const pointerMoved = useRef(false);
   const [showDayCoverage, setShowDayCoverage] = useState(false);
+  const year = new Date().getFullYear();
 
-  const isOverlapping = useCallback((opId, start, end, ignoreId = null) => {
-    const sw = Math.min(start, end);
-    const ew = Math.max(start, end);
+  const isOverlappingDates = useCallback((opId, startDate, endDate, ignoreId = null) => {
     return vacationBlocks.some(b =>
       b.operatorId === opId &&
       b.id !== ignoreId &&
-      Math.max(sw, b.startWeek) <= Math.min(ew, b.endWeek)
+      datesOverlap(startDate, endDate, b.startDate, b.endDate)
     );
   }, [vacationBlocks]);
 
-  const commitDrag = useCallback(() => {
+  /* ── Day-level drag state ──────────────────────────────────────────────── */
+  const commitDayDrag = useCallback(() => {
     if (!drag) return;
     if (drag.type === 'drawing') {
-      const sw = Math.min(drag.startWeek, drag.endWeek);
-      const ew = Math.max(drag.startWeek, drag.endWeek);
-      if (!isOverlapping(drag.opId, sw, ew)) {
-        onAddBlock(drag.opId, sw, ew);
+      const sd = drag.startDate <= drag.endDate ? drag.startDate : drag.endDate;
+      const ed = drag.startDate <= drag.endDate ? drag.endDate : drag.startDate;
+      if (!isOverlappingDates(drag.opId, sd, ed)) {
+        onAddBlock(drag.opId, sd, ed);
       }
     }
-  }, [drag, isOverlapping, onAddBlock]);
+  }, [drag, isOverlappingDates, onAddBlock]);
 
   useEffect(() => {
     if (!drag) return;
     const onMove = (e) => {
       pointerMoved.current = true;
-      if (longPressTimer.current) {
-        clearTimeout(longPressTimer.current);
-        longPressTimer.current = null;
-      }
-      const el = document.elementFromPoint(e.clientX, e.clientY);
-      const cell = el?.closest('[data-week][data-op]');
-      if (!cell) return;
-      const week = +cell.dataset.week;
-      const opId = cell.dataset.op;
+      if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null; }
 
-      if (drag.type === 'drawing' && opId === drag.opId) {
-        if (!isOverlapping(drag.opId, drag.startWeek, week)) {
-          setDrag(d => ({ ...d, endWeek: week }));
-        }
-      } else if (drag.type === 'moving') {
-        const delta = week - (drag.pointerOffsetWeek + drag.origStart);
-        const newStart = drag.origStart + delta;
-        const newEnd = drag.origEnd + delta;
-        if (!isOverlapping(opId, newStart, newEnd, drag.blockId)) {
-          onUpdateBlock(drag.blockId, { operatorId: opId, startWeek: newStart, endWeek: newEnd });
-          setDrag(d => ({ ...d, currentWeek: week, currentOpId: opId }));
-        }
-      } else if (drag.type === 'resizing') {
-        const block = vacationBlocks.find(b => b.id === drag.blockId);
-        if (!block) return;
-        if (drag.edge === 'left') {
-          const newStart = Math.min(week, block.endWeek);
-          if (!isOverlapping(block.operatorId, newStart, block.endWeek, block.id)) {
-            onUpdateBlock(drag.blockId, { startWeek: newStart });
+      const el = document.elementFromPoint(e.clientX, e.clientY);
+
+      if (drag.mode === 'day') {
+        const cell = el?.closest('[data-date][data-op]');
+        if (!cell) return;
+        const dateStr = cell.dataset.date;
+        const opId = cell.dataset.op;
+
+        if (drag.type === 'drawing' && opId === drag.opId) {
+          const sd = drag.startDate <= dateStr ? drag.startDate : dateStr;
+          const ed = drag.startDate <= dateStr ? dateStr : drag.startDate;
+          if (!isOverlappingDates(drag.opId, sd, ed)) {
+            setDrag(d => ({ ...d, endDate: dateStr }));
           }
-        } else {
-          const newEnd = Math.max(week, block.startWeek);
-          if (!isOverlapping(block.operatorId, block.startWeek, newEnd, block.id)) {
-            onUpdateBlock(drag.blockId, { endWeek: newEnd });
+        } else if (drag.type === 'moving') {
+          const origStart = parseDateUTC(drag.origStartDate);
+          const origEnd = parseDateUTC(drag.origEndDate);
+          const dur = (origEnd - origStart) / 86400000;
+          const pointerDate = parseDateUTC(dateStr);
+          const offsetDate = parseDateUTC(drag.anchorDate);
+          const delta = (pointerDate - offsetDate) / 86400000;
+          const newStartD = new Date(origStart.getTime() + delta * 86400000);
+          const newEndD = new Date(newStartD.getTime() + dur * 86400000);
+          const ns = fmtDate(newStartD);
+          const ne = fmtDate(newEndD);
+          if (!isOverlappingDates(opId, ns, ne, drag.blockId)) {
+            onUpdateBlock(drag.blockId, { operatorId: opId, startDate: ns, endDate: ne });
+            setDrag(d => ({ ...d, anchorDate: dateStr, currentOpId: opId }));
+          }
+        } else if (drag.type === 'resizing') {
+          const block = vacationBlocks.find(b => b.id === drag.blockId);
+          if (!block) return;
+          if (drag.edge === 'left') {
+            const ns = dateStr <= block.endDate ? dateStr : block.endDate;
+            if (!isOverlappingDates(block.operatorId, ns, block.endDate, block.id)) {
+              onUpdateBlock(drag.blockId, { startDate: ns });
+            }
+          } else {
+            const ne = dateStr >= block.startDate ? dateStr : block.startDate;
+            if (!isOverlappingDates(block.operatorId, block.startDate, ne, block.id)) {
+              onUpdateBlock(drag.blockId, { endDate: ne });
+            }
+          }
+        }
+      } else {
+        const cell = el?.closest('[data-week][data-op]');
+        if (!cell) return;
+        const week = +cell.dataset.week;
+        const opId = cell.dataset.op;
+
+        if (drag.type === 'drawing' && opId === drag.opId) {
+          const sw = Math.min(drag.startWeekNum, week);
+          const ew = Math.max(drag.startWeekNum, week);
+          const sd = getISOWeekMonday(year, sw);
+          const ed = getISOWeekFriday(year, ew);
+          if (!isOverlappingDates(drag.opId, sd, ed)) {
+            setDrag(d => ({ ...d, endWeekNum: week }));
+          }
+        } else if (drag.type === 'moving') {
+          const delta = week - drag.anchorWeek;
+          const newSW = drag.origStartWeek + delta;
+          const newEW = drag.origEndWeek + delta;
+          if (newSW >= 1 && newEW <= 52) {
+            const ns = getISOWeekMonday(year, newSW);
+            const ne = getISOWeekFriday(year, newEW);
+            if (!isOverlappingDates(opId, ns, ne, drag.blockId)) {
+              onUpdateBlock(drag.blockId, { operatorId: opId, startDate: ns, endDate: ne });
+              setDrag(d => ({ ...d, anchorWeek: week, currentOpId: opId }));
+            }
+          }
+        } else if (drag.type === 'resizing') {
+          const block = vacationBlocks.find(b => b.id === drag.blockId);
+          if (!block) return;
+          if (drag.edge === 'left') {
+            const ns = getISOWeekMonday(year, week);
+            if (ns <= block.endDate && !isOverlappingDates(block.operatorId, ns, block.endDate, block.id)) {
+              onUpdateBlock(drag.blockId, { startDate: ns });
+            }
+          } else {
+            const ne = getISOWeekFriday(year, week);
+            if (ne >= block.startDate && !isOverlappingDates(block.operatorId, block.startDate, ne, block.id)) {
+              onUpdateBlock(drag.blockId, { endDate: ne });
+            }
           }
         }
       }
     };
+
     const onUp = () => {
-      if (longPressTimer.current) {
-        clearTimeout(longPressTimer.current);
-        longPressTimer.current = null;
-      }
-      commitDrag();
+      if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null; }
+      commitDayDrag();
       setDrag(null);
     };
     window.addEventListener('pointermove', onMove);
@@ -323,17 +419,19 @@ export default function CalendarGrid({
       window.removeEventListener('pointerup', onUp);
       window.removeEventListener('pointercancel', onUp);
     };
-  }, [drag, isOverlapping, onUpdateBlock, vacationBlocks, commitDrag]);
+  }, [drag, isOverlappingDates, onUpdateBlock, vacationBlocks, commitDayDrag, year, onAddBlock]);
 
-  const handleCellPointerDown = (e, opId, week) => {
+  /* ── Week-level pointer handlers ───────────────────────────────────────── */
+  const handleWeekCellPointerDown = (e, opId, week) => {
     if (e.button !== 0) return;
     e.preventDefault();
     pointerMoved.current = false;
 
-    const block = vacationBlocks.find(b => b.operatorId === opId && week >= b.startWeek && week <= b.endWeek);
+    const block = vacationBlocks.find(b => b.operatorId === opId && blockCoversWeek(b, week, year));
     if (block) {
-      const offsetWeek = week - block.startWeek;
-      setDrag({ type: 'moving', blockId: block.id, opId, origStart: block.startWeek, origEnd: block.endWeek, pointerOffsetWeek: offsetWeek, currentWeek: week, currentOpId: opId });
+      const bStartW = getWeekNum(block.startDate);
+      const bEndW = getWeekNum(block.endDate);
+      setDrag({ mode: 'week', type: 'moving', blockId: block.id, opId, origStartWeek: bStartW, origEndWeek: bEndW, anchorWeek: week, currentOpId: opId });
       longPressTimer.current = setTimeout(() => {
         if (!pointerMoved.current) {
           setDrag(null);
@@ -342,37 +440,83 @@ export default function CalendarGrid({
         longPressTimer.current = null;
       }, 500);
     } else {
-      if (!isOverlapping(opId, week, week)) {
-        setDrag({ type: 'drawing', opId, startWeek: week, endWeek: week });
+      const sd = getISOWeekMonday(year, week);
+      const ed = getISOWeekFriday(year, week);
+      if (!isOverlappingDates(opId, sd, ed)) {
+        setDrag({ mode: 'week', type: 'drawing', opId, startWeekNum: week, endWeekNum: week });
       }
     }
   };
 
-  const handleCellPointerUp = (e) => {
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
-      longPressTimer.current = null;
-    }
-    if (drag && drag.type === 'moving' && !pointerMoved.current) {
+  const handleWeekCellPointerUp = (e) => {
+    if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null; }
+    if (drag && drag.mode === 'week' && drag.type === 'moving' && !pointerMoved.current) {
       setDrag(null);
       const block = vacationBlocks.find(b => b.id === drag.blockId);
-      if (block) {
-        setPopover({ x: e.clientX, y: e.clientY, block });
-      }
+      if (block) setPopover({ x: e.clientX, y: e.clientY, block });
       return;
     }
-    if (drag && drag.type === 'drawing' && !pointerMoved.current) {
-      onAddBlock(drag.opId, drag.startWeek, drag.startWeek);
+    if (drag && drag.mode === 'week' && drag.type === 'drawing' && !pointerMoved.current) {
+      const sw = Math.min(drag.startWeekNum, drag.endWeekNum);
+      const ew = Math.max(drag.startWeekNum, drag.endWeekNum);
+      onAddBlock(drag.opId, getISOWeekMonday(year, sw), getISOWeekFriday(year, ew));
       setDrag(null);
-      return;
     }
   };
 
-  const handleResizePointerDown = (e, blockId, edge, block) => {
-    e.stopPropagation();
+  const handleWeekResizeDown = (e, blockId, edge) => {
+    e.stopPropagation(); e.preventDefault();
+    pointerMoved.current = false;
+    setDrag({ mode: 'week', type: 'resizing', blockId, edge });
+  };
+
+  /* ── Day-level pointer handlers ────────────────────────────────────────── */
+  const handleDayCellPointerDown = (e, opId, dateStr) => {
+    if (e.button !== 0) return;
     e.preventDefault();
     pointerMoved.current = false;
-    setDrag({ type: 'resizing', blockId, edge, origStart: block.startWeek, origEnd: block.endWeek });
+
+    const block = vacationBlocks.find(b => b.operatorId === opId && blockCoversDate(b, dateStr));
+    if (block) {
+      setDrag({ mode: 'day', type: 'moving', blockId: block.id, opId, origStartDate: block.startDate, origEndDate: block.endDate, anchorDate: dateStr, currentOpId: opId });
+      longPressTimer.current = setTimeout(() => {
+        if (!pointerMoved.current) {
+          setDrag(null);
+          setPopover({ x: e.clientX, y: e.clientY, block });
+        }
+        longPressTimer.current = null;
+      }, 500);
+    } else {
+      if (!isOverlappingDates(opId, dateStr, dateStr)) {
+        setDrag({ mode: 'day', type: 'drawing', opId, startDate: dateStr, endDate: dateStr });
+      }
+    }
+  };
+
+  const handleDayCellPointerUp = (e) => {
+    if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null; }
+    if (drag && drag.mode === 'day' && drag.type === 'moving' && !pointerMoved.current) {
+      setDrag(null);
+      const block = vacationBlocks.find(b => b.id === drag.blockId);
+      if (block) setPopover({ x: e.clientX, y: e.clientY, block });
+      return;
+    }
+    if (drag && drag.mode === 'day' && drag.type === 'drawing' && !pointerMoved.current) {
+      onAddBlock(drag.opId, drag.startDate, drag.startDate);
+      setDrag(null);
+    }
+  };
+
+  const handleDayResizeDown = (e, blockId, edge) => {
+    e.stopPropagation(); e.preventDefault();
+    pointerMoved.current = false;
+    setDrag({ mode: 'day', type: 'resizing', blockId, edge });
+  };
+
+  const handleDoubleClick = (e, block) => {
+    if (block) {
+      setPopover({ x: e.clientX, y: e.clientY, block, focusComment: true });
+    }
   };
 
   const groups = shiftMode === 'separate'
@@ -414,7 +558,7 @@ export default function CalendarGrid({
       {/* ── Secondary tools row ──────────────────────────────────────────── */}
       {showTools && (
         <div className="flex items-center gap-3 px-3 py-1.5 flex-wrap" style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-secondary)' }}>
-          <Legend />
+          <Legend leaveTypes={leaveTypes} />
           <button onClick={onToggleDemand} className="px-2 py-1 text-xs ml-auto"
             style={{ background: showDemand ? 'var(--accent)' : 'var(--bg-primary)', color: showDemand ? '#fff' : 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 'var(--border-radius)' }}>
             Demand
@@ -427,36 +571,48 @@ export default function CalendarGrid({
         <WeekZoomGrid
           ref={scrollRef}
           operators={operators} vacationBlocks={vacationBlocks} demand={demand}
-          settings={settings} weeks={weeks} holidayMap={holidayMap}
+          settings={settings} weeks={weeks} holidayMap={holidayMap} leaveTypes={leaveTypes}
           groups={groups} drag={drag} showDemand={showDemand} updateDemand={updateDemand}
-          onCellPointerDown={handleCellPointerDown}
-          onCellPointerUp={handleCellPointerUp}
-          onResizePointerDown={handleResizePointerDown}
+          year={year}
+          onCellPointerDown={handleWeekCellPointerDown}
+          onCellPointerUp={handleWeekCellPointerUp}
+          onResizePointerDown={handleWeekResizeDown}
+          onZoomChange={onZoomChange} setStartWeek={setStartWeek}
         />
       ) : (
         <DayZoomGrid
           operators={operators} vacationBlocks={vacationBlocks} demand={demand}
-          settings={settings} weeks={weeks} holidayMap={holidayMap} groups={groups}
+          settings={settings} weeks={weeks} holidayMap={holidayMap} leaveTypes={leaveTypes}
+          groups={groups} drag={drag}
           showDayCoverage={showDayCoverage} onToggleDayCoverage={() => setShowDayCoverage(c => !c)}
-          setPopover={setPopover}
+          year={year}
+          onCellPointerDown={handleDayCellPointerDown}
+          onCellPointerUp={handleDayCellPointerUp}
+          onResizePointerDown={handleDayResizeDown}
+          onDoubleClick={handleDoubleClick}
         />
       )}
 
       {/* ── Popover ──────────────────────────────────────────────────────── */}
       {popover && (
         <BlockPopover x={popover.x} y={popover.y} block={popover.block}
-          onSetStatus={onSetBlockStatus} onDelete={onDeleteBlock}
+          leaveTypes={leaveTypes} onUpdate={onUpdateBlock} onDelete={onDeleteBlock}
           onClose={() => setPopover(null)} />
       )}
     </div>
   );
 }
 
+/* ── Helper ──────────────────────────────────────────────────────────────── */
+function getWeekNum(dateStr) {
+  return getISOWeek(dateStr);
+}
+
 /* ══════════════════════════════════════════════════════════════════════════ */
 /*  WEEK ZOOM                                                               */
 /* ══════════════════════════════════════════════════════════════════════════ */
 
-const WeekZoomGrid = ({ operators, vacationBlocks, demand, settings, weeks, holidayMap, groups, drag, showDemand, updateDemand, onCellPointerDown, onCellPointerUp, onResizePointerDown }, ref) => {
+const WeekZoomGrid = ({ operators, vacationBlocks, demand, settings, weeks, holidayMap, leaveTypes, groups, drag, showDemand, updateDemand, year, onCellPointerDown, onCellPointerUp, onResizePointerDown, onZoomChange, setStartWeek }, ref) => {
   return (
     <div ref={ref} className={`flex-1 overflow-auto select-none ${drag ? 'grid-dragging' : ''}`}>
       <div style={{ minWidth: LABEL_W + weeks.length * CELL_W }}>
@@ -470,9 +626,10 @@ const WeekZoomGrid = ({ operators, vacationBlocks, demand, settings, weeks, holi
             const isHoliday = holidayMap[w]?.holidays?.length > 0;
             const holidayAbbrevs = isHoliday ? holidayMap[w].holidays.map(h => HOLIDAY_ABBREV[h.name] || h.name.slice(0, 7)) : [];
             return (
-              <div key={w} className="flex flex-col items-center justify-center text-xs font-medium"
+              <div key={w} className="flex flex-col items-center justify-center text-xs font-medium cursor-pointer"
                 style={{ width: CELL_W, minWidth: CELL_W, height: isHoliday ? CELL_H + 12 : CELL_H, color: isHoliday ? 'var(--holiday-text)' : 'var(--text-secondary)', background: isHoliday ? 'var(--holiday-bg)' : 'transparent', borderRight: '1px solid var(--border)', lineHeight: 1.1 }}
-                title={isHoliday ? holidayMap[w].holidays.map(h => h.name).join(', ') : undefined}>
+                title={isHoliday ? holidayMap[w].holidays.map(h => h.name).join(', ') : `Click to zoom to v.${w}`}
+                onClick={() => { setStartWeek(w); onZoomChange('day'); }}>
                 <span>v.{w}</span>
                 {isHoliday && <span className="text-[9px] italic opacity-80 truncate w-full text-center" style={{ color: 'var(--holiday-text)' }}>{holidayAbbrevs[0]}</span>}
               </div>
@@ -497,40 +654,45 @@ const WeekZoomGrid = ({ operators, vacationBlocks, demand, settings, weeks, holi
                   {op.name}
                 </div>
                 {weeks.map(w => {
-                  const block = vacationBlocks.find(b => b.operatorId === op.id && w >= b.startWeek && w <= b.endWeek);
-                  const isDrawing = drag?.type === 'drawing' && drag.opId === op.id && w >= Math.min(drag.startWeek, drag.endWeek) && w <= Math.max(drag.startWeek, drag.endWeek);
-                  const isStart = block && w === block.startWeek;
-                  const isEnd = block && w === block.endWeek;
-                  const isDrag = drag && (drag.type === 'moving' && drag.blockId === block?.id || drag.type === 'resizing' && drag.blockId === block?.id);
+                  const block = vacationBlocks.find(b => b.operatorId === op.id && blockCoversWeek(b, w, year));
+                  const isDrawing = drag?.mode === 'week' && drag?.type === 'drawing' && drag.opId === op.id &&
+                    w >= Math.min(drag.startWeekNum, drag.endWeekNum) && w <= Math.max(drag.startWeekNum, drag.endWeekNum);
                   const isHoliday = holidayMap[w]?.holidays?.length > 0;
+                  const isDrag = drag && (drag.type === 'moving' && drag.blockId === block?.id || drag.type === 'resizing' && drag.blockId === block?.id);
 
                   let cellStyle = {};
+                  let partialLabel = null;
+
                   if (block) {
-                    if (block.status === 'requested') {
-                      cellStyle = {
-                        background: 'repeating-linear-gradient(45deg, var(--requested-bg), var(--requested-bg) 4px, transparent 4px, transparent 8px)',
-                        borderTop: '2px dashed var(--requested-border)', borderBottom: '2px dashed var(--requested-border)',
-                        opacity: 0.65, zIndex: 1,
-                      };
-                      if (isStart) { cellStyle.borderLeft = '2px dashed var(--requested-border)'; cellStyle.borderTopLeftRadius = '6px'; cellStyle.borderBottomLeftRadius = '6px'; }
-                      if (isEnd) { cellStyle.borderRight = '2px dashed var(--requested-border)'; cellStyle.borderTopRightRadius = '6px'; cellStyle.borderBottomRightRadius = '6px'; }
-                    } else {
-                      const bgVar = `var(--${block.status}-bg)`;
-                      const borderVar = `var(--${block.status}-border)`;
-                      cellStyle = {
-                        background: bgVar, borderTop: `2px solid ${borderVar}`, borderBottom: `2px solid ${borderVar}`,
-                        zIndex: block.status === 'approved' ? 3 : 2,
-                      };
-                      if (isStart) { cellStyle.borderLeft = `2px solid ${borderVar}`; cellStyle.borderTopLeftRadius = '6px'; cellStyle.borderBottomLeftRadius = '6px'; }
-                      if (isEnd) { cellStyle.borderRight = `2px solid ${borderVar}`; cellStyle.borderTopRightRadius = '6px'; cellStyle.borderBottomRightRadius = '6px'; }
-                    }
+                    const color = getLeaveColor(block, leaveTypes);
+                    const wf = WORKFLOW_STYLES[block.status] || WORKFLOW_STYLES.draft;
+                    const workdays = getWorkdaysInWeek(block.startDate, block.endDate, w, year);
+                    const isPartial = workdays < 5;
+                    const isFirstWeek = blockCoversWeek(block, w, year) && !blockCoversWeek(block, w - 1, year);
+                    const isLastWeek = blockCoversWeek(block, w, year) && !blockCoversWeek(block, w + 1, year);
+
+                    cellStyle = {
+                      background: isPartial
+                        ? `linear-gradient(to right, ${color} ${workdays / 5 * 100}%, transparent ${workdays / 5 * 100}%)`
+                        : color,
+                      borderTop: `2px ${wf.borderStyle} ${color}`,
+                      borderBottom: `2px ${wf.borderStyle} ${color}`,
+                      opacity: wf.opacity,
+                      zIndex: block.status === 'beviljad' ? 3 : 2,
+                    };
+                    if (isFirstWeek) { cellStyle.borderLeft = `2px ${wf.borderStyle} ${color}`; cellStyle.borderTopLeftRadius = '6px'; cellStyle.borderBottomLeftRadius = '6px'; }
+                    if (isLastWeek) { cellStyle.borderRight = `2px ${wf.borderStyle} ${color}`; cellStyle.borderTopRightRadius = '6px'; cellStyle.borderBottomRightRadius = '6px'; }
                     cellStyle.boxShadow = isDrag ? '0 10px 15px -3px rgba(0,0,0,0.1)' : '0 2px 4px -1px rgba(0,0,0,0.06)';
                     if (isDrag) { cellStyle.transform = 'scale(1.02)'; cellStyle.outline = '2px solid var(--accent)'; }
+                    if (isPartial) partialLabel = `${workdays}/5`;
                   } else if (isDrawing) {
                     cellStyle = { background: 'var(--draft-bg)', opacity: 0.5 };
                   } else if (isHoliday) {
                     cellStyle = { background: 'var(--holiday-bg)' };
                   }
+
+                  const isFirstWeekOfBlock = block && blockCoversWeek(block, w, year) && !blockCoversWeek(block, w - 1, year);
+                  const isLastWeekOfBlock = block && blockCoversWeek(block, w, year) && !blockCoversWeek(block, w + 1, year);
 
                   return (
                     <div key={w}
@@ -539,19 +701,28 @@ const WeekZoomGrid = ({ operators, vacationBlocks, demand, settings, weeks, holi
                       style={{ width: CELL_W, minWidth: CELL_W, height: CELL_H, borderRight: '1px solid var(--border)', cursor: block ? 'grab' : 'crosshair', touchAction: 'none', ...cellStyle }}
                       onPointerDown={e => onCellPointerDown(e, op.id, w)}
                       onPointerUp={e => onCellPointerUp(e, op.id, w)}>
-                      {block && isStart && (
+                      {block && isFirstWeekOfBlock && (
                         <div className="resize-handle" style={{ left: 0, cursor: 'w-resize' }}
-                          onPointerDown={e => onResizePointerDown(e, block.id, 'left', block)} />
+                          onPointerDown={e => onResizePointerDown(e, block.id, 'left')} />
                       )}
-                      {block && isEnd && (
+                      {block && isLastWeekOfBlock && (
                         <div className="resize-handle" style={{ right: 0, cursor: 'e-resize' }}
-                          onPointerDown={e => onResizePointerDown(e, block.id, 'right', block)} />
+                          onPointerDown={e => onResizePointerDown(e, block.id, 'right')} />
                       )}
-                      {block && isStart && (
+                      {block && isFirstWeekOfBlock && (
                         <span className="absolute inset-[2px] flex items-center justify-center text-xs font-medium truncate pointer-events-none select-none"
-                          style={{ color: 'var(--text-primary)' }}>
-                          {block.startWeek === block.endWeek ? `v.${block.startWeek}` : `v.${block.startWeek}-${block.endWeek}`}
+                          style={{ color: '#fff', textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}>
+                          {formatDateLabel(block.startDate)}–{formatDateLabel(block.endDate)}
                         </span>
+                      )}
+                      {partialLabel && !isFirstWeekOfBlock && (
+                        <span className="text-[9px] font-medium pointer-events-none select-none"
+                          style={{ color: '#fff', textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}>
+                          {partialLabel}
+                        </span>
+                      )}
+                      {block && block.comment && isLastWeekOfBlock && (
+                        <span className="comment-indicator" />
                       )}
                     </div>
                   );
@@ -574,43 +745,39 @@ const WeekZoomGrid = ({ operators, vacationBlocks, demand, settings, weeks, holi
 /*  DAY ZOOM                                                                */
 /* ══════════════════════════════════════════════════════════════════════════ */
 
-function DayZoomGrid({ operators, vacationBlocks, demand, settings, weeks, holidayMap, groups, showDayCoverage, onToggleDayCoverage, setPopover }) {
+function DayZoomGrid({ operators, vacationBlocks, demand, settings, weeks, holidayMap, leaveTypes, groups, drag, showDayCoverage, onToggleDayCoverage, year, onCellPointerDown, onCellPointerUp, onResizePointerDown, onDoubleClick }) {
   const focusWeek = weeks[0];
-  const year = new Date().getFullYear();
-  const dates = isoWeekDates(year, focusWeek);
+  const dates = useMemo(() => isoWeekDates(year, focusWeek), [year, focusWeek]);
 
-  const holidaysByDate = {};
-  if (holidayMap) {
-    Object.values(holidayMap).forEach(wk => {
-      wk.holidays.forEach(h => { holidaysByDate[h.dateStr] = h; });
-    });
-  }
-
-  const handleDayClick = (e, block) => {
-    if (block) {
-      setPopover({ x: e.clientX, y: e.clientY, block });
+  const holidaysByDate = useMemo(() => {
+    const map = {};
+    if (holidayMap) {
+      Object.values(holidayMap).forEach(wk => {
+        wk.holidays.forEach(h => { map[h.dateStr] = h; });
+      });
     }
-  };
+    return map;
+  }, [holidayMap]);
 
   return (
     <div className="flex-1 overflow-auto select-none">
-      <div style={{ minWidth: LABEL_W + 7 * 100 }}>
+      <div style={{ minWidth: LABEL_W + 7 * DAY_W }}>
         {/* Header */}
         <div className="flex sticky top-0 z-20" style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border)' }}>
           <div className="sticky left-0 z-10 flex items-center px-2 text-xs font-semibold"
             style={{ width: LABEL_W, minWidth: LABEL_W, background: 'var(--bg-secondary)', color: 'var(--text-secondary)', borderRight: '1px solid var(--border)' }}>
             Operator
           </div>
-          {dates.map((d, i) => {
-            const dateStr = formatDateStr(d);
+          {dates.map((dateStr, i) => {
             const isHoliday = !!holidaysByDate[dateStr];
             const isWeekend = i >= 5;
+            const dt = parseDateUTC(dateStr);
             return (
               <div key={i} className="flex flex-col items-center justify-center text-xs font-medium"
-                style={{ width: 100, minWidth: 100, height: CELL_H + 4, borderRight: '1px solid var(--border)',
+                style={{ width: DAY_W, minWidth: DAY_W, height: CELL_H + 4, borderRight: '1px solid var(--border)',
                   color: isHoliday ? 'var(--holiday-text)' : isWeekend ? 'var(--text-secondary)' : 'var(--text-primary)',
                   background: isHoliday ? 'var(--holiday-bg)' : 'transparent' }}>
-                <span>{SWEDISH_DAYS[i]} {d.getDate()}/{d.getMonth() + 1}</span>
+                <span>{SWEDISH_DAYS[i]} {dt.getUTCDate()}/{dt.getUTCMonth() + 1}</span>
                 {isHoliday && <span className="text-[9px] italic opacity-80">{holidaysByDate[dateStr].name}</span>}
               </div>
             );
@@ -627,62 +794,83 @@ function DayZoomGrid({ operators, vacationBlocks, demand, settings, weeks, holid
               </div>
             )}
 
-            {group.ops.map(op => {
-              const block = vacationBlocks.find(b => b.operatorId === op.id && focusWeek >= b.startWeek && focusWeek <= b.endWeek);
-              return (
-                <div key={op.id} className="flex relative" style={{ height: CELL_H, borderBottom: '1px solid var(--border)', opacity: op.active ? 1 : 0.4 }}>
-                  <div className="sticky left-0 z-10 flex items-center px-2 text-xs truncate"
-                    style={{ width: LABEL_W, minWidth: LABEL_W, background: 'var(--bg-primary)', borderRight: '1px solid var(--border)', color: 'var(--text-primary)' }}>
-                    {op.name}
-                  </div>
-                  {dates.map((d, i) => {
-                    const dateStr = formatDateStr(d);
-                    const isHoliday = !!holidaysByDate[dateStr];
-                    const isWeekend = i >= 5;
-
-                    let bgClass = isWeekend ? 'day-cell-off' : 'day-cell-working';
-                    let cellStyle = {};
-
-                    if (block) {
-                      const sc = STATUS_COLORS[block.status];
-                      if (block.status === 'requested') {
-                        cellStyle = {
-                          background: 'repeating-linear-gradient(45deg, var(--requested-bg), var(--requested-bg) 4px, transparent 4px, transparent 8px)',
-                          borderTop: '2px dashed var(--requested-border)', borderBottom: '2px dashed var(--requested-border)',
-                          opacity: 0.65, cursor: 'pointer',
-                        };
-                      } else {
-                        cellStyle = {
-                          background: sc.bg,
-                          borderTop: `2px solid ${sc.border}`, borderBottom: `2px solid ${sc.border}`,
-                          cursor: 'pointer',
-                        };
-                      }
-                      bgClass = '';
-                    } else if (isHoliday) {
-                      cellStyle = { background: 'var(--holiday-bg)' };
-                      bgClass = '';
-                    }
-
-                    return (
-                      <div key={i}
-                        className={`flex items-center justify-center text-xs ${bgClass}`}
-                        style={{ width: 100, minWidth: 100, height: CELL_H, borderRight: '1px solid var(--border)', ...cellStyle }}
-                        onClick={e => block && handleDayClick(e, block)}>
-                        {block && i === 0 && (
-                          <span className="text-xs font-medium truncate pointer-events-none select-none"
-                            style={{ color: 'var(--text-primary)' }}>
-                            v.{block.startWeek}-{block.endWeek}
-                          </span>
-                        )}
-                      </div>
-                    );
-                  })}
+            {group.ops.map(op => (
+              <div key={op.id} className="flex relative" style={{ height: CELL_H, borderBottom: '1px solid var(--border)', opacity: op.active ? 1 : 0.4 }}>
+                <div className="sticky left-0 z-10 flex items-center px-2 text-xs truncate"
+                  style={{ width: LABEL_W, minWidth: LABEL_W, background: 'var(--bg-primary)', borderRight: '1px solid var(--border)', color: 'var(--text-primary)' }}>
+                  {op.name}
                 </div>
-              );
-            })}
+                {dates.map((dateStr, i) => {
+                  const isHoliday = !!holidaysByDate[dateStr];
+                  const isWeekend = i >= 5;
+                  const block = vacationBlocks.find(b => b.operatorId === op.id && blockCoversDate(b, dateStr));
+                  const isDrawing = drag?.mode === 'day' && drag?.type === 'drawing' && drag.opId === op.id &&
+                    dateStr >= (drag.startDate <= drag.endDate ? drag.startDate : drag.endDate) &&
+                    dateStr <= (drag.startDate <= drag.endDate ? drag.endDate : drag.startDate);
+                  const isDrag = drag && (drag.type === 'moving' && drag.blockId === block?.id || drag.type === 'resizing' && drag.blockId === block?.id);
 
-            {/* Coverage rows for day view — hidden by default */}
+                  let bgClass = isWeekend ? 'day-cell-off' : 'day-cell-working';
+                  let cellStyle = {};
+
+                  if (block) {
+                    const color = getLeaveColor(block, leaveTypes);
+                    const wf = WORKFLOW_STYLES[block.status] || WORKFLOW_STYLES.draft;
+                    const isFirst = dateStr === block.startDate;
+                    const isLast = dateStr === block.endDate;
+                    cellStyle = {
+                      background: color,
+                      borderTop: `2px ${wf.borderStyle} ${color}`,
+                      borderBottom: `2px ${wf.borderStyle} ${color}`,
+                      opacity: wf.opacity,
+                      cursor: 'grab',
+                      touchAction: 'none',
+                    };
+                    if (isFirst) { cellStyle.borderLeft = `2px ${wf.borderStyle} ${color}`; cellStyle.borderTopLeftRadius = '6px'; cellStyle.borderBottomLeftRadius = '6px'; }
+                    if (isLast) { cellStyle.borderRight = `2px ${wf.borderStyle} ${color}`; cellStyle.borderTopRightRadius = '6px'; cellStyle.borderBottomRightRadius = '6px'; }
+                    if (isDrag) { cellStyle.transform = 'scale(1.02)'; cellStyle.outline = '2px solid var(--accent)'; cellStyle.boxShadow = '0 10px 15px -3px rgba(0,0,0,0.1)'; }
+                    bgClass = '';
+                  } else if (isDrawing) {
+                    cellStyle = { background: 'var(--draft-bg)', opacity: 0.5 };
+                    bgClass = '';
+                  } else if (isHoliday) {
+                    cellStyle = { background: 'var(--holiday-bg)' };
+                    bgClass = '';
+                  }
+
+                  const isFirst = block && dateStr === block.startDate;
+                  const isLast = block && dateStr === block.endDate;
+
+                  return (
+                    <div key={i}
+                      data-date={dateStr} data-op={op.id}
+                      className={`flex items-center justify-center text-xs relative ${bgClass} ${isDrag ? 'block-dragging' : ''}`}
+                      style={{ width: DAY_W, minWidth: DAY_W, height: CELL_H, borderRight: '1px solid var(--border)', cursor: block ? 'grab' : 'crosshair', touchAction: 'none', ...cellStyle }}
+                      onPointerDown={e => onCellPointerDown(e, op.id, dateStr)}
+                      onPointerUp={e => onCellPointerUp(e)}
+                      onDoubleClick={e => block && onDoubleClick(e, block)}>
+                      {block && isFirst && (
+                        <div className="resize-handle" style={{ left: 0, cursor: 'w-resize' }}
+                          onPointerDown={e => onResizePointerDown(e, block.id, 'left')} />
+                      )}
+                      {block && isLast && (
+                        <div className="resize-handle" style={{ right: 0, cursor: 'e-resize' }}
+                          onPointerDown={e => onResizePointerDown(e, block.id, 'right')} />
+                      )}
+                      {block && isFirst && (
+                        <span className="text-xs font-medium truncate pointer-events-none select-none"
+                          style={{ color: '#fff', textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}>
+                          {formatDateLabel(block.startDate)}–{formatDateLabel(block.endDate)}
+                        </span>
+                      )}
+                      {block && block.comment && isLast && (
+                        <span className="comment-indicator" />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+
             {showDayCoverage && (
               <CoverageRows operators={operators} vacationBlocks={vacationBlocks} demand={demand}
                 weeks={[focusWeek]} shiftMode={settings.shiftMode} shiftFilter={group.shift}
@@ -691,7 +879,6 @@ function DayZoomGrid({ operators, vacationBlocks, demand, settings, weeks, holid
           </div>
         ))}
 
-        {/* Coverage toggle for day view */}
         <div className="flex items-center px-3 py-1.5" style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border)' }}>
           <button onClick={onToggleDayCoverage} className="text-xs px-2 py-1"
             style={{ background: showDayCoverage ? 'var(--accent)' : 'var(--bg-primary)', color: showDayCoverage ? '#fff' : 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 'var(--border-radius)' }}>

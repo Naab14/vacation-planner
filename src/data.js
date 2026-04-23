@@ -27,18 +27,18 @@ export const seedOperators = [
   { id: 'op16', name: 'Axel Svensson',   shift: 'S2', active: true, certifications: ['Kapselresaren', 'Serialisering', 'Etikettering'] },
 ];
 
-// ── Seed Vacation Blocks ─────────────────────────────────────────────────────
+// ── Seed Vacation Blocks (date-based) ────────────────────────────────────────
 export const seedVacationBlocks = [
-  { id: 'vb1',  operatorId: 'op1',  startWeek: 16, endWeek: 18, status: 'approved' },
-  { id: 'vb2',  operatorId: 'op3',  startWeek: 20, endWeek: 22, status: 'pending' },
-  { id: 'vb3',  operatorId: 'op5',  startWeek: 17, endWeek: 17, status: 'draft' },
-  { id: 'vb4',  operatorId: 'op7',  startWeek: 24, endWeek: 26, status: 'approved' },
-  { id: 'vb5',  operatorId: 'op2',  startWeek: 19, endWeek: 21, status: 'pending' },
-  { id: 'vb6',  operatorId: 'op9',  startWeek: 15, endWeek: 16, status: 'approved' },
-  { id: 'vb7',  operatorId: 'op11', startWeek: 22, endWeek: 24, status: 'draft' },
-  { id: 'vb8',  operatorId: 'op14', startWeek: 18, endWeek: 19, status: 'pending' },
-  { id: 'vb9',  operatorId: 'op10', startWeek: 25, endWeek: 26, status: 'approved' },
-  { id: 'vb10', operatorId: 'op16', startWeek: 20, endWeek: 23, status: 'draft' },
+  { id: 'vb1',  operatorId: 'op1',  startDate: '2026-04-13', endDate: '2026-05-01', type: 'semester', status: 'beviljad', comment: '' },
+  { id: 'vb2',  operatorId: 'op3',  startDate: '2026-05-11', endDate: '2026-05-29', type: 'semester', status: 'ansökt',   comment: '' },
+  { id: 'vb3',  operatorId: 'op5',  startDate: '2026-04-20', endDate: '2026-04-24', type: 'komp',    status: 'draft',     comment: '' },
+  { id: 'vb4',  operatorId: 'op7',  startDate: '2026-06-08', endDate: '2026-06-26', type: 'semester', status: 'beviljad', comment: '' },
+  { id: 'vb5',  operatorId: 'op2',  startDate: '2026-05-04', endDate: '2026-05-22', type: 'semester', status: 'ansökt',   comment: '' },
+  { id: 'vb6',  operatorId: 'op9',  startDate: '2026-04-06', endDate: '2026-04-17', type: 'semester', status: 'beviljad', comment: '' },
+  { id: 'vb7',  operatorId: 'op11', startDate: '2026-05-25', endDate: '2026-06-12', type: 'semester', status: 'draft',    comment: '' },
+  { id: 'vb8',  operatorId: 'op14', startDate: '2026-04-27', endDate: '2026-05-08', type: 'vab',     status: 'ansökt',   comment: 'Väntar på besked' },
+  { id: 'vb9',  operatorId: 'op10', startDate: '2026-06-15', endDate: '2026-06-26', type: 'semester', status: 'beviljad', comment: '' },
+  { id: 'vb10', operatorId: 'op16', startDate: '2026-05-11', endDate: '2026-06-05', type: 'semester', status: 'draft',    comment: '' },
 ];
 
 // ── Default Demand (2 per process per week across 52 weeks) ──────────────────
@@ -51,11 +51,20 @@ export function buildDefaultDemand() {
   return d;
 }
 
+// ── Default Leave Types ─────────────────────────────────────────────────────
+export const defaultLeaveTypes = [
+  { id: 'semester', label: 'Semester', color: '#22c55e' },
+  { id: 'vab', label: 'VAB', color: '#3b82f6' },
+  { id: 'sjuk', label: 'Sjukdag', color: '#f43f5e' },
+  { id: 'komp', label: 'Kompledigt', color: '#a855f7' },
+];
+
 // ── Default Settings ─────────────────────────────────────────────────────────
 export const defaultSettings = {
   shiftMode: 'separate',
   visibleWeeks: 12,
   startWeek: 15,
+  leaveTypes: defaultLeaveTypes,
 };
 
 // ── Themes ───────────────────────────────────────────────────────────────────

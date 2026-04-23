@@ -20,7 +20,7 @@ beforeEach(() => {
 });
 
 describe('state persistence', () => {
-  const testState = { operators: [{ id: '1', name: 'Test' }], vacationBlocks: [], demand: {}, settings: { shiftMode: 'separate', visibleWeeks: 12, startWeek: 15 } };
+  const testState = { operators: [{ id: '1', name: 'Test' }], vacationBlocks: [], demand: {}, settings: { shiftMode: 'separate', visibleWeeks: 12, startWeek: 15, leaveTypes: [{ id: 'semester', label: 'Semester', color: '#22c55e' }, { id: 'vab', label: 'VAB', color: '#3b82f6' }, { id: 'sjuk', label: 'Sjukdag', color: '#f43f5e' }, { id: 'komp', label: 'Kompledigt', color: '#a855f7' }] } };
 
   it('saveState + loadState roundtrip', () => {
     saveState(testState);

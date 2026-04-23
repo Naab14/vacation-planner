@@ -317,6 +317,19 @@ h1, h2, h3, h4, h5, h6 { font-family: var(--font-heading); }
   .resize-handle::before { opacity: 1; width: 5px; }
 }
 
+/* ── Comment indicator (corner triangle) ─────────────────────────────────── */
+.comment-indicator {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 8px 8px 0;
+  border-color: transparent rgba(255,255,255,0.85) transparent transparent;
+  pointer-events: none;
+}
+
 /* ── Working / off day cells ──────────────────────────────────────────────── */
 .day-cell-working {
   background: color-mix(in srgb, var(--coverage-green) 12%, transparent);

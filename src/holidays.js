@@ -1,14 +1,7 @@
+import { getISOWeek } from './dateUtils';
+
 let _hd = null;
 let _cache = {};
-
-function getISOWeek(dateStr) {
-  const [y, m, d] = dateStr.split('-').map(Number);
-  const dt = new Date(Date.UTC(y, m - 1, d));
-  const day = dt.getUTCDay() || 7;
-  dt.setUTCDate(dt.getUTCDate() + 4 - day);
-  const yearStart = new Date(Date.UTC(dt.getUTCFullYear(), 0, 1));
-  return Math.ceil(((dt - yearStart) / 86400000 + 1) / 7);
-}
 
 async function getHolidayInstance() {
   if (_hd) return _hd;

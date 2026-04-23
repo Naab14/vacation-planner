@@ -1,13 +1,14 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import CalendarGrid from '../components/CalendarGrid';
-import { buildDefaultDemand, defaultSettings, PROCESSES } from '../data';
+import { buildDefaultDemand, defaultSettings, defaultLeaveTypes, PROCESSES } from '../data';
+import { getISOWeekMonday, getISOWeekFriday } from '../dateUtils';
 
 const makeOp = (id, shift = 'S1', active = true, certifications = PROCESSES) =>
   ({ id, name: `Op ${id}`, shift, active, certifications });
 
 const makeBlock = (id, operatorId, startWeek, endWeek, status = 'draft') =>
-  ({ id, operatorId, startWeek, endWeek, status });
+  ({ id, operatorId, startDate: getISOWeekMonday(2026, startWeek), endDate: getISOWeekFriday(2026, endWeek), type: 'semester', status, comment: '' });
 
 const defaultProps = () => ({
   operators: [makeOp('1'), makeOp('2', 'S2')],
@@ -16,10 +17,10 @@ const defaultProps = () => ({
   settings: defaultSettings,
   weeks: [15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26],
   holidayMap: {},
+  leaveTypes: defaultLeaveTypes,
   onAddBlock: vi.fn(),
   onUpdateBlock: vi.fn(),
   onDeleteBlock: vi.fn(),
-  onSetBlockStatus: vi.fn(),
   setStartWeek: vi.fn(),
   showDemand: false,
   onToggleDemand: vi.fn(),
@@ -94,11 +95,11 @@ describe('CalendarGrid', () => {
     expect(cells[0].dataset.op).toBeDefined();
   });
 
-  it('shows block label when vacation block exists', () => {
+  it('shows block date label when vacation block exists', () => {
     const props = defaultProps();
     props.vacationBlocks = [makeBlock('b1', '1', 16, 18)];
     render(<CalendarGrid {...props} />);
-    expect(screen.getByText('v.16-18')).toBeInTheDocument();
+    expect(screen.getByText(/13\/4–1\/5/)).toBeInTheDocument();
   });
 
   it('renders day zoom when zoom=day', () => {
@@ -114,8 +115,8 @@ describe('CalendarGrid', () => {
     render(<CalendarGrid {...props} />);
     const gearBtn = screen.getByText('⚙');
     fireEvent.click(gearBtn);
-    expect(screen.getByText('Utkast')).toBeInTheDocument();
-    expect(screen.getByText('Godkänd')).toBeInTheDocument();
+    expect(screen.getByText('Semester')).toBeInTheDocument();
+    expect(screen.getByText('Beviljad')).toBeInTheDocument();
   });
 
   it('shows demand toggle in tools row', () => {

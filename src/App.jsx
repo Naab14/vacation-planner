@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { seedOperators, seedVacationBlocks, buildDefaultDemand, defaultSettings } from './data';
+import { seedOperators, seedVacationBlocks, buildDefaultDemand, defaultSettings, defaultLeaveTypes } from './data';
 import {
   saveState, loadState, clearState,
   saveTheme, loadTheme,
@@ -52,7 +52,7 @@ export default function App() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(!!storedUI.sidebarCollapsed);
 
   const { operators, vacationBlocks, demand, settings } = state;
-  const { startWeek, visibleWeeks, shiftMode } = settings;
+  const { startWeek, visibleWeeks, shiftMode, leaveTypes = defaultLeaveTypes } = settings;
   const weeks = useMemo(
     () => Array.from({ length: visibleWeeks }, (_, i) => startWeek + i),
     [startWeek, visibleWeeks],
@@ -93,14 +93,12 @@ export default function App() {
   const update = useCallback(patch => setState(s => ({ ...s, ...patch })), []);
   const updateOp = useCallback((id, patch) =>
     setState(s => ({ ...s, operators: s.operators.map(o => o.id === id ? { ...o, ...patch } : o) })), []);
-  const addBlock = useCallback((opId, sw, ew, status = 'draft') =>
-    setState(s => ({ ...s, vacationBlocks: [...s.vacationBlocks, { id: uid(), operatorId: opId, startWeek: sw, endWeek: ew, status }] })), []);
+  const addBlock = useCallback((opId, startDate, endDate, type = 'semester', status = 'draft') =>
+    setState(s => ({ ...s, vacationBlocks: [...s.vacationBlocks, { id: uid(), operatorId: opId, startDate, endDate, type, status, comment: '' }] })), []);
   const updateBlock = useCallback((id, patch) =>
     setState(s => ({ ...s, vacationBlocks: s.vacationBlocks.map(b => b.id === id ? { ...b, ...patch } : b) })), []);
   const deleteBlock = useCallback(id =>
     setState(s => ({ ...s, vacationBlocks: s.vacationBlocks.filter(b => b.id !== id) })), []);
-  const setBlockStatus = useCallback((id, status) =>
-    setState(s => ({ ...s, vacationBlocks: s.vacationBlocks.map(b => b.id === id ? { ...b, status } : b) })), []);
   const updateDemand = useCallback((proc, week, val) =>
     setState(s => ({ ...s, demand: { ...s.demand, [proc]: { ...s.demand[proc], [week]: val } } })), []);
   const setShiftMode = useCallback(m =>
@@ -198,9 +196,9 @@ export default function App() {
         <CalendarGrid
           operators={operators} vacationBlocks={vacationBlocks}
           demand={demand} settings={settings} weeks={weeks}
-          holidayMap={holidayMap}
+          holidayMap={holidayMap} leaveTypes={leaveTypes}
           onAddBlock={addBlock} onUpdateBlock={updateBlock}
-          onDeleteBlock={deleteBlock} onSetBlockStatus={setBlockStatus}
+          onDeleteBlock={deleteBlock}
           setStartWeek={setStartWeek}
           showDemand={showDemand}
           onToggleDemand={() => setShowDemand(p => !p)}
