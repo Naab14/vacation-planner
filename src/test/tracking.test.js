@@ -8,6 +8,7 @@ import {
   getPlannedHours,
   getTrackingSummary,
 } from '../tracking';
+import { getISOWeekMonday, getISOWeekFriday } from '../dateUtils';
 
 const YEAR = 2026;
 
@@ -19,6 +20,14 @@ const emptyHolidayMap = {};
 const holidayMapWithFriday16 = {
   16: { holidays: [{ name: 'Stubbday', dateStr: '2026-04-17' }] },
 };
+
+const mkBlock = (id, operatorId, startWeek, endWeek, status = 'beviljad', extra = {}) => ({
+  id, operatorId,
+  startDate: getISOWeekMonday(YEAR, startWeek),
+  endDate: getISOWeekFriday(YEAR, endWeek),
+  status,
+  ...extra,
+});
 
 describe('getBusinessDaysInWeek', () => {
   it('returns five weekday ISO dates for a non-holiday week', () => {
@@ -56,74 +65,58 @@ describe('getBusinessDaysInWeek', () => {
 
 describe('getBlockWorkDays', () => {
   it('returns a day entry per business day in the block range', () => {
-    const block = { id: 'vb', operatorId: 'op1', startWeek: 16, endWeek: 16, status: 'approved' };
+    const block = mkBlock('vb', 'op1', 16, 16, 'beviljad');
     const days = getBlockWorkDays(block, YEAR, emptyHolidayMap);
     expect(days).toHaveLength(5);
-    expect(days[0]).toEqual({ dateStr: '2026-04-13', week: 16, status: 'approved' });
+    expect(days[0]).toEqual({ dateStr: '2026-04-13', week: 16, status: 'beviljad' });
   });
 
   it('spans multiple weeks', () => {
-    const block = { id: 'vb', operatorId: 'op1', startWeek: 16, endWeek: 17, status: 'approved' };
+    const block = mkBlock('vb', 'op1', 16, 17, 'beviljad');
     const days = getBlockWorkDays(block, YEAR, emptyHolidayMap);
     expect(days).toHaveLength(10);
-    expect(days.every(d => d.status === 'approved')).toBe(true);
+    expect(days.every(d => d.status === 'beviljad')).toBe(true);
   });
 
   it('uses dayStatuses overrides when present', () => {
-    const block = {
-      id: 'vb',
-      operatorId: 'op1',
-      startWeek: 16,
-      endWeek: 16,
-      status: 'approved',
-      dayStatuses: { '2026-04-15': 'pending' },
-    };
+    const block = mkBlock('vb', 'op1', 16, 16, 'beviljad', {
+      dayStatuses: { '2026-04-15': 'ansökt' },
+    });
     const days = getBlockWorkDays(block, YEAR, emptyHolidayMap);
     const wednesday = days.find(d => d.dateStr === '2026-04-15');
-    expect(wednesday.status).toBe('pending');
+    expect(wednesday.status).toBe('ansökt');
     const monday = days.find(d => d.dateStr === '2026-04-13');
-    expect(monday.status).toBe('approved');
+    expect(monday.status).toBe('beviljad');
   });
 });
 
 describe('getBlockHours', () => {
   it('converts workdays to hours using hoursPerDay', () => {
-    const block = { id: 'vb', operatorId: 'op1', startWeek: 16, endWeek: 16, status: 'approved' };
+    const block = mkBlock('vb', 'op1', 16, 16, 'beviljad');
     const h = getBlockHours(block, YEAR, emptyHolidayMap);
-    expect(h.approved).toBe(5 * DEFAULT_HOURS_PER_DAY);
+    expect(h.beviljad).toBe(5 * DEFAULT_HOURS_PER_DAY);
     expect(h.total).toBe(5 * DEFAULT_HOURS_PER_DAY);
-    expect(h.pending).toBe(0);
+    expect(h.ansökt).toBe(0);
   });
 
   it('groups hours by effective status when dayStatuses override', () => {
-    const block = {
-      id: 'vb',
-      operatorId: 'op1',
-      startWeek: 16,
-      endWeek: 16,
-      status: 'approved',
-      dayStatuses: { '2026-04-13': 'pending', '2026-04-14': 'pending' },
-    };
+    const block = mkBlock('vb', 'op1', 16, 16, 'beviljad', {
+      dayStatuses: { '2026-04-13': 'ansökt', '2026-04-14': 'ansökt' },
+    });
     const h = getBlockHours(block, YEAR, emptyHolidayMap);
-    expect(h.pending).toBe(16);
-    expect(h.approved).toBe(24);
+    expect(h.ansökt).toBe(16);
+    expect(h.beviljad).toBe(24);
     expect(h.total).toBe(40);
   });
 
   it('honors a custom hoursPerDay', () => {
-    const block = { id: 'vb', operatorId: 'op1', startWeek: 16, endWeek: 16, status: 'approved' };
+    const block = mkBlock('vb', 'op1', 16, 16, 'beviljad');
     const h = getBlockHours(block, YEAR, emptyHolidayMap, { hoursPerDay: 12 });
-    expect(h.approved).toBe(60);
+    expect(h.beviljad).toBe(60);
   });
 
   it('ignores days whose status is not a tracked status', () => {
-    const block = {
-      id: 'vb',
-      operatorId: 'op1',
-      startWeek: 16,
-      endWeek: 16,
-      status: 'unknown',
-    };
+    const block = mkBlock('vb', 'op1', 16, 16, 'unknown');
     const h = getBlockHours(block, YEAR, emptyHolidayMap);
     expect(h.total).toBe(0);
   });
@@ -131,22 +124,22 @@ describe('getBlockHours', () => {
 
 describe('getOperatorVacationHours', () => {
   const blocks = [
-    { id: 'vb1', operatorId: 'op1', startWeek: 16, endWeek: 16, status: 'approved' },
-    { id: 'vb2', operatorId: 'op1', startWeek: 20, endWeek: 20, status: 'pending' },
-    { id: 'vb3', operatorId: 'op2', startWeek: 16, endWeek: 16, status: 'approved' },
+    mkBlock('vb1', 'op1', 16, 16, 'beviljad'),
+    mkBlock('vb2', 'op1', 20, 20, 'ansökt'),
+    mkBlock('vb3', 'op2', 16, 16, 'beviljad'),
   ];
 
   it('aggregates hours for one operator across multiple blocks', () => {
     const h = getOperatorVacationHours('op1', blocks, YEAR, 1, 52, emptyHolidayMap);
-    expect(h.approved).toBe(40);
-    expect(h.pending).toBe(40);
+    expect(h.beviljad).toBe(40);
+    expect(h.ansökt).toBe(40);
     expect(h.total).toBe(80);
   });
 
   it('clips blocks to the period window', () => {
-    const multiWeek = [{ id: 'vb', operatorId: 'op1', startWeek: 15, endWeek: 20, status: 'approved' }];
+    const multiWeek = [mkBlock('vb', 'op1', 15, 20, 'beviljad')];
     const h = getOperatorVacationHours('op1', multiWeek, YEAR, 16, 17, emptyHolidayMap);
-    expect(h.approved).toBe(80);
+    expect(h.beviljad).toBe(80);
   });
 
   it('excludes blocks wholly outside the period', () => {
@@ -177,9 +170,7 @@ describe('getTrackingSummary', () => {
     { id: 'op1', name: 'Anna', shift: 'S1', active: true, certifications: [] },
     { id: 'op2', name: 'Erik', shift: 'S1', active: false, certifications: [] },
   ];
-  const blocks = [
-    { id: 'vb1', operatorId: 'op1', startWeek: 16, endWeek: 16, status: 'approved' },
-  ];
+  const blocks = [mkBlock('vb1', 'op1', 16, 16, 'beviljad')];
 
   it('produces one row per active operator by default', () => {
     const rows = getTrackingSummary(operators, blocks, YEAR, { periodStart: 16, periodEnd: 16 });
@@ -190,7 +181,7 @@ describe('getTrackingSummary', () => {
   it('computes plannedHours, vacationHours, and netHours per row', () => {
     const rows = getTrackingSummary(operators, blocks, YEAR, { periodStart: 16, periodEnd: 16 });
     expect(rows[0].plannedHours).toBe(40);
-    expect(rows[0].vacationHours.approved).toBe(40);
+    expect(rows[0].vacationHours.beviljad).toBe(40);
     expect(rows[0].netHours).toBe(0);
   });
 

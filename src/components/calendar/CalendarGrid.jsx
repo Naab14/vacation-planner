@@ -1,12 +1,17 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import DayZoomGrid from './DayZoomGrid';
 import BlockPopover from './BlockPopover';
 import Legend from './Legend';
+import { getISOWeek, getISOWeekMonday, getISOWeekFriday } from '../../dateUtils';
+
+const YEAR = new Date().getFullYear();
+const weekToStartDate = w => getISOWeekMonday(YEAR, w);
+const weekToEndDate = w => getISOWeekFriday(YEAR, w);
 
 export default function CalendarGrid({
   operators, vacationBlocks, demand, settings, weeks, holidayMap,
   onAddBlock, onUpdateBlock, onDeleteBlock, onSetBlockStatus,
-  onSetBlockDayStatus, onClearBlockDayStatus, onSetBlockNote,
+  onSetBlockDayStatus, onClearBlockDayStatus, onSetBlockComment,
   setStartWeek, setVisibleWeeks, showDemand, onToggleDemand,
   selectedOperatorId, onSelectOperator,
 }) {
@@ -19,15 +24,26 @@ export default function CalendarGrid({
   const pointerMoved = useRef(false);
   const [showDayCoverage, setShowDayCoverage] = useState(false);
 
+  // Augment blocks with derived startWeek/endWeek so the existing week-based
+  // drag UX keeps working while state is stored in ISO dates.
+  const enrichedBlocks = useMemo(
+    () => vacationBlocks.map(b => ({
+      ...b,
+      startWeek: getISOWeek(b.startDate),
+      endWeek: getISOWeek(b.endDate),
+    })),
+    [vacationBlocks],
+  );
+
   const isOverlapping = useCallback((opId, start, end, ignoreId = null) => {
     const sw = Math.min(start, end);
     const ew = Math.max(start, end);
-    return vacationBlocks.some(b =>
+    return enrichedBlocks.some(b =>
       b.operatorId === opId &&
       b.id !== ignoreId &&
       Math.max(sw, b.startWeek) <= Math.min(ew, b.endWeek)
     );
-  }, [vacationBlocks]);
+  }, [enrichedBlocks]);
 
   const commitDrag = useCallback(() => {
     if (!drag) return;
@@ -35,7 +51,7 @@ export default function CalendarGrid({
       const sw = Math.min(drag.startWeek, drag.endWeek);
       const ew = Math.max(drag.startWeek, drag.endWeek);
       if (!isOverlapping(drag.opId, sw, ew)) {
-        onAddBlock(drag.opId, sw, ew);
+        onAddBlock(drag.opId, weekToStartDate(sw), weekToEndDate(ew));
       }
     }
   }, [drag, isOverlapping, onAddBlock]);
@@ -63,21 +79,25 @@ export default function CalendarGrid({
         const newStart = drag.origStart + delta;
         const newEnd = drag.origEnd + delta;
         if (!isOverlapping(opId, newStart, newEnd, drag.blockId)) {
-          onUpdateBlock(drag.blockId, { operatorId: opId, startWeek: newStart, endWeek: newEnd });
+          onUpdateBlock(drag.blockId, {
+            operatorId: opId,
+            startDate: weekToStartDate(newStart),
+            endDate: weekToEndDate(newEnd),
+          });
           setDrag(d => ({ ...d, currentWeek: week, currentOpId: opId }));
         }
       } else if (drag.type === 'resizing') {
-        const block = vacationBlocks.find(b => b.id === drag.blockId);
+        const block = enrichedBlocks.find(b => b.id === drag.blockId);
         if (!block) return;
         if (drag.edge === 'left') {
           const newStart = Math.min(week, block.endWeek);
           if (!isOverlapping(block.operatorId, newStart, block.endWeek, block.id)) {
-            onUpdateBlock(drag.blockId, { startWeek: newStart });
+            onUpdateBlock(drag.blockId, { startDate: weekToStartDate(newStart) });
           }
         } else {
           const newEnd = Math.max(week, block.startWeek);
           if (!isOverlapping(block.operatorId, block.startWeek, newEnd, block.id)) {
-            onUpdateBlock(drag.blockId, { endWeek: newEnd });
+            onUpdateBlock(drag.blockId, { endDate: weekToEndDate(newEnd) });
           }
         }
       }
@@ -98,14 +118,14 @@ export default function CalendarGrid({
       window.removeEventListener('pointerup', onUp);
       window.removeEventListener('pointercancel', onUp);
     };
-  }, [drag, isOverlapping, onUpdateBlock, vacationBlocks, commitDrag]);
+  }, [drag, isOverlapping, onUpdateBlock, enrichedBlocks, commitDrag]);
 
   const handleCellPointerDown = (e, opId, week) => {
     if (e.button !== 0) return;
     e.preventDefault();
     pointerMoved.current = false;
 
-    const block = vacationBlocks.find(b => b.operatorId === opId && week >= b.startWeek && week <= b.endWeek);
+    const block = enrichedBlocks.find(b => b.operatorId === opId && week >= b.startWeek && week <= b.endWeek);
     if (block) {
       const offsetWeek = week - block.startWeek;
       setDrag({ type: 'moving', blockId: block.id, opId, origStart: block.startWeek, origEnd: block.endWeek, pointerOffsetWeek: offsetWeek, currentWeek: week, currentOpId: opId });
@@ -130,12 +150,12 @@ export default function CalendarGrid({
     }
     if (drag && drag.type === 'moving' && !pointerMoved.current) {
       setDrag(null);
-      const block = vacationBlocks.find(b => b.id === drag.blockId);
+      const block = enrichedBlocks.find(b => b.id === drag.blockId);
       if (block) setPopover({ x: e.clientX, y: e.clientY, block });
       return;
     }
     if (drag && drag.type === 'drawing' && !pointerMoved.current) {
-      onAddBlock(drag.opId, drag.startWeek, drag.startWeek);
+      onAddBlock(drag.opId, weekToStartDate(drag.startWeek), weekToEndDate(drag.startWeek));
       setDrag(null);
     }
   };
@@ -202,7 +222,7 @@ export default function CalendarGrid({
       {/* Grid */}
       <div ref={gridWrapperRef} data-testid="grid-wrapper" className="flex-1 relative flex flex-col overflow-hidden">
         <DayZoomGrid
-          operators={operators} vacationBlocks={vacationBlocks} demand={demand}
+          operators={operators} vacationBlocks={enrichedBlocks} demand={demand}
           settings={settings} weeks={weeks} holidayMap={holidayMap} groups={groups}
           drag={drag}
           showDayCoverage={showDayCoverage} onToggleDayCoverage={() => setShowDayCoverage(c => !c)}
@@ -222,7 +242,7 @@ export default function CalendarGrid({
           dateStr={popover.dateStr}
           onSetStatus={onSetBlockStatus} onDelete={onDeleteBlock}
           onSetDayStatus={onSetBlockDayStatus} onClearDayStatus={onClearBlockDayStatus}
-          onSetNote={onSetBlockNote}
+          onSetComment={onSetBlockComment}
           onClose={() => setPopover(null)} />
       )}
     </div>

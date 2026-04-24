@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import CoverageRows from './CoverageRows';
 import { CELL_H, LABEL_W, STATUS_LABELS, SWEDISH_DAYS, stToken, getInitials, indexBlocksByOp } from './constants';
-import { isoWeekDates, formatDateStr } from '../../dateUtils';
+import { isoWeekDates, formatDateStr, getISOWeekMonday, getISOWeekFriday } from '../../dateUtils';
 
 const DAY_COL_W = 38;
 const WEEK_HDR_H = 28;
@@ -50,7 +50,7 @@ export default function DayZoomGrid({
     if (block) {
       setPopover({ x: e.clientX, y: e.clientY, block, dateStr });
     } else if (onAddBlock) {
-      onAddBlock(op.id, week, week);
+      onAddBlock(op.id, getISOWeekMonday(year, week), getISOWeekFriday(year, week));
     }
   };
 
@@ -185,7 +185,7 @@ export default function DayZoomGrid({
                       const st = stToken(dayStatus);
                       const bgVar = `var(--st-${st}-bg)`;
                       const bdVar = `var(--st-${st}-bd)`;
-                      const isDashed = dayStatus === 'requested';
+                      const isDashed = dayStatus === 'ansökt';
                       const bStyle = isDashed ? 'dashed' : 'solid';
                       cellStyle = {
                         background: bgVar,
@@ -244,7 +244,7 @@ export default function DayZoomGrid({
                           <span className="nk-status-chip"
                             style={{
                               background: `var(--st-${stToken(dayStatus)}-bd)`,
-                              color: dayStatus === 'approved' ? 'var(--ink)' : '#fff',
+                              color: dayStatus === 'beviljad' ? 'var(--ink)' : '#fff',
                             }}>
                             {STATUS_LABELS[dayStatus]?.slice(0, 3)}
                           </span>
@@ -253,9 +253,9 @@ export default function DayZoomGrid({
                           <span className="absolute top-0 right-0.5 text-[7px] pointer-events-none"
                             style={{ color: 'var(--indigo)' }}>●</span>
                         )}
-                        {block?.note && isAbsStart && (
+                        {block?.comment && isAbsStart && (
                           <span className="absolute top-0 left-0.5 text-[8px] pointer-events-none"
-                            title={block.note} aria-label="Has note">💬</span>
+                            title={block.comment} aria-label="Has comment">💬</span>
                         )}
                         {/* Right resize handle */}
                         {block && isAbsEnd && onResizePointerDown && (

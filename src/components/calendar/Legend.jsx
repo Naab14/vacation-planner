@@ -1,10 +1,9 @@
 const items = [
-  { label: 'Utkast', bg: 'var(--draft-bg)', border: 'var(--draft-border)', style: {} },
-  { label: 'Väntande', bg: 'var(--pending-bg)', border: 'var(--pending-border)', style: {} },
-  { label: 'Godkänd', bg: 'var(--approved-bg)', border: 'var(--approved-border)', style: {} },
-  { label: 'Begärd', bg: 'var(--requested-bg)', border: 'var(--requested-border)',
-    style: { backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(0,0,0,0.1) 2px, rgba(0,0,0,0.1) 4px)', borderStyle: 'dashed', opacity: 0.65 } },
-  { label: 'Helgdag', bg: 'var(--holiday-bg)', border: 'var(--holiday-border)', style: {} },
+  { label: 'Utkast',   bg: 'var(--st-draft-bg)',    border: 'var(--st-draft-bd)',    style: {} },
+  { label: 'Ansökt',   bg: 'var(--st-pending-bg)',  border: 'var(--st-pending-bd)',
+    style: { backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(0,0,0,0.1) 2px, rgba(0,0,0,0.1) 4px)', borderStyle: 'dashed' } },
+  { label: 'Beviljad', bg: 'var(--st-approved-bg)', border: 'var(--st-approved-bd)', style: {} },
+  { label: 'Helgdag',  bg: 'var(--holiday-bg)',     border: 'var(--holiday-border)', style: {} },
 ];
 
 export default function Legend() {

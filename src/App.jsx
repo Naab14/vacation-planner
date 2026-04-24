@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useReducer } from 'react';
 import { seedOperators, seedVacationBlocks, buildDefaultDemand, defaultSettings } from './data';
+import { migrateState } from './migration';
 import {
   saveState, loadState, clearState,
   saveTheme, loadTheme,
@@ -29,12 +30,12 @@ function getDefaults() {
     return { state: shared, wasShared: true };
   }
   return {
-    state: loadState() || {
+    state: loadState() || migrateState({
       operators: seedOperators,
       vacationBlocks: seedVacationBlocks,
       demand: buildDefaultDemand(),
       settings: defaultSettings,
-    },
+    }),
     wasShared: false,
   };
 }
@@ -140,8 +141,8 @@ export default function App() {
   const update = useCallback(patch => setFn(s => ({ ...s, ...patch })), [setFn]);
   const updateOp = useCallback((id, patch) =>
     setFn(s => ({ ...s, operators: s.operators.map(o => o.id === id ? { ...o, ...patch } : o) })), [setFn]);
-  const addBlock = useCallback((opId, sw, ew, status = 'draft') =>
-    setFn(s => ({ ...s, vacationBlocks: [...s.vacationBlocks, { id: uid(), operatorId: opId, startWeek: sw, endWeek: ew, status }] })), [setFn]);
+  const addBlock = useCallback((opId, startDate, endDate, status = 'draft') =>
+    setFn(s => ({ ...s, vacationBlocks: [...s.vacationBlocks, { id: uid(), operatorId: opId, startDate, endDate, type: 'semester', status, comment: '' }] })), [setFn]);
   const updateBlock = useCallback((id, patch) =>
     setFn(s => ({ ...s, vacationBlocks: s.vacationBlocks.map(b => b.id === id ? { ...b, ...patch } : b) })), [setFn]);
   const deleteBlock = useCallback(id =>
@@ -166,15 +167,14 @@ export default function App() {
         return { ...b, dayStatuses: Object.keys(rest).length ? rest : undefined };
       }),
     })), [setFn]);
-  const setBlockNote = useCallback((id, note) =>
+  const setBlockComment = useCallback((id, comment) =>
     setFn(s => ({
       ...s,
       vacationBlocks: s.vacationBlocks.map(b => {
         if (b.id !== id) return b;
-        const trimmed = (note || '').trim();
-        if (trimmed === (b.note || '')) return b;
-        if (!trimmed) { const { note: _omit, ...rest } = b; return rest; }
-        return { ...b, note: trimmed };
+        const trimmed = (comment || '').trim();
+        if (trimmed === (b.comment || '')) return b;
+        return { ...b, comment: trimmed };
       }),
     })), [setFn]);
   const setShiftMode = useCallback(m =>
@@ -246,7 +246,12 @@ export default function App() {
   const handleReset = useCallback(() => {
     if (confirm('Reset all data to defaults? This cannot be undone.')) {
       clearState();
-      setFn(() => ({ operators: seedOperators, vacationBlocks: seedVacationBlocks, demand: buildDefaultDemand(), settings: defaultSettings }));
+      setFn(() => migrateState({
+        operators: seedOperators,
+        vacationBlocks: seedVacationBlocks,
+        demand: buildDefaultDemand(),
+        settings: defaultSettings,
+      }));
       flash('Reset to defaults');
     }
   }, [setFn]);
@@ -306,7 +311,7 @@ export default function App() {
           onAddBlock={addBlock} onUpdateBlock={updateBlock}
           onDeleteBlock={deleteBlock} onSetBlockStatus={setBlockStatus}
           onSetBlockDayStatus={setBlockDayStatus} onClearBlockDayStatus={clearBlockDayStatus}
-          onSetBlockNote={setBlockNote}
+          onSetBlockComment={setBlockComment}
           setStartWeek={setStartWeek}
           setVisibleWeeks={setVisibleWeeks}
           showDemand={showDemand}

@@ -1,11 +1,17 @@
 import { PROCESSES } from './data';
+import { blockCoversWeek } from './dateUtils';
+
+const DEFAULT_YEAR = () => new Date().getFullYear();
 
 /**
  * Calculate weekly coverage across all processes intelligently.
  * Operators with one cert get assigned first.
  * Multi-certified operators get assigned dynamically to the process with the highest need.
+ *
+ * Blocks are expected to carry startDate/endDate (YYYY-MM-DD). A block blocks
+ * an operator's coverage only when status === 'beviljad'.
  */
-export function getAllCoverageForWeek(operators, vacationBlocks, demand, week, shiftMode, shiftFilter, holidayMap) {
+export function getAllCoverageForWeek(operators, vacationBlocks, demand, week, shiftMode, shiftFilter, holidayMap, year = DEFAULT_YEAR()) {
   const coverageMap = {};
   
   // Initialize map
@@ -30,7 +36,11 @@ export function getAllCoverageForWeek(operators, vacationBlocks, demand, week, s
   // Check vacations
   const activeOps = [];
   eligible.forEach(op => {
-    const isVacation = vacationBlocks.some(vb => vb.operatorId === op.id && vb.status === 'approved' && week >= vb.startWeek && week <= vb.endWeek);
+    const isVacation = vacationBlocks.some(vb =>
+      vb.operatorId === op.id &&
+      vb.status === 'beviljad' &&
+      blockCoversWeek(vb, week, year)
+    );
     if (isVacation) {
       // Mark as out in all their certified processes to show who is missing
       op.certifications.forEach(cert => {
@@ -93,7 +103,7 @@ export function getAllCoverageForWeek(operators, vacationBlocks, demand, week, s
  * Fallback backward compatibility for individual cell lookups.
  * It's cleaner to precompute globally but this maintains existing API signature.
  */
-export function getCoverage(operators, vacationBlocks, demand, process, week, shiftMode, shiftFilter, holidayMap) {
-  const globalCoverage = getAllCoverageForWeek(operators, vacationBlocks, demand, week, shiftMode, shiftFilter, holidayMap);
+export function getCoverage(operators, vacationBlocks, demand, process, week, shiftMode, shiftFilter, holidayMap, year = DEFAULT_YEAR()) {
+  const globalCoverage = getAllCoverageForWeek(operators, vacationBlocks, demand, week, shiftMode, shiftFilter, holidayMap, year);
   return globalCoverage[process];
 }

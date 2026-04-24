@@ -1,12 +1,20 @@
 import { describe, it, expect } from 'vitest';
 import { getCoverage, getAllCoverageForWeek } from '../coverage';
 import { PROCESSES, buildDefaultDemand } from '../data';
+import { getISOWeekMonday, getISOWeekFriday } from '../dateUtils';
+
+const YEAR = new Date().getFullYear();
 
 const makeOp = (id, shift = 'S1', active = true, certifications = []) =>
   ({ id, name: `Op ${id}`, shift, active, certifications });
 
-const makeBlock = (id, operatorId, startWeek, endWeek, status = 'approved') =>
-  ({ id, operatorId, startWeek, endWeek, status });
+const makeBlock = (id, operatorId, startWeek, endWeek, status = 'beviljad') =>
+  ({
+    id, operatorId,
+    startDate: getISOWeekMonday(YEAR, startWeek),
+    endDate: getISOWeekFriday(YEAR, endWeek),
+    status,
+  });
 
 const defaultDemand = buildDefaultDemand();
 const emptyHolidays = {};
@@ -36,12 +44,12 @@ describe('getCoverage', () => {
     expect(result.level).toBe('red');
   });
 
-  it('excludes operators on approved vacation', () => {
+  it('excludes operators on beviljad vacation', () => {
     const ops = [
       makeOp('1', 'S1', true, ['Avsyning']),
       makeOp('2', 'S1', true, ['Avsyning']),
     ];
-    const blocks = [makeBlock('b1', '1', 10, 12, 'approved')];
+    const blocks = [makeBlock('b1', '1', 10, 12, 'beviljad')];
     const result = getCoverage(ops, blocks, defaultDemand, 'Avsyning', 10, 'combined', null, emptyHolidays);
     expect(result.covered).toBe(1);
     expect(result.operatorsOut).toHaveLength(1);
@@ -99,7 +107,7 @@ describe('getAllCoverageForWeek — multi-cert assignment', () => {
 
   it('handles all operators on vacation', () => {
     const ops = [makeOp('1', 'S1', true, ['Avsyning'])];
-    const blocks = [makeBlock('b1', '1', 1, 52, 'approved')];
+    const blocks = [makeBlock('b1', '1', 1, 52, 'beviljad')];
     const result = getAllCoverageForWeek(ops, blocks, defaultDemand, 10, 'combined', null, emptyHolidays);
     expect(result['Avsyning'].covered).toBe(0);
     expect(result['Avsyning'].level).toBe('red');

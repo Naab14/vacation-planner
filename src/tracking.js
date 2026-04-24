@@ -1,8 +1,8 @@
-import { isoWeekDates, formatDateStr } from './dateUtils';
+import { isoWeekDates, formatDateStr, getISOWeek } from './dateUtils';
 
 export const DEFAULT_HOURS_PER_DAY = 8;
 export const DEFAULT_WORK_DAYS = [1, 2, 3, 4, 5];
-export const TRACKED_STATUSES = ['draft', 'pending', 'approved', 'requested'];
+export const TRACKED_STATUSES = ['draft', 'ansökt', 'beviljad'];
 
 function dayOfWeekIso(d) {
   return d.getDay() === 0 ? 7 : d.getDay();
@@ -30,8 +30,11 @@ export function getBusinessDaysInWeek(year, weekNumber, holidayMap = {}, workDay
 
 export function getBlockWorkDays(block, year, holidayMap = {}, workDays = DEFAULT_WORK_DAYS) {
   const out = [];
-  for (let w = block.startWeek; w <= block.endWeek; w++) {
+  const startW = getISOWeek(block.startDate);
+  const endW = getISOWeek(block.endDate);
+  for (let w = startW; w <= endW; w++) {
     for (const dateStr of getBusinessDaysInWeek(year, w, holidayMap, workDays)) {
+      if (dateStr < block.startDate || dateStr > block.endDate) continue;
       const status = block.dayStatuses?.[dateStr] ?? block.status;
       out.push({ dateStr, week: w, status });
     }
@@ -45,6 +48,8 @@ export function getBlockHours(block, year, holidayMap = {}, config = {}) {
   const days = getBlockWorkDays(block, year, holidayMap, workDays);
   const out = emptyHoursByStatus();
   for (const d of days) {
+    if (config.periodStart != null && d.week < config.periodStart) continue;
+    if (config.periodEnd != null && d.week > config.periodEnd) continue;
     if (!TRACKED_STATUSES.includes(d.status)) continue;
     out[d.status] += hoursPerDay;
     out.total += hoursPerDay;
@@ -57,13 +62,14 @@ export function getOperatorVacationHours(operatorId, blocks, year, periodStart, 
   const keys = Object.keys(totals);
   for (const block of blocks) {
     if (block.operatorId !== operatorId) continue;
-    if (block.endWeek < periodStart || block.startWeek > periodEnd) continue;
-    const clipped = {
-      ...block,
-      startWeek: Math.max(block.startWeek, periodStart),
-      endWeek: Math.min(block.endWeek, periodEnd),
-    };
-    const h = getBlockHours(clipped, year, holidayMap, config);
+    const bStart = getISOWeek(block.startDate);
+    const bEnd = getISOWeek(block.endDate);
+    if (bEnd < periodStart || bStart > periodEnd) continue;
+    const h = getBlockHours(block, year, holidayMap, {
+      ...config,
+      periodStart,
+      periodEnd,
+    });
     for (const k of keys) totals[k] += h[k];
   }
   return totals;

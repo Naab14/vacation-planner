@@ -2,12 +2,20 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import CalendarGrid from '../components/calendar/CalendarGrid';
 import { buildDefaultDemand, defaultSettings, PROCESSES } from '../data';
+import { getISOWeekMonday, getISOWeekFriday } from '../dateUtils';
+
+const YEAR = new Date().getFullYear();
 
 const makeOp = (id, shift = 'S1', active = true, certifications = PROCESSES) =>
   ({ id, name: `Op ${id}`, shift, active, certifications });
 
 const makeBlock = (id, operatorId, startWeek, endWeek, status = 'draft') =>
-  ({ id, operatorId, startWeek, endWeek, status });
+  ({
+    id, operatorId,
+    startDate: getISOWeekMonday(YEAR, startWeek),
+    endDate: getISOWeekFriday(YEAR, endWeek),
+    status,
+  });
 
 const defaultProps = () => ({
   operators: [makeOp('1'), makeOp('2', 'S2')],
@@ -121,18 +129,18 @@ describe('CalendarGrid', () => {
     expect(screen.getByText('Utk')).toBeInTheDocument();
   });
 
-  it('shows note indicator on blocks that have a note', () => {
+  it('shows comment indicator on blocks that have a comment', () => {
     const props = defaultProps();
-    props.vacationBlocks = [{ ...makeBlock('b1', '1', 16, 18), note: 'Parental leave' }];
+    props.vacationBlocks = [{ ...makeBlock('b1', '1', 16, 18), comment: 'Parental leave' }];
     render(<CalendarGrid {...props} />);
-    expect(screen.getByLabelText('Has note')).toBeInTheDocument();
+    expect(screen.getByLabelText('Has comment')).toBeInTheDocument();
   });
 
-  it('does not show note indicator on blocks without a note', () => {
+  it('does not show comment indicator on blocks without a comment', () => {
     const props = defaultProps();
     props.vacationBlocks = [makeBlock('b1', '1', 16, 18)];
     render(<CalendarGrid {...props} />);
-    expect(screen.queryByLabelText('Has note')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Has comment')).not.toBeInTheDocument();
   });
 
   it('shows tools row when gear button clicked', () => {
@@ -140,7 +148,7 @@ describe('CalendarGrid', () => {
     render(<CalendarGrid {...props} />);
     fireEvent.click(screen.getByText('⚙'));
     expect(screen.getByText('Utkast')).toBeInTheDocument();
-    expect(screen.getByText('Godkänd')).toBeInTheDocument();
+    expect(screen.getByText('Beviljad')).toBeInTheDocument();
   });
 
   it('shows demand toggle in tools row', () => {
@@ -182,7 +190,7 @@ describe('CalendarGrid', () => {
   it('vacation block overrides holiday stripe (block styling wins)', () => {
     const props = defaultProps();
     props.holidayMap = { 17: { holidays: [{ name: 'Testhelg', dateStr: '2026-04-20', year: 2026 }] } };
-    props.vacationBlocks = [makeBlock('b1', '1', 17, 17, 'approved')];
+    props.vacationBlocks = [makeBlock('b1', '1', 17, 17, 'beviljad')];
     render(<CalendarGrid {...props} />);
     const cell = document.querySelector('[data-week="17"][data-op="1"]');
     expect(cell.style.background).not.toContain('holiday-pattern');

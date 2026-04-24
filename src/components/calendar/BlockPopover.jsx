@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { STATUS_COLORS, STATUS_LABELS, STATUSES } from './constants';
 
-export default function BlockPopover({ x, y, block, dateStr, onSetStatus, onDelete, onSetDayStatus, onClearDayStatus, onSetNote, onClose }) {
+export default function BlockPopover({ x, y, block, dateStr, onSetStatus, onDelete, onSetDayStatus, onClearDayStatus, onSetComment, onClose }) {
   const ref = useRef(null);
-  const [noteDraft, setNoteDraft] = useState(block?.note || '');
+  const [commentDraft, setCommentDraft] = useState(block?.comment || '');
 
   useEffect(() => {
     const handler = e => { if (ref.current && !ref.current.contains(e.target)) onClose(); };
@@ -15,10 +15,10 @@ export default function BlockPopover({ x, y, block, dateStr, onSetStatus, onDele
 
   if (!block) return null;
 
-  const commitNote = () => {
-    if (!onSetNote) return;
-    if (noteDraft === (block.note || '')) return;
-    onSetNote(block.id, noteDraft);
+  const commitComment = () => {
+    if (!onSetComment) return;
+    if (commentDraft === (block.comment || '')) return;
+    onSetComment(block.id, commentDraft);
   };
 
   const dayStatus = dateStr ? (block.dayStatuses?.[dateStr] || block.status) : null;
@@ -52,7 +52,7 @@ export default function BlockPopover({ x, y, block, dateStr, onSetStatus, onDele
               <span className="w-3 h-3 rounded-sm inline-block flex-shrink-0"
                 style={{
                   background: STATUS_COLORS[s].bg, border: `1px solid ${STATUS_COLORS[s].border}`,
-                  ...(s === 'requested' ? { borderStyle: 'dashed' } : {}),
+                  ...(s === 'ansökt' ? { borderStyle: 'dashed' } : {}),
                 }} />
               {STATUS_LABELS[s]}
               {s === block.status && !hasOverride && <span className="ml-auto text-[10px]" style={{ color: 'var(--ink-mute)' }}>(block)</span>}
@@ -83,29 +83,29 @@ export default function BlockPopover({ x, y, block, dateStr, onSetStatus, onDele
           <span className="w-3 h-3 rounded-sm inline-block flex-shrink-0"
             style={{
               background: STATUS_COLORS[s].bg, border: `1px solid ${STATUS_COLORS[s].border}`,
-              ...(s === 'requested' ? { borderStyle: 'dashed' } : {}),
+              ...(s === 'ansökt' ? { borderStyle: 'dashed' } : {}),
             }} />
           {STATUS_LABELS[s]}
         </button>
       ))}
 
-      {/* Note */}
-      {onSetNote && (
+      {/* Comment */}
+      {onSetComment && (
         <>
           <hr className="nk-popover-divider" />
           <div className="nk-popover-lbl px-3 py-1">
-            Anteckning
+            Kommentar
           </div>
           <div className="px-3 pb-2">
             <textarea
-              aria-label="Block note"
-              placeholder="Lägg till anteckning…"
-              value={noteDraft}
-              onChange={e => setNoteDraft(e.target.value)}
-              onBlur={commitNote}
+              aria-label="Block comment"
+              placeholder="Lägg till kommentar…"
+              value={commentDraft}
+              onChange={e => setCommentDraft(e.target.value)}
+              onBlur={commitComment}
               onKeyDown={e => {
                 if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-                  e.preventDefault(); commitNote(); onClose();
+                  e.preventDefault(); commitComment(); onClose();
                 }
               }}
               rows={3}

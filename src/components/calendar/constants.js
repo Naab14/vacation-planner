@@ -3,17 +3,18 @@ export const CELL_H = 32;
 export const LABEL_W = 130;
 
 export const STATUS_COLORS = {
-  draft:     { bg: 'var(--st-draft-bg)',    border: 'var(--st-draft-bd)' },
-  pending:   { bg: 'var(--st-pending-bg)',  border: 'var(--st-pending-bd)' },
-  approved:  { bg: 'var(--st-approved-bg)', border: 'var(--st-approved-bd)' },
-  requested: { bg: 'var(--st-req-bg)',      border: 'var(--st-req-bd)' },
+  draft:    { bg: 'var(--st-draft-bg)',    border: 'var(--st-draft-bd)' },
+  ansökt:   { bg: 'var(--st-pending-bg)',  border: 'var(--st-pending-bd)' },
+  beviljad: { bg: 'var(--st-approved-bg)', border: 'var(--st-approved-bd)' },
 };
 
-export const STATUS_LABELS = { draft: 'Utkast', pending: 'Väntande', approved: 'Godkänd', requested: 'Begärd' };
-export const STATUSES = ['draft', 'pending', 'approved', 'requested'];
+export const STATUS_LABELS = { draft: 'Utkast', ansökt: 'Ansökt', beviljad: 'Beviljad' };
+export const STATUSES = ['draft', 'ansökt', 'beviljad'];
 
 export function stToken(status) {
-  return status === 'requested' ? 'req' : status;
+  if (status === 'ansökt') return 'pending';
+  if (status === 'beviljad') return 'approved';
+  return 'draft';
 }
 
 export function getInitials(name) {
