@@ -1,13 +1,6 @@
 import { useState, useMemo } from 'react';
 import { PROCESSES } from '../data';
-
-const CERT_COLORS = {
-  'Avsyning':                  'var(--coral)',
-  'Kapselresaren':             'var(--indigo)',
-  'Serialisering':             '#2DD4BF',
-  'Etikettering':              'var(--yellow)',
-  'Granskning/uttag av dok':   '#60A5FA',
-};
+import { CERT_ICONS, CERT_COLORS } from '../certIcons';
 
 const firstInitial = name => (name.trim().split(/\s+/)[0]?.[0] || '').toUpperCase();
 
@@ -160,14 +153,20 @@ export default function OperatorPanel({
                     }}>
                     <div className={`nk-op-avatar ${shiftClass}`}>{firstInitial(op.name)}</div>
                     <div className="flex items-center gap-1 flex-1 min-w-0">
-                      {op.certifications.map(cert => (
-                        <span
-                          key={cert}
-                          className="nk-cert-dot"
-                          style={{ background: CERT_COLORS[cert] || 'var(--ink-mute)' }}
-                          title={cert}
-                        />
-                      ))}
+                      {op.certifications.map(cert => {
+                        const Icon = CERT_ICONS[cert];
+                        return (
+                          <span
+                            key={cert}
+                            className="nk-cert-icon"
+                            style={{ color: CERT_COLORS[cert] || 'var(--ink-mute)' }}
+                            title={cert}
+                            aria-label={cert}
+                          >
+                            {Icon ? <Icon size={14} strokeWidth={2.25} /> : '•'}
+                          </span>
+                        );
+                      })}
                     </div>
                   </div>
 

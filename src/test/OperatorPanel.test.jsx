@@ -204,14 +204,14 @@ describe('OperatorPanel', () => {
     expect(screen.getByText('Skift 2')).toBeInTheDocument();
   });
 
-  it('renders cert dots for operator certifications', () => {
+  it('renders cert icons for operator certifications', () => {
     const props = defaultProps();
     props.operators = [makeOp('1', 'Anna Lindgren', 'S1', true, ['Avsyning', 'Serialisering'])];
     render(<OperatorPanel {...props} />);
-    const dots = document.querySelectorAll('.nk-cert-dot');
-    expect(dots.length).toBe(2);
-    expect(dots[0].title).toBe('Avsyning');
-    expect(dots[1].title).toBe('Serialisering');
+    const icons = document.querySelectorAll('.nk-cert-icon');
+    expect(icons.length).toBe(2);
+    expect(icons[0].title).toBe('Avsyning');
+    expect(icons[1].title).toBe('Serialisering');
   });
 
   it('calls onSelectOperator when card clicked', () => {
