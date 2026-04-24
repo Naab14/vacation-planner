@@ -187,8 +187,11 @@ export default function DayZoomGrid({
                       const bdVar = `var(--st-${st}-bd)`;
                       const isDashed = dayStatus === 'ansökt';
                       const bStyle = isDashed ? 'dashed' : 'solid';
+                      const cellBg = isDashed
+                        ? `repeating-linear-gradient(45deg, ${bgVar} 0 4px, color-mix(in srgb, ${bdVar} 18%, transparent) 4px 8px)`
+                        : bgVar;
                       cellStyle = {
-                        background: bgVar,
+                        background: cellBg,
                         borderTop: `2px ${bStyle} ${bdVar}`,
                         borderBottom: `2px ${bStyle} ${bdVar}`,
                         cursor: 'pointer', zIndex: 1,
