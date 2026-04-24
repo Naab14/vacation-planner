@@ -1,8 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
 
+const VIEWS = [
+  { id: 'calendar', label: 'Kalender' },
+  { id: 'matrix',   label: 'Matris' },
+  { id: 'roadmap',  label: 'Roadmap' },
+];
+
 export default function TopBar({
   onImportCSV, onExportCSV, onSave, onExportJSON, onImportJSON, onReset, onShare,
   onUndo, onRedo, canUndo, canRedo,
+  view, onViewChange,
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
@@ -48,6 +55,23 @@ export default function TopBar({
           ↷
         </button>
       </div>
+
+      {/* View switcher */}
+      {view && onViewChange && (
+        <div className="nk-view-tabs ml-3" role="tablist" aria-label="View">
+          {VIEWS.map(v => (
+            <button
+              key={v.id}
+              role="tab"
+              aria-selected={view === v.id}
+              className={view === v.id ? 'active' : ''}
+              onClick={() => onViewChange(v.id)}
+            >
+              {v.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Spacer */}
       <div className="flex-1" />

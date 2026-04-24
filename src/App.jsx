@@ -18,6 +18,7 @@ import TopBar from './components/TopBar';
 import SettingsPanel from './components/SettingsPanel';
 import OperatorPanel from './components/OperatorPanel';
 import CalendarGrid from './components/calendar/CalendarGrid';
+import CertificationMatrix from './components/CertificationMatrix';
 
 /* ── Utility ──────────────────────────────────────────────────────────────── */
 let _uid = 0;
@@ -69,6 +70,7 @@ export default function App() {
   const [showOperatorMgmt, setShowOperatorMgmt] = useState(false);
   const [selectedOperatorId, setSelectedOperatorId] = useState(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(!!storedUI.sidebarCollapsed);
+  const [view, setView] = useState(storedUI.view || 'calendar');
   const { isMobile, isTablet, isDesktop } = useBreakpoint();
 
   // Auto-collapse sidebar on tablet/mobile; restore latest persisted preference on desktop
@@ -121,8 +123,8 @@ export default function App() {
 
   // Persist UI preferences
   useEffect(() => {
-    saveUI({ sidebarCollapsed, mode, density, grain, asym, settingsPanelCollapsed });
-  }, [sidebarCollapsed, mode, density, grain, asym, settingsPanelCollapsed]);
+    saveUI({ sidebarCollapsed, mode, density, grain, asym, settingsPanelCollapsed, view });
+  }, [sidebarCollapsed, mode, density, grain, asym, settingsPanelCollapsed, view]);
 
   // Keyboard shortcuts: Ctrl/Cmd+Z = undo, Ctrl/Cmd+Shift+Z = redo
   useEffect(() => {
@@ -301,6 +303,7 @@ export default function App() {
         onShare={handleShare}
         onUndo={undo} onRedo={redo}
         canUndo={canUndo} canRedo={canRedo}
+        view={view} onViewChange={setView}
       />
 
       {/* ── Main content ─────────────────────────────────────────────────── */}
@@ -337,22 +340,32 @@ export default function App() {
           onSelectOperator={setSelectedOperatorId}
         />
 
-        {/* Center: Calendar */}
-        <CalendarGrid
-          operators={operators} vacationBlocks={vacationBlocks}
-          demand={demand} settings={settings} weeks={weeks}
-          holidayMap={holidayMap}
-          onAddBlock={addBlock} onUpdateBlock={updateBlock}
-          onDeleteBlock={deleteBlock} onSetBlockStatus={setBlockStatus}
-          onSetBlockDayStatus={setBlockDayStatus} onClearBlockDayStatus={clearBlockDayStatus}
-          onSetBlockComment={setBlockComment}
-          setStartWeek={setStartWeek}
-          setVisibleWeeks={setVisibleWeeks}
-          showDemand={showDemand}
-          onToggleDemand={() => setShowDemand(p => !p)}
-          selectedOperatorId={selectedOperatorId}
-          onSelectOperator={setSelectedOperatorId}
-        />
+        {/* Center: Main view — Calendar / Matrix / Roadmap */}
+        {view === 'calendar' && (
+          <CalendarGrid
+            operators={operators} vacationBlocks={vacationBlocks}
+            demand={demand} settings={settings} weeks={weeks}
+            holidayMap={holidayMap}
+            onAddBlock={addBlock} onUpdateBlock={updateBlock}
+            onDeleteBlock={deleteBlock} onSetBlockStatus={setBlockStatus}
+            onSetBlockDayStatus={setBlockDayStatus} onClearBlockDayStatus={clearBlockDayStatus}
+            onSetBlockComment={setBlockComment}
+            setStartWeek={setStartWeek}
+            setVisibleWeeks={setVisibleWeeks}
+            showDemand={showDemand}
+            onToggleDemand={() => setShowDemand(p => !p)}
+            selectedOperatorId={selectedOperatorId}
+            onSelectOperator={setSelectedOperatorId}
+          />
+        )}
+        {view === 'matrix' && (
+          <CertificationMatrix operators={operators} />
+        )}
+        {view === 'roadmap' && (
+          <div className="flex-1 flex items-center justify-center" style={{ color: 'var(--ink-mute)' }}>
+            <span>Roadmap kommer snart</span>
+          </div>
+        )}
       </div>
 
       {/* Toast — Neo-Kinetic pill */}
