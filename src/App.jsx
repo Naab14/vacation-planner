@@ -19,6 +19,7 @@ import SettingsPanel from './components/SettingsPanel';
 import OperatorPanel from './components/OperatorPanel';
 import CalendarGrid from './components/calendar/CalendarGrid';
 import CertificationMatrix from './components/CertificationMatrix';
+import RoadmapDashboard from './components/RoadmapDashboard';
 
 /* ── Utility ──────────────────────────────────────────────────────────────── */
 let _uid = 0;
@@ -362,9 +363,7 @@ export default function App() {
           <CertificationMatrix operators={operators} />
         )}
         {view === 'roadmap' && (
-          <div className="flex-1 flex items-center justify-center" style={{ color: 'var(--ink-mute)' }}>
-            <span>Roadmap kommer snart</span>
-          </div>
+          <RoadmapDashboard />
         )}
       </div>
 
