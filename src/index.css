@@ -915,3 +915,84 @@ body[data-density='spacious'] .nk-op-group-title { padding: 16px 6px 8px; }
 }
 .nk-sp-mode-btn:hover { border-color: var(--ink); color: var(--ink); }
 .nk-sp-mode-btn.dark-active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+/* ── SettingsPanel: collapsible sections (demand, leave types) ────────── */
+.nk-sp-collapser {
+  appearance: none; border: 0; background: transparent; cursor: pointer;
+  width: 100%; padding: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  color: var(--ink-mute);
+}
+.nk-sp-collapser:hover { color: var(--ink); }
+.nk-sp-chev { font-size: 10px; color: var(--ink-mute); }
+
+/* Demand editor — one row per process, chip per week */
+.nk-sp-demand { margin-top: 8px; display: flex; flex-direction: column; gap: 8px; }
+.nk-sp-demand-hint {
+  font-family: var(--f-body); font-size: 10px; color: var(--ink-mute);
+  font-style: italic; line-height: 1.35;
+}
+.nk-sp-demand-row {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 6px 8px; background: var(--paper-2);
+  border: 1px solid var(--paper-3); border-radius: var(--r-s);
+}
+.nk-sp-demand-proc {
+  font-family: var(--f-mono); font-size: 10px; font-weight: 700;
+  color: var(--ink); letter-spacing: .04em;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.nk-sp-demand-weeks {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px;
+}
+.nk-sp-demand-cell {
+  display: flex; flex-direction: column; align-items: stretch; gap: 2px;
+}
+.nk-sp-demand-wk {
+  font-family: var(--f-mono); font-size: 8px; color: var(--ink-mute);
+  letter-spacing: .08em; text-align: center;
+}
+.nk-sp-demand-cell input {
+  width: 100%; min-width: 0; padding: 2px 0;
+  font-family: var(--f-mono); font-size: 11px; font-weight: 700;
+  text-align: center; color: var(--ink);
+  background: var(--paper); border: 1px solid var(--paper-3);
+  border-radius: var(--r-s); outline: none;
+}
+.nk-sp-demand-cell input:focus { border-color: var(--indigo); }
+
+/* Leave-type editor */
+.nk-sp-leavetypes { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+.nk-sp-lt-row {
+  display: flex; align-items: center; gap: 6px;
+  padding: 4px 6px; background: var(--paper-2);
+  border: 1px solid var(--paper-3); border-radius: var(--r-s);
+}
+.nk-sp-lt-color {
+  width: 24px; height: 24px; padding: 0; border: 1px solid var(--paper-3);
+  border-radius: var(--r-s); cursor: pointer; background: transparent;
+}
+.nk-sp-lt-label {
+  flex: 1; min-width: 0; padding: 3px 6px;
+  font-family: var(--f-body); font-size: 12px; color: var(--ink);
+  background: var(--paper); border: 1px solid var(--paper-3);
+  border-radius: var(--r-s); outline: none;
+}
+.nk-sp-lt-label:focus { border-color: var(--indigo); }
+.nk-sp-lt-del {
+  appearance: none; border: 0; background: transparent; cursor: pointer;
+  width: 22px; height: 22px; border-radius: 50%;
+  color: var(--ink-mute); font-size: 16px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .12s ease, color .12s ease;
+}
+.nk-sp-lt-del:hover { background: var(--coral); color: #fff; }
+.nk-sp-lt-add {
+  appearance: none; cursor: pointer; padding: 6px 8px;
+  font-family: var(--f-mono); font-size: 10px; font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase;
+  color: var(--indigo); background: transparent;
+  border: 1.5px dashed var(--paper-3); border-radius: var(--r-s);
+  transition: all .12s ease;
+}
+.nk-sp-lt-add:hover { border-color: var(--indigo); background: color-mix(in srgb, var(--indigo) 8%, transparent); }

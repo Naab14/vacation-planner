@@ -177,6 +177,34 @@ export default function App() {
         return { ...b, comment: trimmed };
       }),
     })), [setFn]);
+  const updateDemand = useCallback((proc, week, val) =>
+    setFn(s => ({ ...s, demand: { ...s.demand, [proc]: { ...s.demand[proc], [week]: val } } })), [setFn]);
+  const updateLeaveType = useCallback((id, patch) =>
+    setFn(s => {
+      const current = s.settings.leaveTypes || [];
+      return {
+        ...s,
+        settings: {
+          ...s.settings,
+          leaveTypes: current.map(lt => lt.id === id ? { ...lt, ...patch } : lt),
+        },
+      };
+    }), [setFn]);
+  const addLeaveType = useCallback(() =>
+    setFn(s => {
+      const current = s.settings.leaveTypes || [];
+      const newId = `lt_${Date.now().toString(36)}`;
+      const next = [...current, { id: newId, label: 'Ny typ', color: '#64748b' }];
+      return { ...s, settings: { ...s.settings, leaveTypes: next } };
+    }), [setFn]);
+  const removeLeaveType = useCallback(id =>
+    setFn(s => {
+      const current = s.settings.leaveTypes || [];
+      return {
+        ...s,
+        settings: { ...s.settings, leaveTypes: current.filter(lt => lt.id !== id) },
+      };
+    }), [setFn]);
   const setShiftMode = useCallback(m =>
     setFn(s => ({ ...s, settings: { ...s.settings, shiftMode: m } })), [setFn]);
   const setStartWeek = useCallback(w =>
@@ -283,9 +311,15 @@ export default function App() {
           theme={theme} onThemeChange={setTheme}
           mode={mode} onToggleMode={() => setMode(m => m === 'dark' ? 'light' : 'dark')}
           visibleWeeks={visibleWeeks} onVisibleWeeksChange={setVisibleWeeks}
+          startWeek={startWeek} onStartWeekChange={setStartWeek}
           density={density} onDensityChange={setDensity}
           grain={grain} onGrainChange={setGrain}
           asym={asym} onAsymChange={setAsym}
+          demand={demand} onUpdateDemand={updateDemand}
+          leaveTypes={settings.leaveTypes}
+          onUpdateLeaveType={updateLeaveType}
+          onAddLeaveType={addLeaveType}
+          onRemoveLeaveType={removeLeaveType}
           collapsed={settingsPanelCollapsed}
           onToggleCollapse={() => setSettingsPanelCollapsed(p => !p)}
         />
