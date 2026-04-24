@@ -14,7 +14,7 @@
  * }} VacationBlock
  * @typedef {{ [process: string]: { [week: number]: number } }} Demand
  * @typedef {{
- *   shiftMode: 'separate' | 'combined' | 'summer',
+ *   shiftMode: 'separate' | 'combined',
  *   visibleWeeks: number,
  *   startWeek: number,
  *   leaveTypes?: LeaveType[],

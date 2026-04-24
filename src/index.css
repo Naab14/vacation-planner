@@ -738,7 +738,7 @@ body[data-theme='playful'] .nk-op-filter { border-radius: var(--r-pill); box-sha
 }
 
 /* ── Block cell elevation (Direction A) ───────────────────────────────────── */
-/* Applied to vacation-block cells in WeekZoomGrid + DayZoomGrid */
+/* Applied to vacation-block cells in DayZoomGrid */
 .nk-block-cell {
   transition: transform 0.10s ease, box-shadow 0.10s ease;
 }
