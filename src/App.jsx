@@ -93,9 +93,11 @@ export default function App() {
   const [holidayMap, setHolidayMap] = useState(() => buildHolidayMap());
   const flash = msg => { setToast(msg); setTimeout(() => setToast(null), 3000); };
 
-  // Load holidays async (date-holidays is code-split)
+  // Load holidays async for current + next year (date-holidays is code-split)
   useEffect(() => {
-    initHolidays().then(map => setHolidayMap(map));
+    const year = new Date().getFullYear();
+    initHolidays(year).then(map => setHolidayMap(map));
+    initHolidays(year + 1);
   }, []);
 
   // Auto-dismiss initial toast (shared workspace)
