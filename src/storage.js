@@ -1,3 +1,5 @@
+import { migrateState } from './migration';
+
 const STATE_KEY = 'vacation-planner-state';
 const THEME_KEY = 'vacation-planner-theme';
 const UI_KEY = 'vacation-planner-ui';
@@ -11,7 +13,7 @@ export function saveState(state) {
 export function loadState() {
   try {
     const raw = localStorage.getItem(STATE_KEY);
-    return raw ? JSON.parse(raw) : null;
+    return raw ? migrateState(JSON.parse(raw)) : null;
   } catch (e) { console.warn('Failed to load state:', e); return null; }
 }
 
@@ -84,7 +86,7 @@ export function loadStateFromUrl() {
   const m = hash.match(/#share=([^&]+)/);
   if (!m) return null;
   try {
-    return JSON.parse(base64ToUtf8(m[1]));
+    return migrateState(JSON.parse(base64ToUtf8(m[1])));
   } catch (e) {
     console.warn('Failed to parse shared state:', e);
     return null;

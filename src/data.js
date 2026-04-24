@@ -27,7 +27,7 @@ export const seedOperators = [
   { id: 'op16', name: 'Axel Svensson',   shift: 'S2', active: true, certifications: ['Kapselresaren', 'Serialisering', 'Etikettering'] },
 ];
 
-// ── Seed Vacation Blocks ─────────────────────────────────────────────────────
+// ── Seed Vacation Blocks (week-based; migrated to date-based at init time)
 export const seedVacationBlocks = [
   { id: 'vb1',  operatorId: 'op1',  startWeek: 16, endWeek: 18, status: 'approved' },
   { id: 'vb2',  operatorId: 'op3',  startWeek: 20, endWeek: 22, status: 'pending' },
@@ -51,11 +51,20 @@ export function buildDefaultDemand() {
   return d;
 }
 
+// ── Default Leave Types ─────────────────────────────────────────────────────
+export const defaultLeaveTypes = [
+  { id: 'semester', label: 'Semester',   color: '#22c55e' },
+  { id: 'vab',      label: 'VAB',        color: '#3b82f6' },
+  { id: 'sjuk',     label: 'Sjukdag',    color: '#f43f5e' },
+  { id: 'komp',     label: 'Kompledigt', color: '#a855f7' },
+];
+
 // ── Default Settings ─────────────────────────────────────────────────────────
 export const defaultSettings = {
   shiftMode: 'separate',
   visibleWeeks: 12,
   startWeek: 15,
+  leaveTypes: defaultLeaveTypes,
 };
 
 // ── Themes (Neo-Kinetic Travelogue) ─────────────────────────────────────────

@@ -20,7 +20,7 @@ beforeEach(() => {
 });
 
 describe('state persistence', () => {
-  const testState = { operators: [{ id: '1', name: 'Test' }], vacationBlocks: [], demand: {}, settings: { shiftMode: 'separate', visibleWeeks: 12, startWeek: 15 } };
+  const testState = { operators: [{ id: '1', name: 'Test' }], vacationBlocks: [], demand: {}, settings: { shiftMode: 'separate', visibleWeeks: 12, startWeek: 15, leaveTypes: [] } };
 
   it('saveState + loadState roundtrip', () => {
     saveState(testState);
