@@ -1,4 +1,4 @@
-import { isoWeekDates, formatDateStr } from './components/calendar/dateUtils';
+import { isoWeekDates, formatDateStr } from './dateUtils';
 
 export const DEFAULT_HOURS_PER_DAY = 8;
 export const DEFAULT_WORK_DAYS = [1, 2, 3, 4, 5];

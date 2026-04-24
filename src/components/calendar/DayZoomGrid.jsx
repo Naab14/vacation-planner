@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import CoverageRows from './CoverageRows';
 import { CELL_H, LABEL_W, STATUS_LABELS, SWEDISH_DAYS, stToken, getInitials, indexBlocksByOp } from './constants';
-import { isoWeekDates, formatDateStr } from './dateUtils';
+import { isoWeekDates, formatDateStr } from '../../dateUtils';
 
 const DAY_COL_W = 38;
 const WEEK_HDR_H = 28;
