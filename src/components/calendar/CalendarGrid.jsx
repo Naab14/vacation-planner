@@ -240,6 +240,7 @@ export default function CalendarGrid({
       {popover && (
         <BlockPopover x={popover.x} y={popover.y} block={popover.block}
           dateStr={popover.dateStr}
+          focusComment={popover.focusComment}
           onSetStatus={onSetBlockStatus} onDelete={onDeleteBlock}
           onSetDayStatus={onSetBlockDayStatus} onClearDayStatus={onClearBlockDayStatus}
           onSetComment={onSetBlockComment}

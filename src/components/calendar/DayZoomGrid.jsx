@@ -232,6 +232,11 @@ export default function DayZoomGrid({
                         style={{ width: DAY_COL_W, minWidth: DAY_COL_W, height: CELL_H, borderRight, ...cellStyle }}
                         onPointerDown={onCellPointerDown ? e => onCellPointerDown(e, op.id, c.week) : undefined}
                         onPointerUp={onCellPointerUp ? e => onCellPointerUp(e) : undefined}
+                        onDoubleClick={block ? e => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setPopover({ x: e.clientX, y: e.clientY, block, dateStr: c.dateStr, focusComment: true });
+                        } : undefined}
                         onClick={!onCellPointerDown ? e => handleDayClick(e, op, block, c.dateStr, c.week) : undefined}>
                         {/* Left resize handle */}
                         {block && isAbsStart && onResizePointerDown && (
@@ -254,8 +259,8 @@ export default function DayZoomGrid({
                             style={{ color: 'var(--indigo)' }}>●</span>
                         )}
                         {block?.comment && isAbsStart && (
-                          <span className="absolute top-0 left-0.5 text-[8px] pointer-events-none"
-                            title={block.comment} aria-label="Has comment">💬</span>
+                          <span className="nk-comment-triangle"
+                            title={block.comment} aria-label="Has comment" />
                         )}
                         {/* Right resize handle */}
                         {block && isAbsEnd && onResizePointerDown && (

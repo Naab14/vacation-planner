@@ -1171,3 +1171,12 @@ body[data-density='spacious'] .nk-op-group-title { padding: 16px 6px 8px; }
 .nk-rm-item.done .nk-rm-label { color: var(--ink); }
 .nk-rm-item.partial .nk-rm-label { color: var(--ink); }
 .nk-rm-item.planned .nk-rm-label { color: var(--ink-soft); }
+
+/* Corner-triangle marker on blocks that have a comment */
+.nk-comment-triangle {
+  position: absolute; top: 0; left: 0;
+  width: 0; height: 0; pointer-events: auto;
+  border-style: solid; border-width: 6px 6px 0 0;
+  border-color: var(--indigo) transparent transparent transparent;
+  z-index: 2;
+}

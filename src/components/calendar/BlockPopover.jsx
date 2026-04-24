@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { STATUS_COLORS, STATUS_LABELS, STATUSES } from './constants';
 
-export default function BlockPopover({ x, y, block, dateStr, onSetStatus, onDelete, onSetDayStatus, onClearDayStatus, onSetComment, onClose }) {
+export default function BlockPopover({ x, y, block, dateStr, focusComment, onSetStatus, onDelete, onSetDayStatus, onClearDayStatus, onSetComment, onClose }) {
   const ref = useRef(null);
+  const commentRef = useRef(null);
   const [commentDraft, setCommentDraft] = useState(block?.comment || '');
 
   useEffect(() => {
@@ -12,6 +13,14 @@ export default function BlockPopover({ x, y, block, dateStr, onSetStatus, onDele
     document.addEventListener('keydown', keyHandler);
     return () => { document.removeEventListener('mousedown', handler); document.removeEventListener('keydown', keyHandler); };
   }, [onClose]);
+
+  useEffect(() => {
+    if (focusComment && commentRef.current) {
+      commentRef.current.focus();
+      const len = commentRef.current.value.length;
+      commentRef.current.setSelectionRange(len, len);
+    }
+  }, [focusComment]);
 
   if (!block) return null;
 
@@ -98,6 +107,7 @@ export default function BlockPopover({ x, y, block, dateStr, onSetStatus, onDele
           </div>
           <div className="px-3 pb-2">
             <textarea
+              ref={commentRef}
               aria-label="Block comment"
               placeholder="Lägg till kommentar…"
               value={commentDraft}
