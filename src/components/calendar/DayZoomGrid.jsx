@@ -237,6 +237,11 @@ export default function DayZoomGrid({
                           e.stopPropagation();
                           setPopover({ x: e.clientX, y: e.clientY, block, dateStr: c.dateStr, focusComment: true });
                         } : undefined}
+                        onContextMenu={block ? e => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setPopover({ x: e.clientX, y: e.clientY, block });
+                        } : undefined}
                         onClick={!onCellPointerDown ? e => handleDayClick(e, op, block, c.dateStr, c.week) : undefined}>
                         {/* Left resize handle */}
                         {block && isAbsStart && onResizePointerDown && (
