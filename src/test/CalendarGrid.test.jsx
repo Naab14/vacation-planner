@@ -24,7 +24,6 @@ const defaultProps = () => ({
   setVisibleWeeks: vi.fn(),
   showDemand: false,
   onToggleDemand: vi.fn(),
-  updateDemand: vi.fn(),
   selectedOperatorId: null,
   onSelectOperator: vi.fn(),
 });

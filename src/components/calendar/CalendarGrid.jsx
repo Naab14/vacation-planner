@@ -7,7 +7,7 @@ export default function CalendarGrid({
   operators, vacationBlocks, demand, settings, weeks, holidayMap,
   onAddBlock, onUpdateBlock, onDeleteBlock, onSetBlockStatus,
   onSetBlockDayStatus, onClearBlockDayStatus, onSetBlockNote,
-  setStartWeek, setVisibleWeeks, showDemand, onToggleDemand, updateDemand,
+  setStartWeek, setVisibleWeeks, showDemand, onToggleDemand,
   selectedOperatorId, onSelectOperator,
 }) {
   const { shiftMode, startWeek, visibleWeeks } = settings;

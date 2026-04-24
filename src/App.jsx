@@ -177,8 +177,6 @@ export default function App() {
         return { ...b, note: trimmed };
       }),
     })), [setFn]);
-  const updateDemand = useCallback((proc, week, val) =>
-    setFn(s => ({ ...s, demand: { ...s.demand, [proc]: { ...s.demand[proc], [week]: val } } })), [setFn]);
   const setShiftMode = useCallback(m =>
     setFn(s => ({ ...s, settings: { ...s.settings, shiftMode: m } })), [setFn]);
   const setStartWeek = useCallback(w =>
@@ -313,7 +311,6 @@ export default function App() {
           setVisibleWeeks={setVisibleWeeks}
           showDemand={showDemand}
           onToggleDemand={() => setShowDemand(p => !p)}
-          updateDemand={updateDemand}
           selectedOperatorId={selectedOperatorId}
           onSelectOperator={setSelectedOperatorId}
         />
