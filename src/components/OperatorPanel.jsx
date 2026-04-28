@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { PROCESSES } from '../data';
+import { PROCESSES, formatOperatorName } from '../data';
 import { CERT_ICONS, CERT_COLORS } from '../certIcons';
 
 const firstInitial = name => (name.trim().split(/\s+/)[0]?.[0] || '').toUpperCase();
@@ -152,7 +152,8 @@ export default function OperatorPanel({
                       }
                     }}>
                     <div className={`nk-op-avatar ${shiftClass}`}>{firstInitial(op.name)}</div>
-                    <div className="flex items-center gap-1 flex-1 min-w-0">
+                    <span className="nk-op-name-label" title={op.name}>{formatOperatorName(op.name)}</span>
+                    <div className="flex items-center gap-1 flex-shrink-0 min-w-0">
                       {op.certifications.map(cert => {
                         const Icon = CERT_ICONS[cert];
                         return (
