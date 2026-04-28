@@ -651,6 +651,14 @@ body.nk-on[data-theme='lumina']::before { display: none; }
   color: var(--ink);
   min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
+.nk-op-name-label {
+  font-weight: 600; font-size: 12px;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  min-width: 0; max-width: 96px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  flex-shrink: 0;
+}
 .nk-op-shift {
   font-family: var(--f-mono); font-weight: 700;
   font-size: 9px; letter-spacing: .1em;

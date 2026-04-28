@@ -25,7 +25,7 @@ export default function SettingsPanel({
   leaveTypes, onUpdateLeaveType, onAddLeaveType, onRemoveLeaveType,
   collapsed, onToggleCollapse,
 }) {
-  const [demandOpen, setDemandOpen] = useState(false);
+  const [demandOpen, setDemandOpen] = useState(true);
   const [leaveTypesOpen, setLeaveTypesOpen] = useState(false);
 
   return (

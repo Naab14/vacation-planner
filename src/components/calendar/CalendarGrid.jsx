@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import DayZoomGrid from './DayZoomGrid';
 import BlockPopover from './BlockPopover';
 import Legend from './Legend';
-import { getISOWeek, getISOWeekMonday, getISOWeekFriday } from '../../dateUtils';
+import { getISOWeek, getISOWeekMonday, getISOWeekFriday, blockCoversWeek } from '../../dateUtils';
 
 const YEAR = new Date().getFullYear();
 const weekToStartDate = w => getISOWeekMonday(YEAR, w);
@@ -177,6 +177,30 @@ export default function CalendarGrid({
   const canZoomIn = visibleWeeks > 4;
   const canZoomOut = visibleWeeks < 26;
 
+  // Operators available for the first visible week — not on an approved leave
+  // ("beviljad" status). Inactive operators are excluded from both counts.
+  const availability = useMemo(() => {
+    const week = weeks[0];
+    const activeOps = operators.filter(o => o.active);
+    const isOnApprovedLeave = op => vacationBlocks.some(b =>
+      b.operatorId === op.id && b.status === 'beviljad' && blockCoversWeek(b, week, YEAR),
+    );
+    const tally = ops => {
+      const total = ops.length;
+      const onLeave = ops.filter(isOnApprovedLeave).length;
+      return { total, onLeave, available: total - onLeave };
+    };
+    const all = tally(activeOps);
+    if (shiftMode === 'separate') {
+      return {
+        all,
+        s1: tally(activeOps.filter(o => o.shift === 'S1')),
+        s2: tally(activeOps.filter(o => o.shift === 'S2')),
+      };
+    }
+    return { all };
+  }, [operators, vacationBlocks, weeks, shiftMode]);
+
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       {/* Toolbar */}
@@ -234,6 +258,28 @@ export default function CalendarGrid({
           selectedOperatorId={selectedOperatorId}
           onSelectOperator={onSelectOperator}
         />
+      </div>
+
+      {/* Availability footer — operators not on approved leave for v.{first visible} */}
+      <div className="flex items-center gap-4 px-3 py-1.5 text-xs flex-wrap"
+        style={{ borderTop: '1px solid var(--paper-3)', background: 'var(--paper-2)', color: 'var(--ink)' }}
+        aria-label={`Tillgängliga operatörer vecka ${weeks[0]}`}
+        title={`Operatörer utan beviljad ledighet vecka ${weeks[0]}`}>
+        <span className="font-mono font-bold uppercase tracking-[.18em]" style={{ fontSize: 10, color: 'var(--ink-mute)' }}>
+          Tillgängliga · v.{weeks[0]}
+        </span>
+        <span><strong>{availability.all.available}</strong> / {availability.all.total} totalt</span>
+        {availability.s1 && (
+          <span><span className="font-mono font-semibold" style={{ color: 'var(--ink-mute)' }}>S1</span>{' '}<strong>{availability.s1.available}</strong> / {availability.s1.total}</span>
+        )}
+        {availability.s2 && (
+          <span><span className="font-mono font-semibold" style={{ color: 'var(--ink-mute)' }}>S2</span>{' '}<strong>{availability.s2.available}</strong> / {availability.s2.total}</span>
+        )}
+        {availability.all.onLeave > 0 && (
+          <span style={{ color: 'var(--ink-mute)' }}>
+            ({availability.all.onLeave} på beviljad ledighet)
+          </span>
+        )}
       </div>
 
       {/* Popover */}
