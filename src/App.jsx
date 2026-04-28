@@ -54,7 +54,7 @@ export default function App() {
   const redo = useCallback(() => dispatch({ type: 'REDO' }), []);
   const [theme, setTheme] = useState(loadTheme);
   const [toast, setToast] = useState(initResult.wasShared ? 'Loaded shared workspace' : null);
-  const [showDemand, setShowDemand] = useState(false);
+  const [showDemand, setShowDemand] = useState(true);
   const [showOperatorMgmt, setShowOperatorMgmt] = useState(false);
   const [zoom, setZoom] = useState(storedUI.zoom === 'day' ? 'day' : 'week');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(!!storedUI.sidebarCollapsed);

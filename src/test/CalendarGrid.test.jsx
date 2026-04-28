@@ -4,7 +4,7 @@ import CalendarGrid from '../components/calendar/CalendarGrid';
 import { buildDefaultDemand, defaultSettings, PROCESSES } from '../data';
 
 const makeOp = (id, shift = 'S1', active = true, certifications = PROCESSES) =>
-  ({ id, name: `Op ${id}`, shift, active, certifications });
+  ({ id, name: `Op${id} Lindgren`, shift, active, certifications });
 
 const makeBlock = (id, operatorId, startWeek, endWeek, status = 'draft') =>
   ({ id, operatorId, startWeek, endWeek, status });
@@ -29,10 +29,10 @@ const defaultProps = () => ({
 });
 
 describe('CalendarGrid', () => {
-  it('renders operator names as rows', () => {
+  it('renders operator names as rows (first name + last initial)', () => {
     render(<CalendarGrid {...defaultProps()} />);
-    expect(screen.getByText('Op 1')).toBeInTheDocument();
-    expect(screen.getByText('Op 2')).toBeInTheDocument();
+    expect(screen.getByText('Op1 L.')).toBeInTheDocument();
+    expect(screen.getByText('Op2 L.')).toBeInTheDocument();
   });
 
   it('renders week headers', () => {
@@ -155,10 +155,9 @@ describe('CalendarGrid', () => {
     expect(screen.getByText('Godkänd')).toBeInTheDocument();
   });
 
-  it('shows demand toggle in tools row', () => {
+  it('shows demand toggle in primary toolbar', () => {
     const props = defaultProps();
     render(<CalendarGrid {...props} />);
-    fireEvent.click(screen.getByText('⚙'));
     const demandBtn = screen.getByText('Demand');
     fireEvent.click(demandBtn);
     expect(props.onToggleDemand).toHaveBeenCalled();

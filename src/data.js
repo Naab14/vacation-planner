@@ -1,3 +1,14 @@
+// ── Display helpers ──────────────────────────────────────────────────────────
+// Format an operator name as "First L." (first name + last-name initial).
+// Single-token names are returned unchanged.
+export function formatOperatorName(name) {
+  if (!name) return '';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length < 2) return parts[0] || '';
+  const last = parts[parts.length - 1];
+  return `${parts[0]} ${last.charAt(0).toUpperCase()}.`;
+}
+
 // ── Processes / Certifications ────────────────────────────────────────────────
 export const PROCESSES = [
   'Avsyning',

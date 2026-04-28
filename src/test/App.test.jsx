@@ -61,7 +61,7 @@ describe('App', () => {
 
   it('renders the calendar grid with week headers', () => {
     render(<App />);
-    expect(screen.getByText('v.15')).toBeInTheDocument();
+    expect(screen.getAllByText('v.15').length).toBeGreaterThan(0);
   });
 
   it('applies theme on change', async () => {

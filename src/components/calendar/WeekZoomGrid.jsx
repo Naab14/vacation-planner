@@ -1,6 +1,7 @@
 import CoverageRows from './CoverageRows';
 import DemandEditor from './DemandEditor';
 import { CELL_W, CELL_H, LABEL_W, STATUS_COLORS, HOLIDAY_ABBREV } from './constants';
+import { formatOperatorName } from '../../data';
 
 export default function WeekZoomGrid({
   ref, operators, vacationBlocks, demand, settings, weeks, holidayMap,
@@ -44,8 +45,9 @@ export default function WeekZoomGrid({
             {group.ops.map(op => (
               <div key={op.id} className="flex relative" style={{ height: CELL_H, borderBottom: '1px solid var(--border)', opacity: op.active ? 1 : 0.4 }}>
                 <div className="sticky left-0 z-10 flex items-center px-2 text-xs truncate"
-                  style={{ width: LABEL_W, minWidth: LABEL_W, background: 'var(--bg-primary)', borderRight: '1px solid var(--border)', color: 'var(--text-primary)' }}>
-                  {op.name}
+                  style={{ width: LABEL_W, minWidth: LABEL_W, background: 'var(--bg-primary)', borderRight: '1px solid var(--border)', color: 'var(--text-primary)' }}
+                  title={op.name}>
+                  {formatOperatorName(op.name)}
                 </div>
                 {weeks.map(w => {
                   const block = vacationBlocks.find(b => b.operatorId === op.id && w >= b.startWeek && w <= b.endWeek);
