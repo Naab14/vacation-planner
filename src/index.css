@@ -426,6 +426,40 @@ h1, h2, h3, h4, h5, h6 { font-family: var(--font-heading); }
   .sidebar-collapsed { width: 40px !important; min-width: 40px !important; }
 }
 
+/* ── Planning Assistant drawer ────────────────────────────────────────────── */
+.insights-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(15, 23, 42, 0.35);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  animation: insightsFade 0.18s ease-out;
+}
+.insights-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 61;
+  width: 400px;
+  max-width: 92vw;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-panel);
+  border-left: 1px solid var(--border);
+  box-shadow: -12px 0 40px -12px rgba(0, 0, 0, 0.35);
+  animation: insightsSlide 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes insightsFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes insightsSlide {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
 /* ── Mobile (<768): compact top bar, wider tap targets ─────────────────── */
 @media (max-width: 767px) {
   [data-week][data-op] { min-height: 44px; }
