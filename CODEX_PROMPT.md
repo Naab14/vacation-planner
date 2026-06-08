@@ -6,6 +6,24 @@ come back with something that makes me go "oh, that's exactly what this needed."
 Surprise me with judgment and taste, not just feature checkboxes. Work on a new
 branch so I can review before anything lands on master.
 
+REPO
+https://github.com/Naab14/vacation-planner
+
+STEP 0 — BUILD UNDERSTANDING WITH GRAPHIFY
+Before anything else, use Graphify (https://github.com/safishamsi/graphify) to
+build a knowledge graph of this repo so your understanding is grounded in the
+actual structure, not guesses:
+  uv tool install graphifyy   # or: pipx install graphifyy
+  graphify update .           # AST graph, no API key needed
+  graphify export callflow-html
+Then SHOW ME what you learned: surface the generated
+graphify-out/vacation-planner-callflow.html, the god-nodes / communities /
+knowledge-gaps from graphify-out/GRAPH_REPORT.md, and a short plain-language
+summary of how the pieces connect. If you have an LLM API key available, also run
+the deeper semantic pass (the /graphify skill) so the graph includes inferred
+relationships, and note the difference. I want to see the graph and your read of
+it before you start building.
+
 STEP 1 — INSPECT BEFORE EDITING
 First inspect the repository structure, detect the stack, package manager,
 test/lint/build commands, and any existing conventions. Do not edit yet unless
@@ -77,6 +95,14 @@ Strong candidates (your call — argue for your choice):
 - An exportable/printable coverage & schedule report (PDF/print view + CSV heatmap).
 Whatever you choose, make it feel polished, fast, and obvious to use, and keep it
 consistent with the existing component patterns, theming (CSS vars), and tests.
+
+AUTONOMY
+Make up your own mind. The weaknesses and candidate features above are my
+recommendations, not orders — you've now read the whole repo (and the Graphify
+graph), so you may know better. Pick what you believe is the highest-leverage,
+most impressive thing to build. If you choose something other than what I
+suggested, briefly tell me why; if you build on my recommendations, great. Either
+way I want your best judgment, not blind compliance.
 
 DELIVERABLES
 - A new branch (don't touch master).
