@@ -1,7 +1,7 @@
 import { PROCESSES } from '../../data';
 import { CELL_W, CELL_H, LABEL_W } from './constants';
 
-export default function DemandEditor({ demand, weeks, updateDemand }) {
+export default function DemandEditor({ demand, weeks, updateDemand, processes = PROCESSES }) {
   return (
     <div style={{ borderTop: '2px solid var(--border)' }}>
       <div className="flex items-center justify-between px-2 py-1" style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border)' }}>
@@ -19,7 +19,7 @@ export default function DemandEditor({ demand, weeks, updateDemand }) {
           </div>
         ))}
       </div>
-      {PROCESSES.map(proc => (
+      {processes.map(proc => (
         <div key={proc} className="flex" style={{ height: CELL_H, borderBottom: '1px solid var(--border)' }}>
           <div className="sticky left-0 z-10 flex items-center px-2 text-xs"
             style={{ width: LABEL_W, minWidth: LABEL_W, background: 'var(--bg-primary)', borderRight: '1px solid var(--border)', color: 'var(--text-secondary)' }}>

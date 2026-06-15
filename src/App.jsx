@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useReducer } from 'react';
-import { seedOperators, seedVacationBlocks, buildDefaultDemand, defaultSettings } from './data';
+import { seedOperators, seedVacationBlocks, seedProcesses, buildDefaultDemand, defaultSettings } from './data';
 import {
   saveState, loadState, clearState,
   saveTheme, loadTheme,
@@ -7,6 +7,8 @@ import {
   exportJSON, importJSON, debouncedSave,
   buildShareLink, loadStateFromUrl, clearShareHash, copyToClipboard,
 } from './storage';
+import { migrateState } from './store';
+import { addProcess, renameProcess, removeProcess, toggleCertification } from './processOps';
 import { parseCSV, mergeOperators, downloadCSVTemplate, downloadOperatorsCSV } from './csv';
 import { buildHolidayMap, initHolidays } from './holidays';
 import { historyReducer, initHistory } from './historyReducer';
@@ -14,7 +16,13 @@ import { useBreakpoint } from './hooks/useBreakpoint';
 
 import TopBar from './components/TopBar';
 import OperatorPanel from './components/OperatorPanel';
+import NavRail from './components/NavRail';
 import CalendarGrid from './components/calendar/CalendarGrid';
+import CertificationMatrix from './modules/CertificationMatrix';
+import Dashboard from './modules/Dashboard';
+import Employees from './modules/Employees';
+import SettingsPanel from './modules/SettingsPanel';
+import ExportPrint from './modules/ExportPrint';
 
 /* ── Utility ──────────────────────────────────────────────────────────────── */
 let _uid = 0;
@@ -24,17 +32,17 @@ function getDefaults() {
   const shared = loadStateFromUrl();
   if (shared) {
     clearShareHash();
-    return { state: shared, wasShared: true };
+    return { state: migrateState(shared), wasShared: true };
   }
-  return {
-    state: loadState() || {
-      operators: seedOperators,
-      vacationBlocks: seedVacationBlocks,
-      demand: buildDefaultDemand(),
-      settings: defaultSettings,
-    },
-    wasShared: false,
+  const loaded = loadState();
+  const base = loaded || {
+    operators: seedOperators,
+    vacationBlocks: seedVacationBlocks,
+    processes: seedProcesses,
+    demand: buildDefaultDemand(),
+    settings: defaultSettings,
   };
+  return { state: migrateState(base), wasShared: false };
 }
 
 const storedUI = loadUI();
@@ -56,6 +64,8 @@ export default function App() {
   const [toast, setToast] = useState(initResult.wasShared ? 'Loaded shared workspace' : null);
   const [showDemand, setShowDemand] = useState(false);
   const [showOperatorMgmt, setShowOperatorMgmt] = useState(false);
+  const [view, setView] = useState('planning');
+  const [coverageMode, setCoverageMode] = useState('confirmed'); // 'confirmed' | 'projected'
   const [zoom, setZoom] = useState(storedUI.zoom === 'day' ? 'day' : 'week');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(!!storedUI.sidebarCollapsed);
   const { isMobile, isTablet, isDesktop } = useBreakpoint();
@@ -70,10 +80,15 @@ export default function App() {
   }, [isMobile, isTablet, isDesktop]);
 
   const { operators, vacationBlocks, demand, settings } = state;
+  const processes = state.processes || seedProcesses;
   const { startWeek, visibleWeeks, shiftMode } = settings;
   const weeks = useMemo(
     () => Array.from({ length: visibleWeeks }, (_, i) => startWeek + i),
     [startWeek, visibleWeeks],
+  );
+  const coverageOpts = useMemo(
+    () => (coverageMode === 'projected' ? { absentStatuses: ['approved', 'pending', 'requested'] } : {}),
+    [coverageMode],
   );
 
   const [holidayMap, setHolidayMap] = useState(() => buildHolidayMap());
@@ -124,8 +139,12 @@ export default function App() {
   const update = useCallback(patch => setFn(s => ({ ...s, ...patch })), [setFn]);
   const updateOp = useCallback((id, patch) =>
     setFn(s => ({ ...s, operators: s.operators.map(o => o.id === id ? { ...o, ...patch } : o) })), [setFn]);
-  const addBlock = useCallback((opId, sw, ew, status = 'draft') =>
-    setFn(s => ({ ...s, vacationBlocks: [...s.vacationBlocks, { id: uid(), operatorId: opId, startWeek: sw, endWeek: ew, status }] })), [setFn]);
+  const addBlock = useCallback((opId, sw, ew, status = 'draft') => {
+    const lo = Math.min(sw, ew), hi = Math.max(sw, ew);
+    const locked = (settings.lockedWeeks || []).filter(w => w >= lo && w <= hi);
+    if (locked.length) flash(`⚠ Vecka ${locked.join(', ')} är låst`);
+    setFn(s => ({ ...s, vacationBlocks: [...s.vacationBlocks, { id: uid(), operatorId: opId, startWeek: sw, endWeek: ew, status }] }));
+  }, [setFn, settings.lockedWeeks]);
   const updateBlock = useCallback((id, patch) =>
     setFn(s => ({ ...s, vacationBlocks: s.vacationBlocks.map(b => b.id === id ? { ...b, ...patch } : b) })), [setFn]);
   const deleteBlock = useCallback(id =>
@@ -173,6 +192,14 @@ export default function App() {
         startWeek: Math.max(1, Math.min(52 - s.settings.visibleWeeks + 1, w)),
       },
     })), [setFn]);
+  const updateSettings = useCallback(patch =>
+    setFn(s => ({ ...s, settings: { ...s.settings, ...patch } })), [setFn]);
+
+  /* ── Process / certification management ─────────────────────────────────── */
+  const handleAddProcess = useCallback(name => setFn(s => addProcess(s, name)), [setFn]);
+  const handleRenameProcess = useCallback((oldName, newName) => setFn(s => renameProcess(s, oldName, newName)), [setFn]);
+  const handleRemoveProcess = useCallback(name => setFn(s => removeProcess(s, name)), [setFn]);
+  const handleToggleCert = useCallback((opId, proc) => setFn(s => toggleCertification(s, opId, proc)), [setFn]);
 
   /* ── Operator management ────────────────────────────────────────────────── */
   const addOperator = useCallback((name, shift) => {
@@ -197,7 +224,7 @@ export default function App() {
       if (!file) return;
       const reader = new FileReader();
       reader.onload = ev => {
-        const { operators: parsed, error, warnings } = parseCSV(ev.target.result);
+        const { operators: parsed, error, warnings } = parseCSV(ev.target.result, processes);
         if (error) { flash(error); return; }
         const { operators: merged, added, updated } = mergeOperators(operators, parsed);
         update({ operators: merged });
@@ -208,22 +235,23 @@ export default function App() {
       reader.readAsText(file);
     };
     input.click();
-  }, [operators, update]);
+  }, [operators, processes, update]);
   const handleCSVExport = useCallback(() => {
-    downloadOperatorsCSV(operators);
+    downloadOperatorsCSV(operators, processes);
     flash('Personalexport nedladdad');
-  }, [operators]);
+  }, [operators, processes]);
+  const handleDownloadTemplate = useCallback(() => downloadCSVTemplate(processes), [processes]);
 
   const handleSave = useCallback(() => { saveState(state); flash('State saved'); }, [state]);
   const handleExport = useCallback(() => { exportJSON(state); flash('Exported to file'); }, [state]);
   const handleImport = useCallback(async () => {
     const data = await importJSON();
-    if (data) { setFn(() => data); flash('State imported'); }
+    if (data) { setFn(() => migrateState(data)); flash('State imported'); }
   }, [setFn]);
   const handleReset = useCallback(() => {
     if (confirm('Reset all data to defaults? This cannot be undone.')) {
       clearState();
-      setFn(() => ({ operators: seedOperators, vacationBlocks: seedVacationBlocks, demand: buildDefaultDemand(), settings: defaultSettings }));
+      setFn(() => migrateState({ operators: seedOperators, vacationBlocks: seedVacationBlocks, processes: seedProcesses, demand: buildDefaultDemand(), settings: defaultSettings }));
       flash('Reset to defaults');
     }
   }, [setFn]);
@@ -251,33 +279,98 @@ export default function App() {
 
       {/* ── Main content ─────────────────────────────────────────────────── */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Left: Operator Panel */}
-        <OperatorPanel
-          operators={operators} onUpdateOperator={updateOp}
-          showMgmt={showOperatorMgmt}
-          onToggleMgmt={() => setShowOperatorMgmt(p => !p)}
-          onAddOperator={addOperator} onRemoveOperator={removeOperator}
-          onDownloadTemplate={downloadCSVTemplate}
-          collapsed={sidebarCollapsed}
-          onToggleCollapse={() => setSidebarCollapsed(p => !p)}
-        />
+        <NavRail view={view} onChange={setView} />
 
-        {/* Center: Calendar (handles both zoom levels internally) */}
-        <CalendarGrid
-          operators={operators} vacationBlocks={vacationBlocks}
-          demand={demand} settings={settings} weeks={weeks}
-          holidayMap={holidayMap}
-          onAddBlock={addBlock} onUpdateBlock={updateBlock}
-          onDeleteBlock={deleteBlock} onSetBlockStatus={setBlockStatus}
-          onSetBlockDayStatus={setBlockDayStatus} onClearBlockDayStatus={clearBlockDayStatus}
-          onSetBlockNote={setBlockNote}
-          setStartWeek={setStartWeek}
-          showDemand={showDemand}
-          onToggleDemand={() => setShowDemand(p => !p)}
-          updateDemand={updateDemand}
-          zoom={zoom}
-          onZoomChange={setZoom}
-        />
+        {view === 'planning' && (
+          <div className="flex flex-1 overflow-hidden">
+            {/* Left: Operator Panel */}
+            <OperatorPanel
+              operators={operators} onUpdateOperator={updateOp}
+              showMgmt={showOperatorMgmt}
+              onToggleMgmt={() => setShowOperatorMgmt(p => !p)}
+              onAddOperator={addOperator} onRemoveOperator={removeOperator}
+              onDownloadTemplate={handleDownloadTemplate}
+              collapsed={sidebarCollapsed}
+              onToggleCollapse={() => setSidebarCollapsed(p => !p)}
+              processes={processes}
+            />
+
+            {/* Center: coverage-mode toggle + Calendar */}
+            <div className="flex-1 flex flex-col overflow-hidden">
+              <div className="flex items-center gap-2 px-3 py-1.5 text-xs" style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-secondary)' }}>
+                <span className="uppercase tracking-wide font-semibold" style={{ color: 'var(--text-secondary)' }}>Coverage</span>
+                <div className="flex items-center gap-0.5 p-0.5 rounded-full" style={{ background: 'var(--bg-primary)', border: '1px solid var(--border)' }}>
+                  {[['confirmed', 'Confirmed'], ['projected', 'Projected']].map(([val, label]) => (
+                    <button key={val} onClick={() => setCoverageMode(val)}
+                      className="px-3 py-0.5 text-xs font-semibold rounded-full transition-all"
+                      style={coverageMode === val ? { background: 'var(--accent)', color: '#fff' } : { background: 'transparent', color: 'var(--text-secondary)' }}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <span style={{ color: 'var(--text-secondary)' }}>
+                  {coverageMode === 'projected' ? 'incl. pending & requested' : 'approved leave only'}
+                </span>
+              </div>
+              <CalendarGrid
+                operators={operators} vacationBlocks={vacationBlocks}
+                demand={demand} settings={settings} weeks={weeks}
+                holidayMap={holidayMap}
+                onAddBlock={addBlock} onUpdateBlock={updateBlock}
+                onDeleteBlock={deleteBlock} onSetBlockStatus={setBlockStatus}
+                onSetBlockDayStatus={setBlockDayStatus} onClearBlockDayStatus={clearBlockDayStatus}
+                onSetBlockNote={setBlockNote}
+                setStartWeek={setStartWeek}
+                showDemand={showDemand}
+                onToggleDemand={() => setShowDemand(p => !p)}
+                updateDemand={updateDemand}
+                zoom={zoom}
+                onZoomChange={setZoom}
+                processes={processes} coverageOpts={coverageOpts}
+              />
+            </div>
+          </div>
+        )}
+
+        {view === 'matrix' && (
+          <CertificationMatrix
+            operators={operators} processes={processes}
+            onToggleCert={handleToggleCert}
+            onAddProcess={handleAddProcess}
+            onRenameProcess={handleRenameProcess}
+            onRemoveProcess={handleRemoveProcess}
+          />
+        )}
+
+        {view === 'dashboard' && (
+          <Dashboard
+            operators={operators} vacationBlocks={vacationBlocks}
+            demand={demand} settings={settings} weeks={weeks}
+            processes={processes} holidayMap={holidayMap}
+            onNavigate={setView}
+          />
+        )}
+
+        {view === 'employees' && (
+          <Employees
+            operators={operators} processes={processes}
+            onUpdateOperator={updateOp} onAddOperator={addOperator} onRemoveOperator={removeOperator}
+            onImportCSV={handleCSVImport} onExportCSV={handleCSVExport} onDownloadTemplate={handleDownloadTemplate}
+          />
+        )}
+
+        {view === 'settings' && (
+          <SettingsPanel settings={settings} onUpdateSettings={updateSettings} weeks={weeks} />
+        )}
+
+        {view === 'export' && (
+          <ExportPrint
+            operators={operators} vacationBlocks={vacationBlocks}
+            demand={demand} settings={settings} weeks={weeks}
+            processes={processes} holidayMap={holidayMap}
+            onExportCSV={handleCSVExport}
+          />
+        )}
       </div>
 
       {/* Toast — Neo-Kinetic pill */}

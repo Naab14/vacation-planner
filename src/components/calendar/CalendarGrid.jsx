@@ -13,6 +13,7 @@ export default function CalendarGrid({
   onSetBlockDayStatus, onClearBlockDayStatus, onSetBlockNote,
   setStartWeek, showDemand, onToggleDemand, updateDemand,
   zoom, onZoomChange,
+  processes, coverageOpts,
 }) {
   const { shiftMode, startWeek, visibleWeeks } = settings;
   const scrollRef = useRef(null);
@@ -262,6 +263,7 @@ export default function CalendarGrid({
             onCellPointerDown={handleCellPointerDown}
             onCellPointerUp={handleCellPointerUp}
             onResizePointerDown={handleResizePointerDown}
+            processes={processes} coverageOpts={coverageOpts}
           />
         ) : (
           <DayZoomGrid
@@ -270,6 +272,7 @@ export default function CalendarGrid({
             showDayCoverage={showDayCoverage} onToggleDayCoverage={() => setShowDayCoverage(c => !c)}
             setPopover={setPopover}
             onAddBlock={onAddBlock}
+            processes={processes} coverageOpts={coverageOpts}
           />
         )}
         {zoomTransition && (

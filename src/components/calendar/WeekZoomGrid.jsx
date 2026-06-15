@@ -6,6 +6,7 @@ export default function WeekZoomGrid({
   ref, operators, vacationBlocks, demand, settings, weeks, holidayMap,
   groups, drag, showDemand, updateDemand,
   onCellPointerDown, onCellPointerUp, onResizePointerDown,
+  processes, coverageOpts,
 }) {
   return (
     <div ref={ref} className={`flex-1 overflow-auto select-none ${drag ? 'grid-dragging' : ''}`}>
@@ -125,11 +126,12 @@ export default function WeekZoomGrid({
             ))}
 
             <CoverageRows operators={operators} vacationBlocks={vacationBlocks} demand={demand}
-              weeks={weeks} shiftMode={settings.shiftMode} shiftFilter={group.shift} holidayMap={holidayMap} label={`COVERAGE (${group.label})`} />
+              weeks={weeks} shiftMode={settings.shiftMode} shiftFilter={group.shift} holidayMap={holidayMap} label={`COVERAGE (${group.label})`}
+              processes={processes} coverageOpts={coverageOpts} />
           </div>
         ))}
 
-        {showDemand && <DemandEditor demand={demand} weeks={weeks} updateDemand={updateDemand} />}
+        {showDemand && <DemandEditor demand={demand} weeks={weeks} updateDemand={updateDemand} processes={processes} />}
       </div>
     </div>
   );

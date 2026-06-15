@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { PROCESSES } from '../data';
+import OperatorAvatar from './OperatorAvatar';
 
-export default function OperatorPanel({ operators, onUpdateOperator, showMgmt, onToggleMgmt, onAddOperator, onRemoveOperator, onDownloadTemplate, collapsed, onToggleCollapse }) {
+export default function OperatorPanel({ operators, onUpdateOperator, showMgmt, onToggleMgmt, onAddOperator, onRemoveOperator, onDownloadTemplate, collapsed, onToggleCollapse, processes = PROCESSES }) {
   const [editId, setEditId] = useState(null);
   const [newName, setNewName] = useState('');
   const [newShift, setNewShift] = useState('S1');
@@ -14,8 +15,12 @@ export default function OperatorPanel({ operators, onUpdateOperator, showMgmt, o
   };
 
   const q = search.trim().toLowerCase();
+  // Match on name OR any certification, so "avsyning" surfaces everyone certified.
   const filteredOperators = q
-    ? operators.filter(op => op.name.toLowerCase().includes(q))
+    ? operators.filter(op =>
+        op.name.toLowerCase().includes(q) ||
+        (op.certifications || []).some(c => c.toLowerCase().includes(q)),
+      )
     : operators;
 
   return (
@@ -75,7 +80,7 @@ export default function OperatorPanel({ operators, onUpdateOperator, showMgmt, o
       {/* Search */}
       <div className="sidebar-full-only px-3 pt-2 pb-1">
         <div className="relative">
-          <input type="text" placeholder="Search operators" value={search}
+          <input type="text" placeholder="Search name or certification" value={search}
             aria-label="Search operators"
             onChange={e => setSearch(e.target.value)}
             className="w-full pl-3 pr-8 py-1.5 text-sm shadow-sm outline-none"
@@ -106,6 +111,7 @@ export default function OperatorPanel({ operators, onUpdateOperator, showMgmt, o
               onClick={() => setEditId(editId === op.id ? null : op.id)}
               onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.background = 'rgba(79,70,229,0.06)'; }}
               onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.background = 'transparent'; }}>
+              <OperatorAvatar operator={op} />
               <span className="flex-1 truncate font-medium">{op.name}</span>
               <span className="text-xs px-2.5 py-0.5 rounded-full font-mono font-bold"
                 style={op.shift === 'S1'
@@ -143,7 +149,7 @@ export default function OperatorPanel({ operators, onUpdateOperator, showMgmt, o
                 <div className="pt-1">
                   <label className="text-xs block mb-1.5 font-medium" style={{ color: 'var(--text-secondary)' }}>Certifications</label>
                   <div className="space-y-1.5">
-                    {PROCESSES.map(p => (
+                    {processes.map(p => (
                       <label key={p} className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-primary)' }}>
                         <input type="checkbox" checked={op.certifications.includes(p)}
                           className="w-3.5 h-3.5 rounded" style={{ accentColor: 'var(--accent)' }}

@@ -14,7 +14,7 @@ function getDayStatus(block, dateStr) {
 export default function DayZoomGrid({
   operators, vacationBlocks, demand, settings, weeks, holidayMap, groups,
   showDayCoverage, onToggleDayCoverage, setPopover,
-  onAddBlock,
+  onAddBlock, processes, coverageOpts,
 }) {
   const year = new Date().getFullYear();
   const visibleWeeks = weeks.slice(0, DAY_ZOOM_WEEKS);
@@ -199,7 +199,7 @@ export default function DayZoomGrid({
               <CoverageRows operators={operators} vacationBlocks={vacationBlocks} demand={demand}
                 weeks={visibleWeeks} shiftMode={settings.shiftMode} shiftFilter={group.shift}
                 holidayMap={holidayMap} label={`COVERAGE (${group.label})`}
-                cellWidth={weekCellW} />
+                cellWidth={weekCellW} processes={processes} coverageOpts={coverageOpts} />
             )}
           </div>
         ))}

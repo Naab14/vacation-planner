@@ -56,6 +56,17 @@ describe('getCoverage', () => {
     expect(result.operatorsOut).toHaveLength(0);
   });
 
+  it('counts pending/requested leave as absent in projected mode', () => {
+    const ops = [makeOp('1', 'S1', true, ['Avsyning'])];
+    const blocks = [makeBlock('b1', '1', 10, 12, 'pending')];
+    const projected = { absentStatuses: ['approved', 'pending', 'requested'] };
+    const confirmed = getCoverage(ops, blocks, defaultDemand, 'Avsyning', 10, 'combined', null, emptyHolidays, PROCESSES, {});
+    const proj = getCoverage(ops, blocks, defaultDemand, 'Avsyning', 10, 'combined', null, emptyHolidays, PROCESSES, projected);
+    expect(confirmed.covered).toBe(1);      // pending ignored when confirmed
+    expect(proj.covered).toBe(0);           // pending counts as away when projected
+    expect(proj.operatorsOut).toHaveLength(1);
+  });
+
   it('excludes inactive operators', () => {
     const ops = [makeOp('1', 'S1', false, ['Avsyning'])];
     const result = getCoverage(ops, [], defaultDemand, 'Avsyning', 10, 'combined', null, emptyHolidays);
