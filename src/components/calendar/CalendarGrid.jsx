@@ -85,10 +85,15 @@ export default function CalendarGrid({
   }, [vacationBlocks]);
 
   const summarizeCandidate = useCallback(candidate => {
-    const summary = buildConflictSummary(vacationBlocks, candidate, settings);
+    const summary = buildConflictSummary(vacationBlocks, candidate, settings, {
+      operators,
+      demand,
+      processes,
+      holidayMap,
+    });
     setDragConflict(summary.messages.length ? summary : null);
     return summary;
-  }, [vacationBlocks, settings]);
+  }, [vacationBlocks, settings, operators, demand, processes, holidayMap]);
 
   const commitDrag = useCallback(() => {
     if (!drag) return;
@@ -215,6 +220,22 @@ export default function CalendarGrid({
     }
   };
 
+  const handleCellKeyDown = (e, opId, week) => {
+    if (!['Enter', ' ', 'Spacebar'].includes(e.key)) return;
+    e.preventDefault();
+    const block = vacationBlocks.find(b => b.operatorId === opId && week >= b.startWeek && week <= b.endWeek);
+    if (block) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      setPopover({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2, block });
+      return;
+    }
+
+    const summary = summarizeCandidate({ operatorId: opId, startWeek: week, endWeek: week });
+    if (!summary.blocked && !isOverlapping(opId, week, week)) {
+      onAddBlock(opId, week, week);
+    }
+  };
+
   const handleResizePointerDown = (e, blockId, edge, block) => {
     e.stopPropagation();
     e.preventDefault();
@@ -308,6 +329,7 @@ export default function CalendarGrid({
             coverageMode={coverageMode}
             onCellPointerDown={handleCellPointerDown}
             onCellPointerUp={handleCellPointerUp}
+            onCellKeyDown={handleCellKeyDown}
             onResizePointerDown={handleResizePointerDown}
           />
         ) : (

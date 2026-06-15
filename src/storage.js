@@ -1,32 +1,29 @@
 import { migrateState } from './schema';
+import { appStore } from './store';
 
-const STATE_KEY = 'vacation-planner-state';
-const THEME_KEY = 'vacation-planner-theme';
-const UI_KEY = 'vacation-planner-ui';
 let debounceTimer = null;
 
 export function saveState(state) {
-  try { localStorage.setItem(STATE_KEY, JSON.stringify(migrateState(state))); }
+  try { appStore.saveStateSync(state); }
   catch (e) { console.warn('Failed to save state:', e); }
 }
 
 export function loadState() {
   try {
-    const raw = localStorage.getItem(STATE_KEY);
-    return raw ? migrateState(JSON.parse(raw)) : null;
+    return appStore.getStateSync();
   } catch (e) { console.warn('Failed to load state:', e); return null; }
 }
 
-export function clearState() { localStorage.removeItem(STATE_KEY); }
+export function clearState() { appStore.clearStateSync(); }
 
-export function saveTheme(t) { localStorage.setItem(THEME_KEY, t); }
-export function loadTheme() { return localStorage.getItem(THEME_KEY) || 'default'; }
+export function saveTheme(t) { appStore.saveThemeSync(t); }
+export function loadTheme() { return appStore.getThemeSync(); }
 
 export function saveUI(ui) {
-  try { localStorage.setItem(UI_KEY, JSON.stringify(ui)); } catch { /* ignore */ }
+  try { appStore.saveUISync(ui); } catch { /* ignore */ }
 }
 export function loadUI() {
-  try { return JSON.parse(localStorage.getItem(UI_KEY)) || {}; } catch { return {}; }
+  try { return appStore.getUISync(); } catch { return {}; }
 }
 
 export function exportJSON(state) {

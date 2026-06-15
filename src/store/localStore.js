@@ -1,30 +1,58 @@
+import { migrateState } from '../schema';
+
 export function createLocalStore({
   stateKey = 'vacation-planner-state',
   themeKey = 'vacation-planner-theme',
   uiKey = 'vacation-planner-ui',
 } = {}) {
-  return {
-    async getState() {
+  const api = {
+    getStateSync() {
       const raw = localStorage.getItem(stateKey);
-      return raw ? JSON.parse(raw) : null;
+      return raw ? migrateState(JSON.parse(raw)) : null;
     },
-    async saveState(state) {
-      localStorage.setItem(stateKey, JSON.stringify(state));
+    saveStateSync(state) {
+      localStorage.setItem(stateKey, JSON.stringify(migrateState(state)));
     },
-    async clearState() {
+    clearStateSync() {
       localStorage.removeItem(stateKey);
     },
-    async getTheme() {
+    getThemeSync() {
       return localStorage.getItem(themeKey) || 'default';
     },
-    async saveTheme(theme) {
+    saveThemeSync(theme) {
       localStorage.setItem(themeKey, theme);
     },
-    async getUI() {
-      return JSON.parse(localStorage.getItem(uiKey)) || {};
+    getUISync() {
+      try {
+        return JSON.parse(localStorage.getItem(uiKey)) || {};
+      } catch {
+        return {};
+      }
     },
-    async saveUI(ui) {
+    saveUISync(ui) {
       localStorage.setItem(uiKey, JSON.stringify(ui));
     },
+    async getState() {
+      return api.getStateSync();
+    },
+    async saveState(state) {
+      api.saveStateSync(state);
+    },
+    async clearState() {
+      api.clearStateSync();
+    },
+    async getTheme() {
+      return api.getThemeSync();
+    },
+    async saveTheme(theme) {
+      api.saveThemeSync(theme);
+    },
+    async getUI() {
+      return api.getUISync();
+    },
+    async saveUI(ui) {
+      api.saveUISync(ui);
+    },
   };
+  return api;
 }

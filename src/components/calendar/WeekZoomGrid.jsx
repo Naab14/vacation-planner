@@ -6,7 +6,7 @@ import OperatorAvatar from '../OperatorAvatar';
 export default function WeekZoomGrid({
   ref, operators, vacationBlocks, demand, settings, processes, weeks, holidayMap,
   groups, drag, showDemand, updateDemand, coverageMode,
-  onCellPointerDown, onCellPointerUp, onResizePointerDown,
+  onCellPointerDown, onCellPointerUp, onCellKeyDown, onResizePointerDown,
 }) {
   return (
     <div ref={ref} className={`flex-1 overflow-auto select-none ${drag ? 'grid-dragging' : ''}`}>
@@ -19,14 +19,18 @@ export default function WeekZoomGrid({
           </div>
           {weeks.map(w => {
             const isHoliday = holidayMap[w]?.holidays?.length > 0;
+            const isLocked = (settings.lockedWeeks || []).includes(w);
             const holidayAbbrevs = isHoliday ? holidayMap[w].holidays.map(h => HOLIDAY_ABBREV[h.name] || h.name.slice(0, 7)) : [];
             const holidayTitle = isHoliday ? holidayMap[w].holidays.map(h => `${h.name} — ${h.dateStr}`).join(', ') : undefined;
+            const title = [isLocked ? 'Week locked' : null, holidayTitle].filter(Boolean).join(' - ') || undefined;
             return (
               <div key={w} className="flex flex-col items-center justify-center text-xs font-medium"
-                style={{ width: CELL_W, minWidth: CELL_W, height: isHoliday ? CELL_H + 12 : CELL_H, color: isHoliday ? 'var(--holiday-text)' : 'var(--text-secondary)', background: isHoliday ? 'var(--holiday-pattern)' : 'transparent', borderRight: '1px solid var(--border)', lineHeight: 1.1 }}
-                title={holidayTitle}>
+                style={{ width: CELL_W, minWidth: CELL_W, height: isHoliday || isLocked ? CELL_H + 12 : CELL_H, color: isHoliday ? 'var(--holiday-text)' : isLocked ? 'var(--accent-alert)' : 'var(--text-secondary)', background: isHoliday ? 'var(--holiday-pattern)' : isLocked ? 'rgba(239,68,68,0.08)' : 'transparent', borderRight: '1px solid var(--border)', lineHeight: 1.1 }}
+                aria-label={isLocked ? `v.${w} locked` : `v.${w}`}
+                title={title}>
                 <span>v.{w}</span>
                 {isHoliday && <span className="text-[9px] italic opacity-80 truncate w-full text-center" style={{ color: 'var(--holiday-text)' }}>{holidayAbbrevs[0]}</span>}
+                {isLocked && <span className="text-[9px] uppercase tracking-wide truncate w-full text-center">Locked</span>}
               </div>
             );
           })}
@@ -96,8 +100,12 @@ export default function WeekZoomGrid({
                       className={`flex items-center justify-center text-xs relative ${isDrag ? 'block-dragging' : ''}`}
                       style={{ width: CELL_W, minWidth: CELL_W, height: CELL_H, borderRight: '1px solid var(--border)', cursor: block ? 'grab' : 'crosshair', touchAction: 'none', ...cellStyle }}
                       title={cellTitle}
+                      tabIndex={0}
+                      role="button"
+                      aria-label={block ? `${op.name} vacation v.${block.startWeek}-${block.endWeek}` : `${op.name} v.${w}`}
                       onPointerDown={e => onCellPointerDown(e, op.id, w)}
-                      onPointerUp={e => onCellPointerUp(e, op.id, w)}>
+                      onPointerUp={e => onCellPointerUp(e, op.id, w)}
+                      onKeyDown={e => onCellKeyDown(e, op.id, w)}>
                       {block && isStart && (
                         <div className="resize-handle" style={{ left: 0, cursor: 'w-resize' }}
                           onPointerDown={e => onResizePointerDown(e, block.id, 'left', block)} />

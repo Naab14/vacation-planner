@@ -12,6 +12,7 @@ import { parseCSV, mergeOperators, downloadCSVTemplate, downloadOperatorsCSV } f
 import { buildHolidayMap, initHolidays } from './holidays';
 import { historyReducer, initHistory } from './historyReducer';
 import { useBreakpoint } from './hooks/useBreakpoint';
+import { sanitizeSettingsPatch } from './settings';
 
 import TopBar from './components/TopBar';
 import PlanningBoard from './modules/PlanningBoard';
@@ -223,13 +224,7 @@ export default function App() {
   const updateSettings = useCallback(patch =>
     setFn(s => ({
       ...s,
-      settings: {
-        ...s.settings,
-        ...patch,
-        startWeek: patch.startWeek != null
-          ? Math.max(1, Math.min(52 - (patch.visibleWeeks ?? s.settings.visibleWeeks) + 1, patch.startWeek))
-          : s.settings.startWeek,
-      },
+      settings: sanitizeSettingsPatch(s.settings, patch),
     })), [setFn]);
 
   /* ── Operator management ────────────────────────────────────────────────── */

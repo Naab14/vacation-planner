@@ -206,6 +206,64 @@ describe('CalendarGrid', () => {
     expect(cell.style.background).not.toContain('holiday-pattern');
     expect(cell.getAttribute('title')).toBeNull();
   });
+
+  it('shows projected red coverage warning when drawing a risky block', () => {
+    const processes = [{ id: 'serialisering', name: 'Serialisering' }];
+    const props = {
+      ...defaultProps(),
+      operators: [
+        makeOp('1', 'S1', true, ['serialisering']),
+        makeOp('2', 'S1', true, ['serialisering']),
+        makeOp('3', 'S1', true, ['serialisering']),
+      ],
+      processes,
+      demand: { serialisering: { 15: 4 } },
+      settings: { ...defaultSettings, allowedOverlap: 4, minStaffing: 0 },
+    };
+
+    render(<CalendarGrid {...props} />);
+    fireEvent.pointerDown(document.querySelector('[data-week="15"][data-op="1"]'), { button: 0 });
+
+    expect(screen.getByText('v.15 Serialisering would drop to RED')).toBeInTheDocument();
+  });
+
+  it('creates a one-week block from the keyboard on an empty cell', () => {
+    const props = defaultProps();
+    render(<CalendarGrid {...props} />);
+    const cell = document.querySelector('[data-week="15"][data-op="1"]');
+
+    cell.focus();
+    fireEvent.keyDown(cell, { key: 'Enter' });
+
+    expect(props.onAddBlock).toHaveBeenCalledWith('1', 15, 15);
+  });
+
+  it('blocks keyboard creation on locked weeks and shows feedback', () => {
+    const props = {
+      ...defaultProps(),
+      settings: { ...defaultSettings, lockedWeeks: [15] },
+    };
+    render(<CalendarGrid {...props} />);
+    const cell = document.querySelector('[data-week="15"][data-op="1"]');
+
+    cell.focus();
+    fireEvent.keyDown(cell, { key: 'Enter' });
+
+    expect(props.onAddBlock).not.toHaveBeenCalled();
+    expect(screen.getByText('Week locked')).toBeInTheDocument();
+  });
+
+  it('marks locked weeks in the week header', () => {
+    const props = {
+      ...defaultProps(),
+      settings: { ...defaultSettings, lockedWeeks: [16] },
+    };
+
+    render(<CalendarGrid {...props} />);
+
+    expect(screen.getByLabelText('v.16 locked')).toBeInTheDocument();
+    expect(screen.getByText('Locked')).toBeInTheDocument();
+  });
 });
 
 describe('CalendarGrid — scroll zoom & keyboard', () => {
