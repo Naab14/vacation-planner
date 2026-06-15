@@ -1,89 +1,125 @@
-import { PROCESSES } from './data';
+import { defaultProcesses } from './schema';
+
+const VACATION_STATUSES_BY_MODE = {
+  confirmed: new Set(['approved']),
+  projected: new Set(['approved', 'pending', 'requested']),
+};
+
+function buildLookup(processes) {
+  const lookup = new Map();
+  processes.forEach(process => {
+    lookup.set(process.id.toLowerCase(), process.id);
+    lookup.set(process.name.toLowerCase(), process.id);
+  });
+  return lookup;
+}
+
+function resolveProcessId(processOrName, lookup) {
+  if (!processOrName) return null;
+  return lookup.get(String(processOrName).toLowerCase()) || processOrName;
+}
+
+function normalizeCertifications(certifications, lookup) {
+  return Array.from(new Set((certifications || [])
+    .map(cert => resolveProcessId(cert, lookup))
+    .filter(Boolean)));
+}
 
 /**
  * Calculate weekly coverage across all processes intelligently.
  * Operators with one cert get assigned first.
  * Multi-certified operators get assigned dynamically to the process with the highest need.
  */
-export function getAllCoverageForWeek(operators, vacationBlocks, demand, week, shiftMode, shiftFilter, holidayMap) {
+export function getAllCoverageForWeek(
+  operators,
+  vacationBlocks,
+  demand,
+  week,
+  shiftMode,
+  shiftFilter,
+  holidayMap,
+  processes = defaultProcesses,
+  coverageMode = 'confirmed',
+) {
+  const processList = processes && processes.length ? processes : defaultProcesses;
+  const lookup = buildLookup(processList);
   const coverageMap = {};
-  
-  // Initialize map
-  PROCESSES.forEach(proc => {
-    coverageMap[proc] = {
-      required: demand[proc]?.[week] ?? 2,
+
+  processList.forEach(process => {
+    coverageMap[process.id] = {
+      process,
+      required: demand[process.id]?.[week] ?? demand[process.name]?.[week] ?? 2,
       covered: 0,
       operatorsIn: [],
       operatorsOut: [],
-      isHoliday: holidayMap?.[week]?.holidays?.length > 0
+      isHoliday: holidayMap?.[week]?.holidays?.length > 0,
     };
   });
 
-  // Filter available bodies
   const eligible = operators.filter(op => {
     if (!op.active) return false;
     if (shiftMode === 'separate' && shiftFilter && op.shift !== shiftFilter) return false;
-    if (op.certifications.length === 0) return false;
+    if (normalizeCertifications(op.certifications, lookup).length === 0) return false;
     return true;
   });
 
-  // Check vacations
+  const vacationStatuses = VACATION_STATUSES_BY_MODE[coverageMode] || VACATION_STATUSES_BY_MODE.confirmed;
   const activeOps = [];
   eligible.forEach(op => {
-    const isVacation = vacationBlocks.some(vb => vb.operatorId === op.id && vb.status === 'approved' && week >= vb.startWeek && week <= vb.endWeek);
+    const certs = normalizeCertifications(op.certifications, lookup);
+    const isVacation = vacationBlocks.some(vb =>
+      vb.operatorId === op.id &&
+      vacationStatuses.has(vb.status) &&
+      week >= vb.startWeek &&
+      week <= vb.endWeek
+    );
     if (isVacation) {
-      // Mark as out in all their certified processes to show who is missing
-      op.certifications.forEach(cert => {
+      certs.forEach(cert => {
         if (coverageMap[cert]) coverageMap[cert].operatorsOut.push(op);
       });
     } else {
-      activeOps.push(op);
+      activeOps.push({ ...op, certifications: certs });
     }
   });
 
-  // 1st Pass: Assign operators who only have ONE certification
   const multiCerts = [];
   activeOps.forEach(op => {
     if (op.certifications.length === 1) {
-      const proc = op.certifications[0];
-      if (coverageMap[proc]) {
-        coverageMap[proc].covered++;
-        coverageMap[proc].operatorsIn.push(op);
+      const processId = op.certifications[0];
+      if (coverageMap[processId]) {
+        coverageMap[processId].covered++;
+        coverageMap[processId].operatorsIn.push(op);
       }
     } else {
       multiCerts.push(op);
     }
   });
 
-  // 2nd Pass: Dynamically assign multi-certified operators to the process that needs them most
   multiCerts.forEach(op => {
-    let mostNeededProc = null;
+    let mostNeededProcess = null;
     let lowestRatio = Infinity;
 
-    op.certifications.forEach(proc => {
-      const covInfo = coverageMap[proc];
-      if (covInfo) {
-        // Find fulfillment ratio (e.g., 1/2 = 0.5. The lower, the more needed)
-        const ratio = covInfo.required > 0 ? (covInfo.covered / covInfo.required) : Infinity;
-        if (ratio < lowestRatio) {
-          lowestRatio = ratio;
-          mostNeededProc = proc;
-        }
+    op.certifications.forEach(processId => {
+      const coverage = coverageMap[processId];
+      if (!coverage) return;
+      const ratio = coverage.required > 0 ? (coverage.covered / coverage.required) : Infinity;
+      if (ratio < lowestRatio) {
+        lowestRatio = ratio;
+        mostNeededProcess = processId;
       }
     });
 
-    if (mostNeededProc) {
-      coverageMap[mostNeededProc].covered++;
-      coverageMap[mostNeededProc].operatorsIn.push(op);
+    if (mostNeededProcess) {
+      coverageMap[mostNeededProcess].covered++;
+      coverageMap[mostNeededProcess].operatorsIn.push(op);
     }
   });
 
-  // Finalize levels
-  PROCESSES.forEach(proc => {
-    const covInfo = coverageMap[proc];
-    if (covInfo.covered >= covInfo.required) covInfo.level = 'green';
-    else if (covInfo.covered >= covInfo.required - 1) covInfo.level = 'yellow';
-    else covInfo.level = 'red';
+  processList.forEach(process => {
+    const coverage = coverageMap[process.id];
+    if (coverage.covered >= coverage.required) coverage.level = 'green';
+    else if (coverage.covered >= coverage.required - 1) coverage.level = 'yellow';
+    else coverage.level = 'red';
   });
 
   return coverageMap;
@@ -91,9 +127,32 @@ export function getAllCoverageForWeek(operators, vacationBlocks, demand, week, s
 
 /**
  * Fallback backward compatibility for individual cell lookups.
- * It's cleaner to precompute globally but this maintains existing API signature.
  */
-export function getCoverage(operators, vacationBlocks, demand, process, week, shiftMode, shiftFilter, holidayMap) {
-  const globalCoverage = getAllCoverageForWeek(operators, vacationBlocks, demand, week, shiftMode, shiftFilter, holidayMap);
-  return globalCoverage[process];
+export function getCoverage(
+  operators,
+  vacationBlocks,
+  demand,
+  process,
+  week,
+  shiftMode,
+  shiftFilter,
+  holidayMap,
+  processes = defaultProcesses,
+  coverageMode = 'confirmed',
+) {
+  const processList = processes && processes.length ? processes : defaultProcesses;
+  const lookup = buildLookup(processList);
+  const processId = resolveProcessId(process, lookup);
+  const globalCoverage = getAllCoverageForWeek(
+    operators,
+    vacationBlocks,
+    demand,
+    week,
+    shiftMode,
+    shiftFilter,
+    holidayMap,
+    processList,
+    coverageMode,
+  );
+  return globalCoverage[processId];
 }

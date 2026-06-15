@@ -5,6 +5,7 @@ export default function TopBar({
   shiftMode, onShiftModeChange, theme, onThemeChange,
   onImportCSV, onExportCSV, onSave, onExportJSON, onImportJSON, onReset, onShare,
   onUndo, onRedo, canUndo, canRedo,
+  activeModule = 'planning', onModuleChange,
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
@@ -23,10 +24,29 @@ export default function TopBar({
     { value: 'combined', label: 'Combined' },
     { value: 'summer', label: 'Summer' },
   ];
+  const modules = [
+    { id: 'dashboard', label: 'Dashboard' },
+    { id: 'planning', label: 'Planning' },
+    { id: 'matrix', label: 'Matrix' },
+    { id: 'employees', label: 'Employees' },
+    { id: 'settings', label: 'Settings' },
+    { id: 'export', label: 'Export / Print' },
+  ];
 
   return (
     <div className="flex items-center gap-3 px-5 py-2 flex-wrap shadow-md z-30 relative" style={{ background: 'var(--topbar-bg)', color: 'var(--topbar-text)' }}>
       <h1 className="impact-heading text-base mr-3 whitespace-nowrap">Semester Planner</h1>
+      <nav className="flex items-center gap-1 p-1 rounded-full border border-white/10" style={{ background: 'rgba(0,0,0,0.18)' }} aria-label="Modules">
+        {modules.map(m => (
+          <button key={m.id} onClick={() => onModuleChange?.(m.id)}
+            className="px-3 py-1 text-xs font-semibold rounded-full transition-all duration-200"
+            style={activeModule === m.id
+              ? { background: 'var(--accent-secondary)', color: '#fff', boxShadow: '0 0 10px rgba(59,130,246,0.45)' }
+              : { background: 'transparent', color: 'rgba(255,255,255,0.72)' }}>
+            {m.label}
+          </button>
+        ))}
+      </nav>
 
       {/* Undo / Redo — history controls */}
       <div className="flex items-center gap-1 mr-1">

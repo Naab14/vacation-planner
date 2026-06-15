@@ -1,7 +1,8 @@
-import { useState } from 'react';
-import { PROCESSES } from '../data';
+import { useMemo, useState } from 'react';
+import { defaultProcesses } from '../schema';
+import OperatorAvatar from './OperatorAvatar';
 
-export default function OperatorPanel({ operators, onUpdateOperator, showMgmt, onToggleMgmt, onAddOperator, onRemoveOperator, onDownloadTemplate, collapsed, onToggleCollapse }) {
+export default function OperatorPanel({ operators, processes = defaultProcesses, onUpdateOperator, showMgmt, onToggleMgmt, onAddOperator, onRemoveOperator, onDownloadTemplate, collapsed, onToggleCollapse }) {
   const [editId, setEditId] = useState(null);
   const [newName, setNewName] = useState('');
   const [newShift, setNewShift] = useState('S1');
@@ -14,8 +15,20 @@ export default function OperatorPanel({ operators, onUpdateOperator, showMgmt, o
   };
 
   const q = search.trim().toLowerCase();
+  const processById = useMemo(() => {
+    const map = new Map();
+    processes.forEach(process => {
+      map.set(process.id, process);
+      map.set(process.name, process);
+    });
+    return map;
+  }, [processes]);
+  const certLabels = op => (op.certifications || []).map(cert => processById.get(cert)?.name || cert);
   const filteredOperators = q
-    ? operators.filter(op => op.name.toLowerCase().includes(q))
+    ? operators.filter(op =>
+      op.name.toLowerCase().includes(q) ||
+      certLabels(op).some(cert => cert.toLowerCase().includes(q))
+    )
     : operators;
 
   return (
@@ -106,6 +119,7 @@ export default function OperatorPanel({ operators, onUpdateOperator, showMgmt, o
               onClick={() => setEditId(editId === op.id ? null : op.id)}
               onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.background = 'rgba(79,70,229,0.06)'; }}
               onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.background = 'transparent'; }}>
+              <OperatorAvatar operator={op} size={24} />
               <span className="flex-1 truncate font-medium">{op.name}</span>
               <span className="text-xs px-2.5 py-0.5 rounded-full font-mono font-bold"
                 style={op.shift === 'S1'
@@ -143,15 +157,16 @@ export default function OperatorPanel({ operators, onUpdateOperator, showMgmt, o
                 <div className="pt-1">
                   <label className="text-xs block mb-1.5 font-medium" style={{ color: 'var(--text-secondary)' }}>Certifications</label>
                   <div className="space-y-1.5">
-                    {PROCESSES.map(p => (
-                      <label key={p} className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-primary)' }}>
-                        <input type="checkbox" checked={op.certifications.includes(p)}
+                    {processes.map(p => (
+                      <label key={p.id} className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-primary)' }}>
+                        <input type="checkbox" checked={op.certifications.includes(p.id) || op.certifications.includes(p.name)}
                           className="w-3.5 h-3.5 rounded" style={{ accentColor: 'var(--accent)' }}
                           onChange={e => {
-                            const certs = e.target.checked ? [...op.certifications, p] : op.certifications.filter(c => c !== p);
+                            const current = (op.certifications || []).filter(c => c !== p.name);
+                            const certs = e.target.checked ? [...current, p.id] : current.filter(c => c !== p.id);
                             onUpdateOperator(op.id, { certifications: certs });
                           }} />
-                        {p}
+                        {p.name}
                       </label>
                     ))}
                   </div>

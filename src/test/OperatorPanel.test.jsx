@@ -164,6 +164,18 @@ describe('OperatorPanel', () => {
     expect(screen.queryByText('Erik Holm')).not.toBeInTheDocument();
   });
 
+  it('filters operators by certification name', () => {
+    const props = defaultProps();
+    props.operators = [
+      makeOp('1', 'Anna Lindgren', 'S1', true, ['avsyning']),
+      makeOp('2', 'Erik Holm', 'S2', true, ['kapselresaren']),
+    ];
+    render(<OperatorPanel {...props} />);
+    fireEvent.change(screen.getByPlaceholderText('Search operators'), { target: { value: 'kapsel' } });
+    expect(screen.queryByText('Anna Lindgren')).not.toBeInTheDocument();
+    expect(screen.getByText('Erik Holm')).toBeInTheDocument();
+  });
+
   it('matches substring anywhere in the name', () => {
     render(<OperatorPanel {...defaultProps()} />);
     fireEvent.change(screen.getByPlaceholderText('Search operators'), { target: { value: 'holm' } });

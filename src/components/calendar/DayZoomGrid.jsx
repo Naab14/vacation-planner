@@ -1,6 +1,7 @@
 import CoverageRows from './CoverageRows';
 import { CELL_H, LABEL_W, STATUS_COLORS, STATUS_LABELS, SWEDISH_DAYS } from './constants';
 import { isoWeekDates, formatDateStr } from './dateUtils';
+import OperatorAvatar from '../OperatorAvatar';
 
 const DAY_ZOOM_WEEKS = 8;
 const DAY_COL_W = 38;
@@ -12,8 +13,8 @@ function getDayStatus(block, dateStr) {
 }
 
 export default function DayZoomGrid({
-  operators, vacationBlocks, demand, settings, weeks, holidayMap, groups,
-  showDayCoverage, onToggleDayCoverage, setPopover,
+  operators, vacationBlocks, demand, settings, processes, weeks, holidayMap, groups,
+  showDayCoverage, onToggleDayCoverage, coverageMode, setPopover,
   onAddBlock,
 }) {
   const year = new Date().getFullYear();
@@ -120,7 +121,8 @@ export default function DayZoomGrid({
               <div key={op.id} className="flex relative" style={{ height: CELL_H, borderBottom: '1px solid var(--border)', opacity: op.active ? 1 : 0.4 }}>
                 <div className="sticky left-0 z-10 flex items-center px-2 text-xs truncate"
                   style={{ width: LABEL_W, minWidth: LABEL_W, background: 'var(--bg-primary)', borderRight: '1px solid var(--border)', color: 'var(--text-primary)' }}>
-                  {op.name}
+                  <OperatorAvatar operator={op} size={22} />
+                  <span className="ml-2 truncate">{op.name}</span>
                 </div>
                 {cells.map((c, idx) => {
                   const block = vacationBlocks.find(b =>
@@ -197,8 +199,8 @@ export default function DayZoomGrid({
 
             {showDayCoverage && (
               <CoverageRows operators={operators} vacationBlocks={vacationBlocks} demand={demand}
-                weeks={visibleWeeks} shiftMode={settings.shiftMode} shiftFilter={group.shift}
-                holidayMap={holidayMap} label={`COVERAGE (${group.label})`}
+                processes={processes} weeks={visibleWeeks} shiftMode={settings.shiftMode} shiftFilter={group.shift}
+                holidayMap={holidayMap} coverageMode={coverageMode} label={`COVERAGE (${group.label})`}
                 cellWidth={weekCellW} />
             )}
           </div>

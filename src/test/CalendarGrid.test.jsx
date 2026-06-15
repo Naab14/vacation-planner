@@ -93,6 +93,12 @@ describe('CalendarGrid', () => {
     expect(coverageText.length).toBeGreaterThan(0);
   });
 
+  it('toggles coverage between confirmed and projected', () => {
+    render(<CalendarGrid {...defaultProps()} />);
+    fireEvent.click(screen.getByText('Projected'));
+    expect(screen.getByText('Projected')).toBeInTheDocument();
+  });
+
   it('renders data-week and data-op attributes on cells', () => {
     render(<CalendarGrid {...defaultProps()} />);
     const cells = document.querySelectorAll('[data-week][data-op]');

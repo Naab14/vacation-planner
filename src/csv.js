@@ -1,4 +1,4 @@
-import { PROCESSES } from './data';
+import { defaultProcesses } from './schema';
 
 const UTF8_BOM = '\uFEFF';
 
@@ -30,23 +30,43 @@ function levenshtein(a, b) {
   return prev[n];
 }
 
-function suggestCert(input) {
+function buildProcessLookup(processes = defaultProcesses) {
+  const byName = new Map();
+  const byId = new Map();
+  processes.forEach(process => {
+    byName.set(process.name.toLowerCase(), process);
+    byId.set(process.id.toLowerCase(), process);
+  });
+  return { byName, byId };
+}
+
+function suggestCert(input, processes) {
   const trimmed = input.trim();
   if (!trimmed) return null;
   let best = null;
   let bestDist = Infinity;
-  for (const p of PROCESSES) {
-    const d = levenshtein(trimmed, p);
-    if (d < bestDist && d <= 2) { bestDist = d; best = p; }
+  for (const process of processes) {
+    const d = levenshtein(trimmed, process.name);
+    if (d < bestDist && d <= 2) {
+      bestDist = d;
+      best = process.name;
+    }
   }
   return best;
 }
 
-function matchCertCaseInsensitive(input) {
+function matchCertCaseInsensitive(input, processes) {
   const trimmed = input.trim();
   if (!trimmed) return null;
   const lower = trimmed.toLowerCase();
-  return PROCESSES.find(p => p.toLowerCase() === lower) || null;
+  const { byName, byId } = buildProcessLookup(processes);
+  return byName.get(lower)?.id || byId.get(lower)?.id || null;
+}
+
+function certName(cert, processes) {
+  const lower = String(cert || '').toLowerCase();
+  const { byName, byId } = buildProcessLookup(processes);
+  return byId.get(lower)?.name || byName.get(lower)?.name || cert;
 }
 
 function normalizeHeader(raw) {
@@ -62,7 +82,7 @@ function normalizeHeader(raw) {
  * treated as comments and skipped. Returns `{ operators, error, warnings }`
  * where warnings carry per-row hints (unknown certs with fuzzy suggestions).
  */
-export function parseCSV(text) {
+export function parseCSV(text, processes = defaultProcesses) {
   const stripped = text.replace(/^\uFEFF/, '');
   const allLines = stripped.split(/\r?\n/);
   const dataLines = [];
@@ -98,14 +118,14 @@ export function parseCSV(text) {
     const certTokens = rawCerts.split(';').map(c => c.trim()).filter(Boolean);
     const certifications = [];
     for (const token of certTokens) {
-      const matched = matchCertCaseInsensitive(token);
+      const matched = matchCertCaseInsensitive(token, processes);
       if (matched) {
         certifications.push(matched);
       } else {
-        const suggestion = suggestCert(token);
+        const suggestion = suggestCert(token, processes);
         warnings.push(
           suggestion
-            ? `Rad ${rowNum}: Okänd certifiering "${token}" — menade du "${suggestion}"?`
+            ? `Rad ${rowNum}: Okänd certifiering "${token}" - menade du "${suggestion}"?`
             : `Rad ${rowNum}: Okänd certifiering "${token}"`,
         );
       }
@@ -156,12 +176,12 @@ function todayIso() {
   return `${d.getFullYear()}-${mm}-${dd}`;
 }
 
-function buildHeaderComments(title) {
+function buildHeaderComments(title, processes) {
   return [
     `# ${title}`,
     `# Genererad: ${todayIso()}`,
     '# Format: Namn, Skift (S1/S2), Certifieringar (semikolon-separerade)',
-    `# Tillgängliga certifieringar: ${PROCESSES.join('; ')}`,
+    `# Tillgängliga certifieringar: ${processes.map(p => p.name).join('; ')}`,
     '',
   ];
 }
@@ -171,12 +191,12 @@ function buildHeaderComments(title) {
  * preamble). Returns the string including a UTF-8 BOM so Excel opens it
  * correctly without encoding issues.
  */
-export function exportOperatorsCSV(operators) {
+export function exportOperatorsCSV(operators, processes = defaultProcesses) {
   const rows = [
-    ...buildHeaderComments('Semester Planner — Personalexport'),
+    ...buildHeaderComments('Semester Planner - Personalexport', processes),
     'Namn,Skift,Certifieringar',
     ...operators.map(op =>
-      [csvEscape(op.name), csvEscape(op.shift), csvEscape((op.certifications || []).join(';'))].join(','),
+      [csvEscape(op.name), csvEscape(op.shift), csvEscape((op.certifications || []).map(cert => certName(cert, processes)).join(';'))].join(','),
     ),
   ];
   return UTF8_BOM + rows.join('\n') + '\n';
@@ -191,23 +211,15 @@ function triggerDownload(content, filename) {
   URL.revokeObjectURL(a.href);
 }
 
-/**
- * Download the current operator list as a Swedish CSV file.
- * Filename: `personal-YYYY-MM-DD.csv`.
- */
-export function downloadOperatorsCSV(operators) {
-  triggerDownload(exportOperatorsCSV(operators), `personal-${todayIso()}.csv`);
+export function downloadOperatorsCSV(operators, processes = defaultProcesses) {
+  triggerDownload(exportOperatorsCSV(operators, processes), `personal-${todayIso()}.csv`);
 }
 
-/**
- * Download a CSV template with `#` comments listing valid certifications and
- * three example rows (full certs, partial certs, no certs).
- */
-export function downloadCSVTemplate() {
+export function downloadCSVTemplate(processes = defaultProcesses) {
   const rows = [
-    ...buildHeaderComments('Semester Planner — Personalmall'),
+    ...buildHeaderComments('Semester Planner - Personalmall', processes),
     'Namn,Skift,Certifieringar',
-    `Anna Lindgren,S1,${PROCESSES.join(';')}`,
+    `Anna Lindgren,S1,${processes.map(p => p.name).join(';')}`,
     'Erik Holm,S1,Kapselresaren;Etikettering',
     'Klara Dahl,S2,',
   ];
@@ -221,10 +233,15 @@ function splitCSVLine(line) {
   for (let i = 0; i < line.length; i++) {
     const ch = line[i];
     if (ch === '"') {
-      if (inQuotes && line[i + 1] === '"') { current += '"'; i++; }
-      else { inQuotes = !inQuotes; }
+      if (inQuotes && line[i + 1] === '"') {
+        current += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
     } else if (ch === ',' && !inQuotes) {
-      result.push(current); current = '';
+      result.push(current);
+      current = '';
     } else {
       current += ch;
     }

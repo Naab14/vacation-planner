@@ -1,10 +1,11 @@
 import CoverageRows from './CoverageRows';
 import DemandEditor from './DemandEditor';
 import { CELL_W, CELL_H, LABEL_W, STATUS_COLORS, HOLIDAY_ABBREV } from './constants';
+import OperatorAvatar from '../OperatorAvatar';
 
 export default function WeekZoomGrid({
-  ref, operators, vacationBlocks, demand, settings, weeks, holidayMap,
-  groups, drag, showDemand, updateDemand,
+  ref, operators, vacationBlocks, demand, settings, processes, weeks, holidayMap,
+  groups, drag, showDemand, updateDemand, coverageMode,
   onCellPointerDown, onCellPointerUp, onResizePointerDown,
 }) {
   return (
@@ -45,7 +46,8 @@ export default function WeekZoomGrid({
               <div key={op.id} className="flex relative" style={{ height: CELL_H, borderBottom: '1px solid var(--border)', opacity: op.active ? 1 : 0.4 }}>
                 <div className="sticky left-0 z-10 flex items-center px-2 text-xs truncate"
                   style={{ width: LABEL_W, minWidth: LABEL_W, background: 'var(--bg-primary)', borderRight: '1px solid var(--border)', color: 'var(--text-primary)' }}>
-                  {op.name}
+                  <OperatorAvatar operator={op} size={22} />
+                  <span className="ml-2 truncate">{op.name}</span>
                 </div>
                 {weeks.map(w => {
                   const block = vacationBlocks.find(b => b.operatorId === op.id && w >= b.startWeek && w <= b.endWeek);
@@ -125,11 +127,12 @@ export default function WeekZoomGrid({
             ))}
 
             <CoverageRows operators={operators} vacationBlocks={vacationBlocks} demand={demand}
-              weeks={weeks} shiftMode={settings.shiftMode} shiftFilter={group.shift} holidayMap={holidayMap} label={`COVERAGE (${group.label})`} />
+              processes={processes} weeks={weeks} shiftMode={settings.shiftMode} shiftFilter={group.shift}
+              holidayMap={holidayMap} coverageMode={coverageMode} label={`COVERAGE (${group.label})`} />
           </div>
         ))}
 
-        {showDemand && <DemandEditor demand={demand} weeks={weeks} updateDemand={updateDemand} />}
+        {showDemand && <DemandEditor demand={demand} processes={processes} weeks={weeks} updateDemand={updateDemand} />}
       </div>
     </div>
   );

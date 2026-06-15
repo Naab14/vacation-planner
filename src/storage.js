@@ -1,17 +1,19 @@
+import { migrateState } from './schema';
+
 const STATE_KEY = 'vacation-planner-state';
 const THEME_KEY = 'vacation-planner-theme';
 const UI_KEY = 'vacation-planner-ui';
 let debounceTimer = null;
 
 export function saveState(state) {
-  try { localStorage.setItem(STATE_KEY, JSON.stringify(state)); }
+  try { localStorage.setItem(STATE_KEY, JSON.stringify(migrateState(state))); }
   catch (e) { console.warn('Failed to save state:', e); }
 }
 
 export function loadState() {
   try {
     const raw = localStorage.getItem(STATE_KEY);
-    return raw ? JSON.parse(raw) : null;
+    return raw ? migrateState(JSON.parse(raw)) : null;
   } catch (e) { console.warn('Failed to load state:', e); return null; }
 }
 
@@ -28,7 +30,7 @@ export function loadUI() {
 }
 
 export function exportJSON(state) {
-  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  const blob = new Blob([JSON.stringify(migrateState(state), null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -47,7 +49,7 @@ export function importJSON() {
       if (!file) return resolve(null);
       const reader = new FileReader();
       reader.onload = ev => {
-        try { resolve(JSON.parse(ev.target.result)); }
+        try { resolve(migrateState(JSON.parse(ev.target.result))); }
         catch { resolve(null); }
       };
       reader.readAsText(file);
@@ -74,7 +76,7 @@ function base64ToUtf8(b64) {
 }
 
 export function buildShareLink(state) {
-  const payload = utf8ToBase64(JSON.stringify(state));
+  const payload = utf8ToBase64(JSON.stringify(migrateState(state)));
   const base = window.location.origin + window.location.pathname;
   return `${base}#share=${payload}`;
 }
@@ -84,7 +86,7 @@ export function loadStateFromUrl() {
   const m = hash.match(/#share=([^&]+)/);
   if (!m) return null;
   try {
-    return JSON.parse(base64ToUtf8(m[1]));
+    return migrateState(JSON.parse(base64ToUtf8(m[1])));
   } catch (e) {
     console.warn('Failed to parse shared state:', e);
     return null;

@@ -1,16 +1,39 @@
-# React + Vite
+# Semester Planner
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Client-only React/Vite vacation planning tool for managers. It keeps the original calendar-first workflow and adds lightweight modules for plan health, certification management, employee editing, settings, and print/export.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- Dashboard with projected red weeks, pending/requested count, people off, and biggest capacity gaps.
+- Planning board with week/day zoom, custom pointer drag, demand editing, confirmed/projected coverage toggle, and drag conflict warnings.
+- Certification matrix with operators as rows and processes as editable columns.
+- Employee management with operator avatars, active status, shifts, certifications, CSV import/export, and search by name or certification.
+- Settings for planning year, visible weeks, start week, minimum staffing, allowed overlap, locked weeks, and holiday region.
+- Export/Print view with printable vacation plan and projected coverage heatmap.
+- Versioned client-side state with migration from legacy process-name data to process IDs.
 
-## React Compiler
+## Commands
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```bash
+npm install
+npm run dev
+npm run test:ci
+npm run lint
+npm run build
+```
 
-## Expanding the ESLint configuration
+## Architecture
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+This is a browser-only SPA. State is flat and serializable, undo/redo is handled by `historyReducer`, and persistence uses localStorage/share-link helpers through a backend-ready store shape.
+
+Important files:
+
+- `src/schema.js`: schema version, defaults, migrations, process IDs, operator icon generation.
+- `src/App.jsx`: state owner, module shell, update callbacks.
+- `src/coverage.js`: confirmed/projected coverage engine.
+- `src/conflicts.js`: locked-week and overlap warning helpers.
+- `src/dashboard.js`: manager summary derivation.
+- `src/modules/`: Dashboard, Planning, Certification Matrix, Employees, Settings, Export/Print.
+- `src/components/calendar/`: custom pointer-based planning board.
+
+See `ARCHITECTURE.md` for more detail.

@@ -64,6 +64,13 @@ describe('App', () => {
     expect(screen.getByText('v.15')).toBeInTheDocument();
   });
 
+  it('switches to the dashboard module from the top navigation', () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: 'Dashboard' }));
+    expect(screen.getByText('Plan health')).toBeInTheDocument();
+    expect(screen.queryByText('v.15')).not.toBeInTheDocument();
+  });
+
   it('applies theme on change', async () => {
     render(<App />);
     const themeSelect = screen.getByDisplayValue('Default');

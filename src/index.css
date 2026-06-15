@@ -431,3 +431,11 @@ h1, h2, h3, h4, h5, h6 { font-family: var(--font-heading); }
   [data-week][data-op] { min-height: 44px; }
   .time-slider { width: 120px !important; }
 }
+
+@media print {
+  body { background: #fff !important; color: #000 !important; }
+  .no-print, .no-print * { display: none !important; }
+  main { overflow: visible !important; }
+  table { page-break-inside: auto; }
+  tr { page-break-inside: avoid; page-break-after: auto; }
+}

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { saveState, loadState, clearState, saveTheme, loadTheme, saveUI, loadUI, buildShareLink, copyToClipboard } from '../storage';
+import { SCHEMA_VERSION } from '../schema';
 
 const mockStorage = (() => {
   let store = {};
@@ -25,7 +26,21 @@ describe('state persistence', () => {
   it('saveState + loadState roundtrip', () => {
     saveState(testState);
     const loaded = loadState();
-    expect(loaded).toEqual(testState);
+    expect(loaded.schemaVersion).toBe(SCHEMA_VERSION);
+    expect(loaded.operators[0].name).toBe('Test');
+  });
+
+  it('loadState migrates legacy process-name state', () => {
+    saveState({
+      operators: [{ id: '1', name: 'Anna', shift: 'S1', active: true, certifications: ['Avsyning'] }],
+      vacationBlocks: [],
+      demand: { Avsyning: { 15: 4 } },
+      settings: { shiftMode: 'combined', visibleWeeks: 12, startWeek: 15 },
+    });
+    const loaded = loadState();
+    expect(loaded.schemaVersion).toBe(SCHEMA_VERSION);
+    expect(loaded.operators[0].certifications).toEqual(['avsyning']);
+    expect(loaded.demand.avsyning[15]).toBe(4);
   });
 
   it('loadState returns null when no saved state', () => {
