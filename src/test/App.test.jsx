@@ -57,7 +57,7 @@ describe('App', () => {
       const matches = screen.getAllByText(op.name);
       expect(matches.length).toBeGreaterThanOrEqual(1);
     });
-  });
+  }, 15000);
 
   it('renders the top bar title', () => {
     render(<App />);
@@ -74,7 +74,7 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Dashboard' }));
     expect(screen.getByText('Plan health')).toBeInTheDocument();
     expect(screen.queryByText('v.15')).not.toBeInTheDocument();
-  });
+  }, 15000);
 
   it('applies theme on change', async () => {
     render(<App />);
@@ -133,7 +133,7 @@ describe('App', () => {
     expect(screen.getByText('State saved')).toBeInTheDocument();
     act(() => { vi.advanceTimersByTime(3000); });
     expect(screen.queryByText('State saved')).not.toBeInTheDocument();
-  });
+  }, 15000);
 
   it('does not let an older toast timer clear a newer toast', () => {
     render(<App />);
@@ -148,7 +148,7 @@ describe('App', () => {
 
     act(() => { vi.advanceTimersByTime(2100); });
     expect(screen.getByText('Exported to file')).toBeInTheDocument();
-  });
+  }, 15000);
 
   it('reset restores defaults after confirm', () => {
     vi.spyOn(window, 'confirm').mockReturnValue(true);

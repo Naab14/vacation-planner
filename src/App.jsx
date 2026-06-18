@@ -244,7 +244,7 @@ export default function App() {
     const op = { id: uid(), name, shift, active: true, certifications: [], icon: buildOperatorIcon(name, operators.length) };
     setFn(s => ({ ...s, operators: [...s.operators, op] }));
     flash(`${name} tillagd`);
-  }, [operators.length, setFn]);
+  }, [flash, operators.length, setFn]);
   const removeOperator = useCallback(id => {
     setFn(s => ({
       ...s,
@@ -273,30 +273,30 @@ export default function App() {
       reader.readAsText(file);
     };
     input.click();
-  }, [operators, processes, update]);
+  }, [flash, operators, processes, update]);
   const handleCSVExport = useCallback(() => {
     downloadOperatorsCSV(operators, processes);
     flash('Personalexport nedladdad');
-  }, [operators, processes]);
+  }, [flash, operators, processes]);
 
-  const handleSave = useCallback(() => { saveState(state); flash('State saved'); }, [state]);
-  const handleExport = useCallback(() => { exportJSON(state); flash('Exported to file'); }, [state]);
+  const handleSave = useCallback(() => { saveState(state); flash('State saved'); }, [flash, state]);
+  const handleExport = useCallback(() => { exportJSON(state); flash('Exported to file'); }, [flash, state]);
   const handleImport = useCallback(async () => {
     const data = await importJSON();
     if (data) { setFn(() => data); flash('State imported'); }
-  }, [setFn]);
+  }, [flash, setFn]);
   const handleReset = useCallback(() => {
     if (confirm('Reset all data to defaults? This cannot be undone.')) {
       clearState();
       setFn(() => buildDefaultState());
       flash('Reset to defaults');
     }
-  }, [setFn]);
+  }, [flash, setFn]);
   const handleShare = useCallback(async () => {
     const link = buildShareLink(state);
     const ok = await copyToClipboard(link);
     flash(ok ? 'Share link copied' : 'Could not copy link');
-  }, [state]);
+  }, [flash, state]);
 
   /* ── Render ─────────────────────────────────────────────────────────────── */
   return (

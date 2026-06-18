@@ -73,7 +73,7 @@ export default function CoverageRows({
       );
     }
     return map;
-  }, [operators, vacationBlocks, demand, weeks, shiftMode, shiftFilter, holidayMap, processes, coverageMode]);
+  }, [operators, vacationBlocks, demand, weeks, shiftMode, shiftFilter, holidayMap, processes, coverageMode, settings]);
 
   return (
     <>
