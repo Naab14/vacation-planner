@@ -243,6 +243,16 @@ export default function CalendarGrid({
     setDrag({ type: 'resizing', blockId, edge, origStart: block.startWeek, origEnd: block.endWeek });
   };
 
+  const handlePopoverUpdateBlock = useCallback((id, patch) => {
+    const block = vacationBlocks.find(vacationBlock => vacationBlock.id === id);
+    if (!block) return;
+    const candidate = { ...block, ...patch, id };
+    const summary = summarizeCandidate(candidate);
+    if (!summary.blocked && !isOverlapping(candidate.operatorId, candidate.startWeek, candidate.endWeek, id)) {
+      onUpdateBlock(id, patch);
+    }
+  }, [vacationBlocks, summarizeCandidate, isOverlapping, onUpdateBlock]);
+
   const groups = shiftMode === 'separate'
     ? [{ label: 'S1', ops: operators.filter(o => o.shift === 'S1'), shift: 'S1' },
        { label: 'S2', ops: operators.filter(o => o.shift === 'S2'), shift: 'S2' }]
@@ -359,6 +369,7 @@ export default function CalendarGrid({
           onSetStatus={onSetBlockStatus} onDelete={onDeleteBlock}
           onSetDayStatus={onSetBlockDayStatus} onClearDayStatus={onClearBlockDayStatus}
           onSetNote={onSetBlockNote}
+          onUpdateBlock={handlePopoverUpdateBlock}
           onClose={() => setPopover(null)} />
       )}
     </div>

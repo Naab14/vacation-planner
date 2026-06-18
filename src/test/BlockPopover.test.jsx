@@ -20,6 +20,7 @@ const defaultProps = (overrides = {}) => ({
   onSetDayStatus: vi.fn(),
   onClearDayStatus: vi.fn(),
   onSetNote: vi.fn(),
+  onUpdateBlock: vi.fn(),
   onClose: vi.fn(),
   ...overrides,
 });
@@ -72,5 +73,17 @@ describe('BlockPopover — note', () => {
     render(<BlockPopover {...defaultProps()} />);
     expect(screen.getByText('Utkast')).toBeInTheDocument();
     expect(screen.getByText('Delete')).toBeInTheDocument();
+  });
+
+  it('updates the block range from keyboard-accessible week inputs', () => {
+    const props = defaultProps();
+    render(<BlockPopover {...props} />);
+
+    fireEvent.change(screen.getByLabelText('Start week'), { target: { value: '24' } });
+    fireEvent.change(screen.getByLabelText('End week'), { target: { value: '23' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Apply week range' }));
+
+    expect(props.onUpdateBlock).toHaveBeenCalledWith('b1', { startWeek: 23, endWeek: 24 });
+    expect(props.onClose).toHaveBeenCalled();
   });
 });
