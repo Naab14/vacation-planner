@@ -59,16 +59,12 @@ export default function OperatorPanel({ operators, processes = defaultProcesses,
           <div className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: 'var(--text-secondary)' }}>Add Operator</div>
           <input type="text" placeholder="Name" value={newName} onChange={e => setNewName(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleAdd()}
-            className="w-full px-3 py-2 text-sm mb-2 shadow-sm transition-shadow outline-none"
-            style={{ background: 'var(--bg-primary)', border: '1px solid var(--border)', borderRadius: 'var(--border-radius)', color: 'var(--text-primary)' }}
-            onFocus={e => { e.target.style.boxShadow = '0 0 0 2px var(--accent)'; }}
-            onBlur={e => { e.target.style.boxShadow = 'none'; }} />
+            className="operator-field w-full px-3 py-2 text-sm mb-2 shadow-sm transition-shadow outline-none"
+            style={{ background: 'var(--bg-primary)', border: '1px solid var(--border)', borderRadius: 'var(--border-radius)', color: 'var(--text-primary)' }} />
           <div className="flex gap-2 mb-2">
             <select value={newShift} onChange={e => setNewShift(e.target.value)}
-              className="flex-1 px-3 py-2 text-sm shadow-sm outline-none"
-              style={{ background: 'var(--bg-primary)', border: '1px solid var(--border)', borderRadius: 'var(--border-radius)', color: 'var(--text-primary)' }}
-              onFocus={e => { e.target.style.boxShadow = '0 0 0 2px var(--accent)'; }}
-              onBlur={e => { e.target.style.boxShadow = 'none'; }}>
+              className="operator-field flex-1 px-3 py-2 text-sm shadow-sm outline-none"
+              style={{ background: 'var(--bg-primary)', border: '1px solid var(--border)', borderRadius: 'var(--border-radius)', color: 'var(--text-primary)' }}>
               <option value="S1">S1</option><option value="S2">S2</option>
             </select>
             <button onClick={handleAdd} className="px-4 py-2 text-sm font-semibold rounded shadow-sm transition-all hover:scale-105"
@@ -91,10 +87,8 @@ export default function OperatorPanel({ operators, processes = defaultProcesses,
           <input type="text" placeholder="Search operators" value={search}
             aria-label="Search operators"
             onChange={e => setSearch(e.target.value)}
-            className="w-full pl-3 pr-8 py-1.5 text-sm shadow-sm outline-none"
-            style={{ background: 'var(--bg-primary)', border: '1px solid var(--border)', borderRadius: 'var(--border-radius)', color: 'var(--text-primary)' }}
-            onFocus={e => { e.target.style.boxShadow = '0 0 0 2px var(--accent)'; }}
-            onBlur={e => { e.target.style.boxShadow = 'none'; }} />
+            className="operator-field w-full pl-3 pr-8 py-1.5 text-sm shadow-sm outline-none"
+            style={{ background: 'var(--bg-primary)', border: '1px solid var(--border)', borderRadius: 'var(--border-radius)', color: 'var(--text-primary)' }} />
           {search && (
             <button onClick={() => setSearch('')} aria-label="Clear search"
               className="absolute right-1 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center text-xs rounded hover:bg-black/5"
@@ -114,11 +108,9 @@ export default function OperatorPanel({ operators, processes = defaultProcesses,
         )}
         {filteredOperators.map(op => (
           <div key={op.id} className="rounded-lg transition-colors" style={{ background: editId === op.id ? 'var(--bg-secondary)' : 'transparent' }}>
-            <div className="px-3 py-2.5 flex items-center gap-3 cursor-pointer rounded-md text-sm transition-all duration-200"
+            <div className="operator-row px-3 py-2.5 flex items-center gap-3 cursor-pointer rounded-md text-sm transition-all duration-200"
               style={{ opacity: op.active ? 1 : 0.4, color: 'var(--text-primary)' }}
-              onClick={() => setEditId(editId === op.id ? null : op.id)}
-              onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.background = 'rgba(79,70,229,0.06)'; }}
-              onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.background = 'transparent'; }}>
+              onClick={() => setEditId(editId === op.id ? null : op.id)}>
               <OperatorAvatar operator={op} size={24} />
               <span className="flex-1 truncate font-medium">{op.name}</span>
               <span className="text-xs px-2.5 py-0.5 rounded-full font-mono font-bold"
@@ -134,18 +126,14 @@ export default function OperatorPanel({ operators, processes = defaultProcesses,
                 <div>
                   <label className="text-xs block mb-1 font-medium" style={{ color: 'var(--text-secondary)' }}>Name</label>
                   <input type="text" value={op.name} onChange={e => onUpdateOperator(op.id, { name: e.target.value })}
-                    className="w-full px-2.5 py-1.5 text-sm shadow-sm outline-none"
-                    style={{ background: 'var(--bg-primary)', border: '1px solid var(--border)', borderRadius: 'var(--border-radius)', color: 'var(--text-primary)' }}
-                    onFocus={e => { e.target.style.boxShadow = '0 0 0 2px var(--accent)'; }}
-                    onBlur={e => { e.target.style.boxShadow = 'none'; }} />
+                    className="operator-field w-full px-2.5 py-1.5 text-sm shadow-sm outline-none"
+                    style={{ background: 'var(--bg-primary)', border: '1px solid var(--border)', borderRadius: 'var(--border-radius)', color: 'var(--text-primary)' }} />
                 </div>
                 <div>
                   <label className="text-xs block mb-1 font-medium" style={{ color: 'var(--text-secondary)' }}>Shift</label>
                   <select value={op.shift} onChange={e => onUpdateOperator(op.id, { shift: e.target.value })}
-                    className="w-full px-2.5 py-1.5 text-sm shadow-sm outline-none"
-                    style={{ background: 'var(--bg-primary)', border: '1px solid var(--border)', borderRadius: 'var(--border-radius)', color: 'var(--text-primary)' }}
-                    onFocus={e => { e.target.style.boxShadow = '0 0 0 2px var(--accent)'; }}
-                    onBlur={e => { e.target.style.boxShadow = 'none'; }}>
+                    className="operator-field w-full px-2.5 py-1.5 text-sm shadow-sm outline-none"
+                    style={{ background: 'var(--bg-primary)', border: '1px solid var(--border)', borderRadius: 'var(--border-radius)', color: 'var(--text-primary)' }}>
                     <option value="S1">S1</option><option value="S2">S2</option>
                   </select>
                 </div>
