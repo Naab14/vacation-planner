@@ -18,6 +18,34 @@ describe('conflict helpers', () => {
     expect(warnings).toContain('v.21 exceeds allowed overlap (2)');
   });
 
+  it('counts only projected absences from the candidate shift for overlap warnings', () => {
+    const operators = [
+      { id: 'op1', shift: 'S1', active: true },
+      { id: 'op2', shift: 'S1', active: true },
+      { id: 'op3', shift: 'S2', active: true },
+      { id: 'op4', shift: 'S1', active: true },
+    ];
+    const mixedBlocks = [
+      { id: 'draft', operatorId: 'op1', startWeek: 10, endWeek: 10, status: 'draft' },
+      { id: 'other-shift', operatorId: 'op3', startWeek: 10, endWeek: 10, status: 'approved' },
+      { id: 'same-shift', operatorId: 'op2', startWeek: 10, endWeek: 10, status: 'pending' },
+    ];
+
+    expect(getOverlapWarnings(
+      mixedBlocks,
+      { operatorId: 'op4', startWeek: 10, endWeek: 10 },
+      { allowedOverlap: 1, shiftMode: 'separate' },
+      { operators },
+    )).toContain('v.10 exceeds allowed overlap (1)');
+
+    expect(getOverlapWarnings(
+      mixedBlocks,
+      { operatorId: 'op4', startWeek: 10, endWeek: 10 },
+      { allowedOverlap: 2, shiftMode: 'separate' },
+      { operators },
+    )).toEqual([]);
+  });
+
   it('builds a hard-lock conflict summary before softer warnings', () => {
     const summary = buildConflictSummary(blocks, { operatorId: 'op4', startWeek: 21, endWeek: 22 }, { allowedOverlap: 2, lockedWeeks: [22] });
     expect(summary.blocked).toBe(true);
@@ -43,6 +71,24 @@ describe('conflict helpers', () => {
 
     expect(summary.messages).toContain('v.22 Serialisering would drop to RED');
     expect(summary.level).toBe('warning');
+  });
+
+  it('does not blame the candidate for coverage that was already red and unchanged', () => {
+    const processes = [{ id: 'serialisering', name: 'Serialisering' }];
+    const operators = [
+      { id: 'op1', name: 'A', shift: 'S1', active: true, certifications: [] },
+      { id: 'op2', name: 'B', shift: 'S1', active: true, certifications: ['serialisering'] },
+    ];
+    const demand = { serialisering: { 22: 4 } };
+
+    const summary = buildConflictSummary(
+      [],
+      { operatorId: 'op1', startWeek: 22, endWeek: 22 },
+      { allowedOverlap: 4, minStaffing: 0, shiftMode: 'combined' },
+      { operators, demand, processes, holidayMap: {} },
+    );
+
+    expect(summary.messages).not.toContain('v.22 Serialisering would drop to RED');
   });
 
   it('warns when a candidate drops a shift below minimum staffing', () => {

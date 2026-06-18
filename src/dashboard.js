@@ -25,6 +25,7 @@ export function buildDashboardSummary({
       holidayMap,
       processes,
       'projected',
+      settings,
     );
     let hasRed = false;
     processes.forEach(process => {

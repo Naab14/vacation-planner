@@ -37,6 +37,7 @@ export default function CoverageRows({
   processes = defaultProcesses,
   weeks,
   shiftMode,
+  settings = {},
   shiftFilter,
   holidayMap,
   coverageMode = 'confirmed',
@@ -59,6 +60,7 @@ export default function CoverageRows({
         holidayMap,
         processes,
         coverageMode,
+        settings,
       );
     }
     return map;

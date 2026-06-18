@@ -37,10 +37,18 @@ describe('settings helpers', () => {
       planningYear: 1900,
       minStaffing: -4,
       allowedOverlap: 50,
+      defaultRequired: 99,
     });
 
     expect(next.planningYear).toBe(2020);
     expect(next.minStaffing).toBe(0);
     expect(next.allowedOverlap).toBe(20);
+    expect(next.defaultRequired).toBe(20);
+  });
+
+  it('keeps previous default required demand when input parses to NaN', () => {
+    const next = sanitizeSettingsPatch({ ...current, defaultRequired: 3 }, { defaultRequired: Number.NaN });
+
+    expect(next.defaultRequired).toBe(3);
   });
 });

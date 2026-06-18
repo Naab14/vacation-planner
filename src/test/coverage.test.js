@@ -117,6 +117,24 @@ describe('getAllCoverageForWeek multi-cert assignment', () => {
     expect(result.packning.required).toBe(2);
   });
 
+  it('uses settings.defaultRequired when demand is missing for a process/week', () => {
+    const processes = [{ id: 'packning', name: 'Packning' }];
+    const result = getAllCoverageForWeek(
+      [],
+      [],
+      {},
+      10,
+      'combined',
+      null,
+      emptyHolidays,
+      processes,
+      'confirmed',
+      { defaultRequired: 4 },
+    );
+
+    expect(result.packning.required).toBe(4);
+  });
+
   it('assigns single-cert operators first, then multi-cert to most-needed', () => {
     const ops = [
       makeOp('1', 'S1', true, ['avsyning']),

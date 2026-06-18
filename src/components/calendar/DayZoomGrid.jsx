@@ -199,7 +199,7 @@ export default function DayZoomGrid({
 
             {showDayCoverage && (
               <CoverageRows operators={operators} vacationBlocks={vacationBlocks} demand={demand}
-                processes={processes} weeks={visibleWeeks} shiftMode={settings.shiftMode} shiftFilter={group.shift}
+                processes={processes} weeks={visibleWeeks} shiftMode={settings.shiftMode} settings={settings} shiftFilter={group.shift}
                 holidayMap={holidayMap} coverageMode={coverageMode} label={`COVERAGE (${group.label})`}
                 cellWidth={weekCellW} />
             )}

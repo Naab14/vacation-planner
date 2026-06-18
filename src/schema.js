@@ -1,4 +1,5 @@
 export const SCHEMA_VERSION = 2;
+export const DEFAULT_REQUIRED = 2;
 
 export const defaultProcesses = [
   { id: 'avsyning', name: 'Avsyning' },
@@ -15,6 +16,7 @@ export const defaultSettings = {
   startWeek: 15,
   minStaffing: 1,
   allowedOverlap: 2,
+  defaultRequired: DEFAULT_REQUIRED,
   lockedWeeks: [],
   holidaysRegion: 'SE',
   colorCoding: {
@@ -106,7 +108,7 @@ function uniqueProcesses(inputProcesses, legacyState) {
   return processes;
 }
 
-export function buildDefaultDemand(processes = defaultProcesses, value = 2) {
+export function buildDefaultDemand(processes = defaultProcesses, value = DEFAULT_REQUIRED) {
   const demand = {};
   processes.forEach(process => {
     demand[process.id] = {};

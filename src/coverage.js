@@ -1,4 +1,4 @@
-import { defaultProcesses } from './schema';
+import { defaultProcesses, defaultSettings } from './schema';
 
 const VACATION_STATUSES_BY_MODE = {
   confirmed: new Set(['approved']),
@@ -40,6 +40,7 @@ export function getAllCoverageForWeek(
   holidayMap,
   processes = defaultProcesses,
   coverageMode = 'confirmed',
+  settings = defaultSettings,
 ) {
   const processList = processes && processes.length ? processes : defaultProcesses;
   const lookup = buildLookup(processList);
@@ -48,7 +49,7 @@ export function getAllCoverageForWeek(
   processList.forEach(process => {
     coverageMap[process.id] = {
       process,
-      required: demand[process.id]?.[week] ?? demand[process.name]?.[week] ?? 2,
+      required: demand[process.id]?.[week] ?? demand[process.name]?.[week] ?? settings.defaultRequired ?? defaultSettings.defaultRequired,
       covered: 0,
       operatorsIn: [],
       operatorsOut: [],
@@ -139,6 +140,7 @@ export function getCoverage(
   holidayMap,
   processes = defaultProcesses,
   coverageMode = 'confirmed',
+  settings = defaultSettings,
 ) {
   const processList = processes && processes.length ? processes : defaultProcesses;
   const lookup = buildLookup(processList);
@@ -153,6 +155,7 @@ export function getCoverage(
     holidayMap,
     processList,
     coverageMode,
+    settings,
   );
   return globalCoverage[processId];
 }

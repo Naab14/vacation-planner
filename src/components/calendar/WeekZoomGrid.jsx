@@ -136,7 +136,7 @@ export default function WeekZoomGrid({
 
             <CoverageRows operators={operators} vacationBlocks={vacationBlocks} demand={demand}
               processes={processes} weeks={weeks} shiftMode={settings.shiftMode} shiftFilter={group.shift}
-              holidayMap={holidayMap} coverageMode={coverageMode} label={`COVERAGE (${group.label})`} />
+              settings={settings} holidayMap={holidayMap} coverageMode={coverageMode} label={`COVERAGE (${group.label})`} />
           </div>
         ))}
 
