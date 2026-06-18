@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useReducer } from 'react';
+import { useState, useEffect, useCallback, useMemo, useReducer, useRef } from 'react';
 import { buildDefaultState } from './data';
 import { migrateState, processIdForName, buildOperatorIcon } from './schema';
 import {
@@ -60,6 +60,7 @@ export default function App() {
   const [activeModule, setActiveModule] = useState('planning');
   const [zoom, setZoom] = useState(storedUI.zoom === 'day' ? 'day' : 'week');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(!!storedUI.sidebarCollapsed);
+  const toastTimerRef = useRef(null);
   const { isMobile, isTablet, isDesktop } = useBreakpoint();
 
   // Auto-collapse sidebar on tablet/mobile; restore latest persisted preference on desktop
@@ -79,7 +80,18 @@ export default function App() {
   );
 
   const [holidayMap, setHolidayMap] = useState(() => buildHolidayMap());
-  const flash = msg => { setToast(msg); setTimeout(() => setToast(null), 3000); };
+  const flash = useCallback(msg => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    setToast(msg);
+    toastTimerRef.current = setTimeout(() => {
+      setToast(null);
+      toastTimerRef.current = null;
+    }, 3000);
+  }, []);
+
+  useEffect(() => () => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+  }, []);
 
   // Load holidays async (date-holidays is code-split)
   useEffect(() => {

@@ -33,6 +33,11 @@ import App from '../App';
 import { seedOperators } from '../data';
 import * as storage from '../storage';
 
+const openOverflowMenu = () => {
+  const button = screen.getAllByRole('button').find(btn => ['⋮', 'â‹®'].includes(btn.textContent.trim()));
+  fireEvent.click(button);
+};
+
 describe('App', () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -128,6 +133,21 @@ describe('App', () => {
     expect(screen.getByText('State saved')).toBeInTheDocument();
     act(() => { vi.advanceTimersByTime(3000); });
     expect(screen.queryByText('State saved')).not.toBeInTheDocument();
+  });
+
+  it('does not let an older toast timer clear a newer toast', () => {
+    render(<App />);
+    openOverflowMenu();
+    fireEvent.click(screen.getByText('Save'));
+    expect(screen.getByText('State saved')).toBeInTheDocument();
+
+    act(() => { vi.advanceTimersByTime(1000); });
+    openOverflowMenu();
+    fireEvent.click(screen.getByText('Export'));
+    expect(screen.getByText('Exported to file')).toBeInTheDocument();
+
+    act(() => { vi.advanceTimersByTime(2100); });
+    expect(screen.getByText('Exported to file')).toBeInTheDocument();
   });
 
   it('reset restores defaults after confirm', () => {
