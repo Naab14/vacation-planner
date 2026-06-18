@@ -29,6 +29,15 @@ function CoverageTooltip({ coverageData, week, processName, holidayMap, style })
 }
 
 const colorMap = { green: 'var(--coverage-green)', yellow: 'var(--coverage-yellow)', red: 'var(--coverage-red)' };
+const TOOLTIP_ESTIMATED_HEIGHT = 200;
+const TOOLTIP_MARGIN = 8;
+
+function getTooltipPosition(rect) {
+  const x = rect.right + 4 > window.innerWidth ? rect.left - 220 : rect.right + 4;
+  const maxY = window.innerHeight - TOOLTIP_ESTIMATED_HEIGHT;
+  const y = Math.max(TOOLTIP_MARGIN, Math.min(rect.top, maxY));
+  return { x, y };
+}
 
 export default function CoverageRows({
   operators,
@@ -85,18 +94,18 @@ export default function CoverageRows({
               <div key={week}
                 className="flex items-center justify-center text-xs font-medium relative"
                 style={{ width: w, minWidth: w, height: CELL_H, borderRight: '1px solid var(--border)', color: colorMap[cov.level], cursor: 'help' }}
-                tabIndex={0} role="button"
+                tabIndex={0}
                 aria-label={`${process.name} v.${week}: ${cov.covered}/${cov.required}`}
                 onPointerEnter={e => {
                   const rect = e.currentTarget.getBoundingClientRect();
-                  const x = rect.right + 4 > window.innerWidth ? rect.left - 220 : rect.right + 4;
-                  const y = Math.min(rect.top, window.innerHeight - 200);
+                  const { x, y } = getTooltipPosition(rect);
                   setTooltip({ processName: process.name, week, cov, x, y });
                 }}
                 onPointerLeave={() => setTooltip(null)}
                 onFocus={e => {
                   const rect = e.currentTarget.getBoundingClientRect();
-                  setTooltip({ processName: process.name, week, cov, x: rect.right + 4, y: rect.top });
+                  const { x, y } = getTooltipPosition(rect);
+                  setTooltip({ processName: process.name, week, cov, x, y });
                 }}
                 onBlur={() => setTooltip(null)}>
                 {cov.covered}/{cov.required}
