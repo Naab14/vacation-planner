@@ -14,7 +14,7 @@ describe('schema migration', () => {
     expect(state.processes).toEqual(defaultProcesses);
     expect(state.demand.avsyning[1]).toBe(2);
     expect(state.operators[0].certifications).toContain('avsyning');
-    expect(state.operators[0].icon).toEqual({ initials: 'AL', color: expect.any(String) });
+    expect(state.operators[0].icon).toEqual({ color: expect.any(String) });
   });
 
   it('migrates legacy process-name demand and certifications to process IDs', () => {
@@ -33,7 +33,7 @@ describe('schema migration', () => {
     expect(migrated.schemaVersion).toBe(SCHEMA_VERSION);
     expect(migrated.processes.map(p => p.id)).toEqual(defaultProcesses.map(p => p.id));
     expect(migrated.operators[0].certifications).toEqual(['avsyning', 'serialisering']);
-    expect(migrated.operators[0].icon.initials).toBe('AN');
+    expect(migrated.operators[0].icon).toEqual({ color: expect.any(String) });
     expect(migrated.demand.avsyning[15]).toBe(3);
     expect(migrated.demand.serialisering[15]).toBe(1);
     expect(migrated.settings.shiftMode).toBe('combined');
@@ -50,6 +50,19 @@ describe('schema migration', () => {
     expect(migrated.processes).toContainEqual({ id: 'packning', name: 'Packning' });
     expect(migrated.operators[0].certifications).toEqual(['packning']);
     expect(migrated.demand.packning[4]).toBe(5);
+  });
+
+  it('drops stale persisted initials while preserving icon color', () => {
+    const migrated = migrateState({
+      operators: [
+        { id: 'op1', name: 'Anna Ny', shift: 'S1', active: true, certifications: [], icon: { initials: 'OLD', color: '#123456' } },
+      ],
+      vacationBlocks: [],
+      demand: {},
+      settings: {},
+    });
+
+    expect(migrated.operators[0].icon).toEqual({ color: '#123456' });
   });
 
   it('normalizes process names to stable IDs', () => {

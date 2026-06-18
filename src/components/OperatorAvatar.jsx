@@ -1,7 +1,8 @@
-import { buildOperatorIcon } from '../schema';
+import { buildOperatorIcon, getOperatorInitials } from '../schema';
 
 export default function OperatorAvatar({ operator, size = 24 }) {
   const icon = operator.icon || buildOperatorIcon(operator.name);
+  const initials = getOperatorInitials(operator.name);
   return (
     <span
       aria-label={`${operator.name} icon`}
@@ -16,7 +17,7 @@ export default function OperatorAvatar({ operator, size = 24 }) {
         boxShadow: '0 2px 8px rgba(15,23,42,0.16)',
       }}
     >
-      {icon.initials}
+      {initials}
     </span>
   );
 }

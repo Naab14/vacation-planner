@@ -60,13 +60,16 @@ export const seedVacationBlocks = [
 const iconColors = ['#4f46e5', '#0284c7', '#059669', '#d97706', '#db2777', '#7c3aed', '#0891b2', '#be123c'];
 
 export function buildOperatorIcon(name, index = 0) {
+  const seed = Array.from(String(name || '')).reduce((sum, ch) => sum + ch.charCodeAt(0), index);
+  return { color: iconColors[Math.abs(seed) % iconColors.length] };
+}
+
+export function getOperatorInitials(name) {
   const words = String(name || '')
     .trim()
     .split(/\s+/)
     .filter(Boolean);
-  const initials = (words.length >= 2 ? `${words[0][0]}${words[1][0]}` : (words[0]?.slice(0, 2) || '?')).toUpperCase();
-  const seed = Array.from(String(name || '')).reduce((sum, ch) => sum + ch.charCodeAt(0), index);
-  return { initials, color: iconColors[Math.abs(seed) % iconColors.length] };
+  return (words.length >= 2 ? `${words[0][0]}${words[1][0]}` : (words[0]?.slice(0, 2) || '?')).toUpperCase();
 }
 
 export function processIdForName(name) {
@@ -143,7 +146,7 @@ export function migrateState(rawState) {
     operators: (rawState.operators || seedOperators).map((op, index) => ({
       ...op,
       active: op.active !== false,
-      icon: op.icon || buildOperatorIcon(op.name, index),
+      icon: { color: op.icon?.color || buildOperatorIcon(op.name, index).color },
       certifications: Array.from(new Set((op.certifications || []).map(mapProcessId).filter(Boolean))),
     })),
     vacationBlocks: rawState.vacationBlocks || seedVacationBlocks,
