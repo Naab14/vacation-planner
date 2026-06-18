@@ -35,4 +35,18 @@ describe('CertificationMatrix', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add process' }));
     expect(onAddProcess).toHaveBeenCalledWith('Packning');
   });
+
+  it('renames a process from the column header', () => {
+    const onRenameProcess = vi.fn();
+    render(<CertificationMatrix operators={operators} processes={processes} onRenameProcess={onRenameProcess} />);
+    fireEvent.change(screen.getByLabelText('Rename Serialisering'), { target: { value: 'Serialisering 2' } });
+    expect(onRenameProcess).toHaveBeenCalledWith('serialisering', 'Serialisering 2');
+  });
+
+  it('removes a process from the column header', () => {
+    const onRemoveProcess = vi.fn();
+    render(<CertificationMatrix operators={operators} processes={processes} onRemoveProcess={onRemoveProcess} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Remove Serialisering' }));
+    expect(onRemoveProcess).toHaveBeenCalledWith('serialisering');
+  });
 });

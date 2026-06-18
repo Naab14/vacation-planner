@@ -8,8 +8,13 @@ const operators = [
   { id: 'op1', name: 'Anna', shift: 'S1', active: true, certifications: ['avsyning'], icon: { initials: 'AN', color: '#4f46e5' } },
 ];
 
+function statValue(label) {
+  const statLabel = screen.getAllByText(label).find(element => element.className.includes('uppercase'));
+  return statLabel.parentElement.querySelector('.text-2xl').textContent;
+}
+
 describe('Dashboard', () => {
-  it('renders health summary cards', () => {
+  it('renders exact health summary KPI values', () => {
     render(
       <Dashboard
         operators={operators}
@@ -23,8 +28,10 @@ describe('Dashboard', () => {
       />,
     );
     expect(screen.getByText('Plan health')).toBeInTheDocument();
-    expect(screen.getByText('Pending requests')).toBeInTheDocument();
-    expect(screen.getAllByText('1').length).toBeGreaterThan(0);
+    expect(statValue('Red weeks')).toBe('1');
+    expect(statValue('Pending requests')).toBe('1');
+    expect(statValue('Off this week')).toBe('1');
+    expect(statValue('Capacity gaps')).toBe('2');
     expect(screen.getByText('Anna')).toBeInTheDocument();
   });
 });
