@@ -1,6 +1,6 @@
-import { AbsenceStatus } from '@prisma/client';
 import { computeWeekCoverage, isAbsentInWeek, OUT_STATUSES } from './coverage';
 import type {
+  AbsenceStatus,
   DemandMap,
   EngineAbsence,
   EngineOperator,
@@ -60,7 +60,7 @@ function resolveCandidate(
     operatorId: candidate.operatorId,
     startWeek: Math.min(candidate.startWeek, candidate.endWeek),
     endWeek: Math.max(candidate.startWeek, candidate.endWeek),
-    status: candidate.status ?? existing?.status ?? AbsenceStatus.REQUESTED,
+    status: candidate.status ?? existing?.status ?? 'REQUESTED',
   };
   const after = [...absences.filter((a) => a.id !== candidate.id), candidateBlock];
   return { candidateBlock, before: absences, after };

@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { AbsenceStatus } from '@prisma/client';
 import { computeWeekCoverage, coverageLevel } from './coverage';
-import type { DemandMap, EngineAbsence, EngineOperator, EngineProcess } from './types';
+import type { AbsenceStatus, DemandMap, EngineAbsence, EngineOperator, EngineProcess } from './types';
 
 const processes: EngineProcess[] = [
   { id: 'p-avsyning', name: 'Avsyning' },
@@ -70,8 +69,8 @@ describe('computeWeekCoverage', () => {
   it('confirmed mode counts only APPROVED absences as out', () => {
     const operators = [op('a', ['p-avsyning']), op('b', ['p-avsyning'])];
     const absences = [
-      absence('a', 9, 11, AbsenceStatus.APPROVED),
-      absence('b', 9, 11, AbsenceStatus.REQUESTED),
+      absence('a', 9, 11, 'APPROVED'),
+      absence('b', 9, 11, 'REQUESTED'),
     ];
     const result = computeWeekCoverage({
       operators, absences, processes, demand, week: 10, shift: 'S1',
@@ -84,9 +83,9 @@ describe('computeWeekCoverage', () => {
   it('projected mode also counts REQUESTED and PENDING', () => {
     const operators = [op('a', ['p-avsyning']), op('b', ['p-avsyning']), op('c', ['p-avsyning'])];
     const absences = [
-      absence('a', 10, 10, AbsenceStatus.REQUESTED),
-      absence('b', 10, 10, AbsenceStatus.PENDING),
-      absence('c', 10, 10, AbsenceStatus.DRAFT), // drafts never count
+      absence('a', 10, 10, 'REQUESTED'),
+      absence('b', 10, 10, 'PENDING'),
+      absence('c', 10, 10, 'DRAFT'), // drafts never count
     ];
     const result = computeWeekCoverage({
       operators, absences, processes, demand, week: 10, shift: 'S1',
@@ -119,7 +118,7 @@ describe('computeWeekCoverage', () => {
 
   it('absence outside the week does not count as out', () => {
     const operators = [op('a', ['p-avsyning'])];
-    const absences = [absence('a', 11, 12, AbsenceStatus.APPROVED)];
+    const absences = [absence('a', 11, 12, 'APPROVED')];
     const result = computeWeekCoverage({
       operators, absences, processes, demand, week: 10, shift: 'S1',
       mode: 'confirmed', settings,

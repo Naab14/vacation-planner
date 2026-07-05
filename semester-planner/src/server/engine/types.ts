@@ -1,6 +1,12 @@
-import type { AbsenceStatus } from '@prisma/client';
-
 /** Minimal shapes the engines need — decoupled from Prisma query results. */
+
+/**
+ * Mirrors the Prisma AbsenceStatus enum as a plain string union so the pure
+ * engines can also run in the browser (live drag previews) without pulling
+ * in @prisma/client. Server code passes Prisma enum values directly — they
+ * are the same strings.
+ */
+export type AbsenceStatus = 'DRAFT' | 'REQUESTED' | 'PENDING' | 'APPROVED' | 'DENIED';
 
 export interface EngineOperator {
   id: string;

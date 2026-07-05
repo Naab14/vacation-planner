@@ -7,18 +7,24 @@ import type {
   EngineSettings,
 } from '@/server/engine/types';
 
+export interface BoardOperator extends EngineOperator {
+  name: string;
+  iconColor: string | null;
+}
+
 export interface PlanningData {
-  operators: EngineOperator[];
+  operators: BoardOperator[];
   processes: EngineProcess[];
   absences: EngineAbsence[];
   demand: DemandMap;
-  settings: EngineSettings & { planningYear: number; shifts: string[] };
+  holidays: Array<{ week: number; name: string }>;
+  settings: EngineSettings & { planningYear: number; shifts: string[]; visibleWeeks: number; startWeek: number };
 }
 
-/** Load everything the engines need for one org + year in one round trip set. */
+/** Load everything the engines and the board need for one org + year. */
 export async function loadPlanningData(orgId: string, year: number): Promise<PlanningData> {
-  const [settingsRow, operatorRows, processRows, demandRows, absenceRows] = await Promise.all([
-    db.settings.findUniqueOrThrow({ where: { orgId } }),
+  const settingsRow = await db.settings.findUniqueOrThrow({ where: { orgId } });
+  const [operatorRows, processRows, demandRows, absenceRows, holidayRows] = await Promise.all([
     db.operator.findMany({
       where: { orgId },
       include: { certifications: { select: { processId: true } } },
@@ -27,6 +33,10 @@ export async function loadPlanningData(orgId: string, year: number): Promise<Pla
     db.process.findMany({ where: { orgId }, orderBy: { sortOrder: 'asc' } }),
     db.demand.findMany({ where: { year, process: { orgId } } }),
     db.absenceBlock.findMany({ where: { year, operator: { orgId } } }),
+    db.holiday.findMany({
+      where: { region: settingsRow.holidaysRegion, year },
+      orderBy: { week: 'asc' },
+    }),
   ]);
 
   const demand: DemandMap = {};
@@ -37,6 +47,8 @@ export async function loadPlanningData(orgId: string, year: number): Promise<Pla
   return {
     operators: operatorRows.map((op) => ({
       id: op.id,
+      name: op.name,
+      iconColor: op.iconColor,
       shift: op.shift,
       active: op.active,
       certifications: op.certifications.map((c) => c.processId),
@@ -50,9 +62,12 @@ export async function loadPlanningData(orgId: string, year: number): Promise<Pla
       status: a.status,
     })),
     demand,
+    holidays: holidayRows.map((h) => ({ week: h.week, name: h.name })),
     settings: {
       planningYear: settingsRow.planningYear,
       shifts: settingsRow.shifts,
+      visibleWeeks: settingsRow.visibleWeeks,
+      startWeek: settingsRow.startWeek,
       minStaffing: settingsRow.minStaffing,
       defaultRequired: settingsRow.defaultRequired,
       allowedOverlap: settingsRow.allowedOverlap,

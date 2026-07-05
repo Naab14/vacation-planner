@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { AbsenceStatus } from '@prisma/client';
 import { evaluateCandidate, hasBlockingConflict, weeksInRange } from './conflicts';
 import type { ConflictContext } from './conflicts';
-import type { EngineAbsence, EngineOperator, EngineProcess } from './types';
+import type { AbsenceStatus, EngineAbsence, EngineOperator, EngineProcess } from './types';
 
 const processes: EngineProcess[] = [{ id: 'p1', name: 'Avsyning' }];
 
@@ -15,7 +14,7 @@ function absence(
   operatorId: string,
   startWeek: number,
   endWeek: number,
-  status: AbsenceStatus = AbsenceStatus.APPROVED,
+  status: AbsenceStatus = 'APPROVED',
 ): EngineAbsence {
   return { id, operatorId, startWeek, endWeek, status };
 }
@@ -36,7 +35,7 @@ const candidate = (startWeek: number, endWeek: number, operatorId = 'a') => ({
   operatorId,
   startWeek,
   endWeek,
-  status: AbsenceStatus.REQUESTED,
+  status: 'REQUESTED' as AbsenceStatus,
 });
 
 describe('weeksInRange', () => {
@@ -62,8 +61,8 @@ describe('evaluateCandidate — overlap', () => {
   it('warns when simultaneous projected absences in the same shift exceed the allowance', () => {
     const ctx = context({
       absences: [
-        absence('x1', 'b', 10, 10, AbsenceStatus.APPROVED),
-        absence('x2', 'c', 10, 10, AbsenceStatus.PENDING),
+        absence('x1', 'b', 10, 10, 'APPROVED'),
+        absence('x2', 'c', 10, 10, 'PENDING'),
       ],
       settings: { minStaffing: 0, defaultRequired: 0, allowedOverlap: 2, lockedWeeks: [] },
     });
@@ -75,8 +74,8 @@ describe('evaluateCandidate — overlap', () => {
     const ctx = context({
       operators: [op('a'), op('b'), op('c', 'S2'), op('d')],
       absences: [
-        absence('x1', 'b', 10, 10, AbsenceStatus.DRAFT), // draft — ignored
-        absence('x2', 'c', 10, 10, AbsenceStatus.APPROVED), // S2 — ignored
+        absence('x1', 'b', 10, 10, 'DRAFT'), // draft — ignored
+        absence('x2', 'c', 10, 10, 'APPROVED'), // S2 — ignored
       ],
       settings: { minStaffing: 0, defaultRequired: 0, allowedOverlap: 1, lockedWeeks: [] },
     });
@@ -86,11 +85,11 @@ describe('evaluateCandidate — overlap', () => {
 
   it('a DRAFT candidate itself produces no overlap warning', () => {
     const ctx = context({
-      absences: [absence('x1', 'b', 10, 10, AbsenceStatus.APPROVED)],
+      absences: [absence('x1', 'b', 10, 10, 'APPROVED')],
       settings: { minStaffing: 0, defaultRequired: 0, allowedOverlap: 1, lockedWeeks: [] },
     });
     const warnings = evaluateCandidate(
-      { ...candidate(10, 10), status: AbsenceStatus.DRAFT },
+      { ...candidate(10, 10), status: 'DRAFT' },
       ctx,
     );
     expect(warnings.filter((w) => w.kind === 'overlap')).toHaveLength(0);
@@ -101,7 +100,7 @@ describe('evaluateCandidate — minimum staffing', () => {
   it('warns when the candidate drops staffing below the minimum', () => {
     const ctx = context({
       operators: [op('a'), op('b')],
-      absences: [absence('x1', 'b', 10, 10, AbsenceStatus.APPROVED)],
+      absences: [absence('x1', 'b', 10, 10, 'APPROVED')],
       settings: { minStaffing: 1, defaultRequired: 0, allowedOverlap: 9, lockedWeeks: [] },
     });
     const warnings = evaluateCandidate(candidate(10, 10), ctx);
@@ -112,8 +111,8 @@ describe('evaluateCandidate — minimum staffing', () => {
     const ctx = context({
       operators: [op('a'), op('b')],
       absences: [
-        absence('x1', 'a', 10, 10, AbsenceStatus.APPROVED),
-        absence('x2', 'b', 10, 10, AbsenceStatus.APPROVED),
+        absence('x1', 'a', 10, 10, 'APPROVED'),
+        absence('x2', 'b', 10, 10, 'APPROVED'),
       ],
       settings: { minStaffing: 2, defaultRequired: 0, allowedOverlap: 9, lockedWeeks: [] },
     });
@@ -132,7 +131,7 @@ describe('evaluateCandidate — projected red coverage', () => {
   it('warns when the candidate newly turns a process red', () => {
     const ctx = context({
       operators: [op('a'), op('b')],
-      absences: [absence('x1', 'b', 10, 10, AbsenceStatus.APPROVED)], // 1/2 = yellow
+      absences: [absence('x1', 'b', 10, 10, 'APPROVED')], // 1/2 = yellow
       demand,
       settings: { minStaffing: 0, defaultRequired: 2, allowedOverlap: 9, lockedWeeks: [] },
     });
@@ -144,8 +143,8 @@ describe('evaluateCandidate — projected red coverage', () => {
     const ctx = context({
       operators: [op('a'), op('b'), op('c')],
       absences: [
-        absence('x1', 'b', 10, 10, AbsenceStatus.APPROVED),
-        absence('x2', 'c', 10, 10, AbsenceStatus.APPROVED),
+        absence('x1', 'b', 10, 10, 'APPROVED'),
+        absence('x2', 'c', 10, 10, 'APPROVED'),
       ], // already 1/3 → red
       demand: { p1: { 10: 3 } },
       settings: { minStaffing: 0, defaultRequired: 3, allowedOverlap: 9, lockedWeeks: [] },
@@ -162,8 +161,8 @@ describe('evaluateCandidate — projected red coverage', () => {
     const ctx = context({
       operators: [op('a'), op('b'), op('c'), op('d')],
       absences: [
-        absence('x1', 'b', 10, 10, AbsenceStatus.APPROVED),
-        absence('x2', 'c', 10, 10, AbsenceStatus.APPROVED),
+        absence('x1', 'b', 10, 10, 'APPROVED'),
+        absence('x2', 'c', 10, 10, 'APPROVED'),
       ], // 2/4 covered → red already
       demand: { p1: { 10: 4 } },
       settings: { minStaffing: 0, defaultRequired: 4, allowedOverlap: 9, lockedWeeks: [] },

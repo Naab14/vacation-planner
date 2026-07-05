@@ -1,5 +1,5 @@
-import { AbsenceStatus } from '@prisma/client';
 import type {
+  AbsenceStatus,
   CoverageLevel,
   CoverageMode,
   DemandMap,
@@ -16,8 +16,8 @@ import type {
  * DRAFT and DENIED never count.
  */
 export const OUT_STATUSES: Record<CoverageMode, ReadonlySet<AbsenceStatus>> = {
-  confirmed: new Set([AbsenceStatus.APPROVED]),
-  projected: new Set([AbsenceStatus.APPROVED, AbsenceStatus.PENDING, AbsenceStatus.REQUESTED]),
+  confirmed: new Set<AbsenceStatus>(['APPROVED']),
+  projected: new Set<AbsenceStatus>(['APPROVED', 'PENDING', 'REQUESTED']),
 };
 
 export function isAbsentInWeek(
