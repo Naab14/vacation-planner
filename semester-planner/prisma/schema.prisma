@@ -1,0 +1,263 @@
+// Semester Planner — PostgreSQL schema (Prisma)
+// Single-organization today; every domain row hangs off Organization so
+// multi-tenancy is an additive change (add orgId scoping to queries), not a migration rewrite.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── Enums ────────────────────────────────────────────────────────────────
+
+enum Role {
+  ADMIN
+  MANAGER
+  EMPLOYEE
+}
+
+enum AbsenceStatus {
+  DRAFT // planner sketch, invisible to coverage & overlap
+  REQUESTED // employee submitted
+  PENDING // acknowledged, awaiting decision
+  APPROVED // counts as confirmed absence
+  DENIED
+}
+
+enum LeaveDecision {
+  SUBMITTED
+  APPROVED
+  DENIED
+  CANCELLED
+}
+
+enum ShiftMode {
+  COMBINED
+  SEPARATE
+}
+
+// ── Identity & org ───────────────────────────────────────────────────────
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+
+  users         User[]
+  operators     Operator[]
+  teams         Team[]
+  processes     Process[]
+  settings      Settings?
+  auditLogs     AuditLog[]
+  notifications Notification[]
+}
+
+model User {
+  id           String   @id @default(cuid())
+  orgId        String
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(EMPLOYEE)
+  locale       String   @default("sv")
+  operatorId   String?  @unique // EMPLOYEE users link to their operator row
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  org           Organization   @relation(fields: [orgId], references: [id])
+  operator      Operator?      @relation(fields: [operatorId], references: [id])
+  notifications Notification[]
+  auditLogs     AuditLog[]     @relation("actor")
+  requested     LeaveEvent[]   @relation("requestedBy")
+  decided       LeaveEvent[]   @relation("decidedBy")
+
+  @@index([orgId])
+}
+
+// ── Personnel ────────────────────────────────────────────────────────────
+
+model Team {
+  id    String  @id @default(cuid())
+  orgId String
+  name  String
+  shift String? // e.g. "S1" — optional default shift for the team
+
+  org       Organization @relation(fields: [orgId], references: [id])
+  operators Operator[]
+
+  @@unique([orgId, name])
+}
+
+model Operator {
+  id        String   @id @default(cuid())
+  orgId     String
+  name      String
+  shift     String // "S1" | "S2" | … — validated in app code against Settings.shifts
+  active    Boolean  @default(true)
+  teamId    String?
+  iconColor String? // hex token key; initials are ALWAYS derived from name at render
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  org            Organization    @relation(fields: [orgId], references: [id])
+  team           Team?           @relation(fields: [teamId], references: [id])
+  user           User?
+  certifications Certification[]
+  absences       AbsenceBlock[]
+
+  @@index([orgId, active])
+  @@index([teamId])
+}
+
+// ── Processes & certifications ───────────────────────────────────────────
+
+model Process {
+  id        String   @id @default(cuid())
+  orgId     String
+  slug      String // stable machine key, e.g. "avsyning"
+  name      String // display name, e.g. "Avsyning"
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  org            Organization    @relation(fields: [orgId], references: [id])
+  certifications Certification[]
+  demand         Demand[]
+
+  @@unique([orgId, slug])
+}
+
+model Certification {
+  operatorId String
+  processId  String
+  level      Int?     @db.SmallInt // reserved for skill levels (phase-2 hook)
+  createdAt  DateTime @default(now())
+
+  operator Operator @relation(fields: [operatorId], references: [id], onDelete: Cascade)
+  process  Process  @relation(fields: [processId], references: [id], onDelete: Cascade)
+
+  @@id([operatorId, processId])
+  @@index([processId])
+}
+
+// ── Demand ───────────────────────────────────────────────────────────────
+
+model Demand {
+  id        String @id @default(cuid())
+  processId String
+  year      Int
+  week      Int    @db.SmallInt // 1–53
+  required  Int    @db.SmallInt
+
+  process Process @relation(fields: [processId], references: [id], onDelete: Cascade)
+
+  // Sparse: absent rows fall back to Settings.defaultRequired
+  @@unique([processId, year, week])
+  @@index([year, week])
+}
+
+// ── Absence planning ─────────────────────────────────────────────────────
+
+model AbsenceBlock {
+  id          String        @id @default(cuid())
+  operatorId  String
+  year        Int
+  startWeek   Int           @db.SmallInt
+  endWeek     Int           @db.SmallInt
+  status      AbsenceStatus @default(DRAFT)
+  note        String?
+  dayStatuses Json? // per-day overrides inside a week (day-zoom), jsonb
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  operator Operator     @relation(fields: [operatorId], references: [id], onDelete: Cascade)
+  events   LeaveEvent[]
+
+  @@index([operatorId, year])
+  @@index([year, startWeek, endWeek])
+  @@index([status])
+}
+
+/// Immutable approval trail. Rows are only ever inserted, never updated.
+model LeaveEvent {
+  id             String        @id @default(cuid())
+  absenceBlockId String
+  requestedById  String
+  decidedById    String?
+  decision       LeaveDecision
+  comment        String?
+  createdAt      DateTime      @default(now())
+
+  absenceBlock AbsenceBlock @relation(fields: [absenceBlockId], references: [id], onDelete: Cascade)
+  requestedBy  User         @relation("requestedBy", fields: [requestedById], references: [id])
+  decidedBy    User?        @relation("decidedBy", fields: [decidedById], references: [id])
+
+  @@index([absenceBlockId, createdAt])
+}
+
+// ── Configuration ────────────────────────────────────────────────────────
+
+model Settings {
+  orgId           String    @id
+  planningYear    Int
+  shiftMode       ShiftMode @default(SEPARATE)
+  shifts          String[]  @default(["S1", "S2"])
+  visibleWeeks    Int       @default(12) @db.SmallInt
+  startWeek       Int       @default(1) @db.SmallInt
+  minStaffing     Int       @default(1) @db.SmallInt
+  defaultRequired Int       @default(2) @db.SmallInt
+  allowedOverlap  Int       @default(2) @db.SmallInt
+  lockedWeeks     Int[]     @default([])
+  holidaysRegion  String    @default("SE")
+  colorThresholds Json? // { greenAt, yellowWithin } — engine thresholds
+  updatedAt       DateTime  @updatedAt
+
+  org Organization @relation(fields: [orgId], references: [id])
+}
+
+model Holiday {
+  id     String @id @default(cuid())
+  region String // "SE"
+  year   Int
+  week   Int    @db.SmallInt
+  name   String
+
+  @@unique([region, year, week, name])
+  @@index([region, year])
+}
+
+// ── Cross-cutting ────────────────────────────────────────────────────────
+
+model AuditLog {
+  id       String   @id @default(cuid())
+  orgId    String
+  actorId  String?
+  action   String // e.g. "absence.approve", "demand.update"
+  entity   String // model name
+  entityId String
+  before   Json?
+  after    Json?
+  at       DateTime @default(now())
+
+  org   Organization @relation(fields: [orgId], references: [id])
+  actor User?        @relation("actor", fields: [actorId], references: [id])
+
+  @@index([orgId, at])
+  @@index([entity, entityId])
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  orgId     String
+  userId    String
+  type      String // "request.submitted" | "request.decided" | "coverage.risk" | …
+  payload   Json
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  org  Organization @relation(fields: [orgId], references: [id])
+  user User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+}

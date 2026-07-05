@@ -1,0 +1,180 @@
+/*
+ * Semester Planner — "Neon-Kinetic" design tokens
+ *
+ * STATUS: PROVISIONAL. The authoritative visual spec is the claude.ai/design
+ * share link in FABLE_PROMPT.md, which requires the owner's Claude login and is
+ * not reachable from this build environment (redirects to claude.ai/login).
+ * These values implement the brief's written guardrails (dark base surfaces,
+ * saturated neon accents with layered soft glows, springy micro-motion,
+ * crisp high-contrast text) and reuse the reference SPA's semantic slots
+ * (status/coverage/holiday colors). Every value below is a single source of
+ * truth — components must never hardcode a hex, shadow, or duration.
+ *
+ * RECONCILIATION: when the real design HTML is provided, only this file and
+ * the Tailwind preset change; component code stays untouched.
+ */
+
+:root {
+  /* ── Typography ─────────────────────────────────────────────── */
+  --font-heading: 'Epilogue', system-ui, sans-serif;
+  --font-body: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-mono: 'Space Mono', ui-monospace, monospace; /* week numbers, counts */
+
+  /* ── Radii ──────────────────────────────────────────────────── */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-pill: 999px;
+
+  /* ── Motion (kinetic) ───────────────────────────────────────── */
+  --motion-fast: 120ms;
+  --motion-base: 200ms;
+  --motion-slow: 320ms;
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1); /* springy overshoot */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --lift-hover: translateY(-2px) scale(1.01);
+  --lift-drag: translateY(-4px) scale(1.03);
+}
+
+/* ── Dark (primary) theme — neon-kinetic base ─────────────────── */
+:root,
+[data-theme='dark'] {
+  color-scheme: dark;
+
+  /* Base surfaces: deep, slightly blue-black layers */
+  --bg-primary: #070b14;
+  --bg-secondary: #0c1120;
+  --bg-panel: #111830;
+  --bg-raised: #17203d;
+  --border: #24304f;
+  --border-strong: #35446b;
+
+  /* Text: crisp, high contrast */
+  --text-primary: #eef2ff;
+  --text-secondary: #93a0c4;
+  --text-inverse: #070b14;
+
+  /* Neon accents */
+  --accent: #7c6bff; /* electric violet — primary interactive */
+  --accent-secondary: #34e0ff; /* cyan — links, secondary actions */
+  --accent-alert: #ff4d7d; /* neon rose — destructive/risk */
+  --accent-ok: #46f2a9; /* neon mint — success */
+
+  /* Layered neon glows (interactive/active elements only) */
+  --glow-accent:
+    0 0 0 1px rgb(124 107 255 / 0.55), 0 0 12px rgb(124 107 255 / 0.35), 0 0 32px rgb(124 107 255 / 0.18);
+  --glow-ok: 0 0 0 1px rgb(70 242 169 / 0.5), 0 0 12px rgb(70 242 169 / 0.3), 0 0 28px rgb(70 242 169 / 0.15);
+  --glow-risk: 0 0 0 1px rgb(255 77 125 / 0.6), 0 0 12px rgb(255 77 125 / 0.35), 0 0 28px rgb(255 77 125 / 0.2);
+  --shadow-panel: 0 10px 30px -12px rgb(0 0 0 / 0.7);
+  --shadow-pop: 0 20px 40px -16px rgb(0 0 0 / 0.8);
+
+  /* Absence block statuses (board) */
+  --draft-bg: #2a3352;
+  --draft-border: #566089;
+  --requested-bg: #4a3a10;
+  --requested-border: #f5b829;
+  --pending-bg: #4d2f08;
+  --pending-border: #ff9d2e;
+  --approved-bg: #0b3d2c;
+  --approved-border: #46f2a9;
+  --denied-bg: #3d1220;
+  --denied-border: #ff4d7d;
+
+  /* Coverage levels */
+  --coverage-green: #46f2a9;
+  --coverage-yellow: #ffd84d;
+  --coverage-red: #ff4d7d;
+
+  /* Holidays */
+  --holiday-bg: #251222;
+  --holiday-border: #a3325f;
+  --holiday-text: #ff9dbd;
+  --holiday-stripe-color: rgb(255 77 125 / 0.16);
+  --holiday-pattern: repeating-linear-gradient(
+      45deg,
+      var(--holiday-stripe-color),
+      var(--holiday-stripe-color) 6px,
+      transparent 6px,
+      transparent 12px
+    ),
+    var(--holiday-bg);
+
+  /* Top bar / chrome */
+  --topbar-bg: #05070f;
+  --topbar-text: #eef2ff;
+
+  /* Hero gradient (headers, empty states) */
+  --gradient-hero: linear-gradient(135deg, #7c6bff 0%, #34e0ff 100%);
+}
+
+/* ── Light theme (secondary; neon toned down, same slots) ─────── */
+[data-theme='light'] {
+  color-scheme: light;
+
+  --bg-primary: #f6f7fc;
+  --bg-secondary: #eceef8;
+  --bg-panel: #ffffff;
+  --bg-raised: #ffffff;
+  --border: #dde1f0;
+  --border-strong: #b9c0dd;
+
+  --text-primary: #131a33;
+  --text-secondary: #5a6486;
+  --text-inverse: #ffffff;
+
+  --accent: #5b48f5;
+  --accent-secondary: #0899c2;
+  --accent-alert: #e11d5f;
+  --accent-ok: #0e9f6e;
+
+  --glow-accent: 0 0 0 1px rgb(91 72 245 / 0.4), 0 4px 16px rgb(91 72 245 / 0.25);
+  --glow-ok: 0 0 0 1px rgb(14 159 110 / 0.4), 0 4px 16px rgb(14 159 110 / 0.2);
+  --glow-risk: 0 0 0 1px rgb(225 29 95 / 0.45), 0 4px 16px rgb(225 29 95 / 0.25);
+  --shadow-panel: 0 10px 24px -12px rgb(19 26 51 / 0.18);
+  --shadow-pop: 0 20px 36px -16px rgb(19 26 51 / 0.25);
+
+  --draft-bg: #e4e7f4;
+  --draft-border: #9aa3c4;
+  --requested-bg: #fdeeb9;
+  --requested-border: #d99e06;
+  --pending-bg: #ffe3c2;
+  --pending-border: #e07c0c;
+  --approved-bg: #c9f7e2;
+  --approved-border: #0e9f6e;
+  --denied-bg: #fbd7e2;
+  --denied-border: #e11d5f;
+
+  --coverage-green: #0e9f6e;
+  --coverage-yellow: #d99e06;
+  --coverage-red: #e11d5f;
+
+  --holiday-bg: #fdf0f4;
+  --holiday-border: #f0a3bd;
+  --holiday-text: #ad1a52;
+  --holiday-stripe-color: rgb(225 29 95 / 0.14);
+  --holiday-pattern: repeating-linear-gradient(
+      45deg,
+      var(--holiday-stripe-color),
+      var(--holiday-stripe-color) 6px,
+      transparent 6px,
+      transparent 12px
+    ),
+    var(--holiday-bg);
+
+  --topbar-bg: #131a33;
+  --topbar-text: #f6f7fc;
+
+  --gradient-hero: linear-gradient(135deg, #5b48f5 0%, #0899c2 100%);
+}
+
+/* ── Kinetic motion is opt-out via user preference ─────────────── */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-fast: 0ms;
+    --motion-base: 0ms;
+    --motion-slow: 0ms;
+    --ease-spring: linear;
+    --lift-hover: none;
+    --lift-drag: none;
+  }
+}
