@@ -34,11 +34,6 @@ enum LeaveDecision {
   CANCELLED
 }
 
-enum ShiftMode {
-  COMBINED
-  SEPARATE
-}
-
 // ── Identity & org ───────────────────────────────────────────────────────
 
 model Organization {
@@ -198,12 +193,12 @@ model LeaveEvent {
 
 // ── Configuration ────────────────────────────────────────────────────────
 
+// Shifts are always planned separately (per review: no combined/summer modes).
 model Settings {
-  orgId           String    @id
+  orgId           String   @id
   planningYear    Int
-  shiftMode       ShiftMode @default(SEPARATE)
-  shifts          String[]  @default(["S1", "S2"])
-  visibleWeeks    Int       @default(12) @db.SmallInt
+  shifts          String[] @default(["S1", "S2"])
+  visibleWeeks    Int      @default(12) @db.SmallInt
   startWeek       Int       @default(1) @db.SmallInt
   minStaffing     Int       @default(1) @db.SmallInt
   defaultRequired Int       @default(2) @db.SmallInt

@@ -43,7 +43,7 @@ server-authoritative code, not copied.
 
 1. Full migration for the schema; sparse `Demand` (missing row ⇒
    `Settings.defaultRequired`).
-2. Seed script: 1 org, settings (planningYear 2026, shiftMode SEPARATE, S1/S2),
+2. Seed script: 1 org, settings (planningYear 2026, S1/S2 planned separately (no combined/summer modes)),
    5 Swedish processes (Avsyning, Kapselresaren, Serialisering, Etikettering,
    Granskning/uttag av dok), 16 operators with certs (from reference seed),
    demand, ~10 absence blocks across statuses, SE holidays for the planning year,
