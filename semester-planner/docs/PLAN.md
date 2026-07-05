@@ -79,3 +79,13 @@ reproducible from empty DB; seeded app logs in as admin/manager/employee.
 3. **Vercel deploy:** happy to wire `vercel.json` + docs now; the actual deploy
    needs the Vercel project linked to this repo with root directory
    `semester-planner/`.
+
+## Phase 5 — overview, reports & email (landed)
+
+1. `/dashboard` (manager+): pending-request count, projected staffing risks across
+   the visible window (worst deficits first), who is away this week / next week.
+2. `/reports` (manager+): projected coverage heatmap per shift, per-operator
+   absence summary, CSV exports (coverage + absences, UTF-8 BOM for Excel).
+3. Email: `src/server/email.ts` posts to Resend's REST API when `RESEND_API_KEY`
+   is set; `notify.ts` mirrors in-app notifications to email best-effort — a
+   failed send never breaks the mutation. No-op when unconfigured.
