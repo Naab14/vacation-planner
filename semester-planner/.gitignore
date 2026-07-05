@@ -9,7 +9,7 @@ next-env.d.ts
 .env.local
 .env.*.local
 
-coverage/
+/coverage/
 playwright-report/
 test-results/
 
