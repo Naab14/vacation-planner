@@ -14,6 +14,8 @@ const roleTone = {
 // Modules appear here as their phases land.
 const NAV: Array<{ href: string; label: string; minRole: Role[] }> = [
   { href: '/planning', label: 'Planering', minRole: [Role.ADMIN, Role.MANAGER, Role.EMPLOYEE] },
+  { href: '/matrix', label: 'Matris', minRole: [Role.ADMIN, Role.MANAGER, Role.EMPLOYEE] },
+  { href: '/employees', label: 'Medarbetare', minRole: [Role.ADMIN, Role.MANAGER] },
 ];
 
 export function AppHeader({
