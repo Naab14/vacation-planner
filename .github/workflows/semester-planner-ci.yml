@@ -1,0 +1,51 @@
+name: semester-planner CI
+
+on:
+  pull_request:
+    paths:
+      - 'semester-planner/**'
+      - '.github/workflows/semester-planner-ci.yml'
+  push:
+    branches: [master]
+    paths:
+      - 'semester-planner/**'
+
+defaults:
+  run:
+    working-directory: semester-planner
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: planner
+          POSTGRES_PASSWORD: planner
+          POSTGRES_DB: semester_planner
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U planner"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://planner:planner@127.0.0.1:5432/semester_planner
+      AUTH_SECRET: ci-only-secret-not-used-in-production
+      ADMIN_EMAIL: ci-admin@example.com
+      ADMIN_PASSWORD: ci-admin-password
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: semester-planner/package-lock.json
+      - run: npm ci
+      - run: npx prisma migrate deploy
+      - run: npm run db:seed
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run test
+      - run: npm run build

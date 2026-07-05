@@ -1,0 +1,79 @@
+@import 'tailwindcss';
+@import '../../design/tokens.css';
+
+/*
+ * Tailwind v4 theme bridge — every utility below resolves to a token variable
+ * from design/tokens.css. Components use ONLY these slots; no raw hexes.
+ */
+@theme inline {
+  --color-*: initial;
+  --color-bg: var(--bg-primary);
+  --color-bg-2: var(--bg-secondary);
+  --color-panel: var(--bg-panel);
+  --color-raised: var(--bg-raised);
+  --color-line: var(--border);
+  --color-line-strong: var(--border-strong);
+
+  --color-ink: var(--text-primary);
+  --color-ink-muted: var(--text-secondary);
+  --color-ink-inverse: var(--text-inverse);
+
+  --color-accent: var(--accent);
+  --color-accent-2: var(--accent-secondary);
+  --color-alert: var(--accent-alert);
+  --color-ok: var(--accent-ok);
+
+  --color-coverage-green: var(--coverage-green);
+  --color-coverage-yellow: var(--coverage-yellow);
+  --color-coverage-red: var(--coverage-red);
+
+  --color-draft: var(--draft-bg);
+  --color-draft-line: var(--draft-border);
+  --color-requested: var(--requested-bg);
+  --color-requested-line: var(--requested-border);
+  --color-pending: var(--pending-bg);
+  --color-pending-line: var(--pending-border);
+  --color-approved: var(--approved-bg);
+  --color-approved-line: var(--approved-border);
+  --color-denied: var(--denied-bg);
+  --color-denied-line: var(--denied-border);
+
+  --color-topbar: var(--topbar-bg);
+  --color-topbar-ink: var(--topbar-text);
+
+  --font-heading: var(--font-heading);
+  --font-body: var(--font-body);
+  --font-mono: var(--font-mono);
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-pill: var(--radius-pill);
+
+  --shadow-panel: var(--shadow-panel);
+  --shadow-pop: var(--shadow-pop);
+  --shadow-glow-accent: var(--glow-accent);
+  --shadow-glow-ok: var(--glow-ok);
+  --shadow-glow-risk: var(--glow-risk);
+
+  --ease-spring: var(--ease-spring);
+  --ease-out-soft: var(--ease-out);
+}
+
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-heading);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent-secondary);
+  outline-offset: 2px;
+}
