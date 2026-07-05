@@ -89,3 +89,16 @@ reproducible from empty DB; seeded app logs in as admin/manager/employee.
 3. Email: `src/server/email.ts` posts to Resend's REST API when `RESEND_API_KEY`
    is set; `notify.ts` mirrors in-app notifications to email best-effort — a
    failed send never breaks the mutation. No-op when unconfigured.
+
+## Phase 6 — e2e, a11y, deploy docs (landed)
+
+1. Playwright e2e (`e2e/`, `npm run test:e2e`): auth/RBAC, full submit→approve
+   request flow across two browser sessions, dashboard/reports incl. real CSV
+   downloads, board render. Runs as its own CI job on a fresh seeded Postgres
+   (browser installed in CI; sandboxes with a pre-installed Chromium can point
+   `PLAYWRIGHT_CHROMIUM_PATH` at it).
+2. A11y spot-check documented in `docs/VERIFICATION.md` (labels, landmarks,
+   keyboard fallbacks, reduced motion, no color-only signaling).
+3. `docs/DEPLOY.md` — Vercel + Neon setup, env table, seeding, deploy loop.
+4. i18n decision: UI ships Swedish-only; next-intl extraction deferred until
+   copy stabilizes (rationale + path in VERIFICATION.md).

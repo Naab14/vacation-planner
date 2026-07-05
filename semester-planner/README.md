@@ -33,6 +33,7 @@ Seeded logins: the admin from `ADMIN_EMAIL`/`ADMIN_PASSWORD`, plus demo users
 |---|---|
 | `npm run dev` / `build` / `start` | Next.js |
 | `npm run lint` / `typecheck` / `test` | ESLint · tsc · Vitest |
+| `npm run test:e2e` | Playwright (needs a seeded database; see `docs/VERIFICATION.md`) |
 | `npm run db:migrate` / `db:deploy` / `db:seed` / `db:studio` | Prisma |
 
 ## Environment
@@ -46,3 +47,5 @@ gracefully when `RESEND_API_KEY` is unset.
 2. Env vars: `DATABASE_URL` (Neon/Supabase pooled string), `AUTH_SECRET`,
    `ADMIN_EMAIL`, `ADMIN_PASSWORD`, optional `RESEND_API_KEY`.
 3. Migrations run via `prisma migrate deploy` (see `vercel.json` build command).
+
+Full walkthrough: `docs/DEPLOY.md`. Verification log: `docs/VERIFICATION.md`.
