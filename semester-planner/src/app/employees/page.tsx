@@ -25,7 +25,7 @@ export default async function EmployeesPage() {
 
   return (
     <div className="min-h-screen bg-bg">
-      <AppHeader active="/employees" role={role} email={session.user.email ?? ''} />
+      <AppHeader active="/employees" role={role} email={session.user.email ?? ''} userId={session.user.id} />
       <main className="p-4">
         <EmployeeList
           operators={operators.map((op) => ({

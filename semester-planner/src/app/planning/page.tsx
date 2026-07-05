@@ -20,7 +20,7 @@ export default async function PlanningPage() {
 
   return (
     <div className="min-h-screen bg-bg">
-      <AppHeader active="/planning" role={role} email={session.user.email ?? ''} />
+      <AppHeader active="/planning" role={role} email={session.user.email ?? ''} userId={session.user.id} />
       <main className="p-4">
         <PlanningBoard data={data} canEdit={canEdit} isAdmin={role === Role.ADMIN} />
       </main>

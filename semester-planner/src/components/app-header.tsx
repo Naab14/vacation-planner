@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Role } from '@prisma/client';
 import { signOut } from '@/auth';
+import { db } from '@/lib/db';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -16,17 +17,23 @@ const NAV: Array<{ href: string; label: string; minRole: Role[] }> = [
   { href: '/planning', label: 'Planering', minRole: [Role.ADMIN, Role.MANAGER, Role.EMPLOYEE] },
   { href: '/matrix', label: 'Matris', minRole: [Role.ADMIN, Role.MANAGER, Role.EMPLOYEE] },
   { href: '/employees', label: 'Medarbetare', minRole: [Role.ADMIN, Role.MANAGER] },
+  { href: '/requests', label: 'Ansökningar', minRole: [Role.ADMIN, Role.MANAGER, Role.EMPLOYEE] },
 ];
 
-export function AppHeader({
+export async function AppHeader({
   active,
   role,
   email,
+  userId,
 }: {
   active: string;
   role: Role;
   email: string;
+  userId?: string;
 }) {
+  const unread = userId
+    ? await db.notification.count({ where: { userId, readAt: null } })
+    : 0;
   return (
     <header className="flex items-center justify-between border-b border-line bg-topbar px-4 py-2.5 text-topbar-ink">
       <div className="flex items-center gap-5">
@@ -46,6 +53,14 @@ export function AppHeader({
               }`}
             >
               {item.label}
+              {item.href === '/requests' && unread > 0 ? (
+                <span
+                  aria-label={`${unread} olästa notiser`}
+                  className="ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-pill bg-accent px-1 font-mono text-[10px] font-bold text-ink-inverse shadow-glow-accent"
+                >
+                  {unread}
+                </span>
+              ) : null}
             </Link>
           ))}
         </nav>

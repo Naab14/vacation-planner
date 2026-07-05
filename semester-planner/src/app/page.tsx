@@ -13,7 +13,7 @@ export default async function Home() {
 
   return (
     <div className="min-h-screen bg-bg">
-      <AppHeader active="/" role={user.role} email={user.email ?? ''} />
+      <AppHeader active="/" role={user.role} email={user.email ?? ''} userId={user.id} />
       <main className="mx-auto max-w-3xl p-6">
         <Panel>
           <h2 className="font-heading text-xl font-extrabold">Välkommen!</h2>

@@ -24,7 +24,7 @@ export default async function MatrixPage() {
 
   return (
     <div className="min-h-screen bg-bg">
-      <AppHeader active="/matrix" role={role} email={session.user.email ?? ''} />
+      <AppHeader active="/matrix" role={role} email={session.user.email ?? ''} userId={session.user.id} />
       <main className="p-4">
         <CertificationMatrix
           operators={operators.map((op) => ({
