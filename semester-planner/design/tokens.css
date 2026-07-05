@@ -65,8 +65,8 @@
     0 0 0 1px rgb(124 107 255 / 0.55), 0 0 12px rgb(124 107 255 / 0.35), 0 0 32px rgb(124 107 255 / 0.18);
   --glow-ok: 0 0 0 1px rgb(70 242 169 / 0.5), 0 0 12px rgb(70 242 169 / 0.3), 0 0 28px rgb(70 242 169 / 0.15);
   --glow-risk: 0 0 0 1px rgb(255 77 125 / 0.6), 0 0 12px rgb(255 77 125 / 0.35), 0 0 28px rgb(255 77 125 / 0.2);
-  --shadow-panel: 0 10px 30px -12px rgb(0 0 0 / 0.7);
-  --shadow-pop: 0 20px 40px -16px rgb(0 0 0 / 0.8);
+  --shadow-panel: inset 0 1px 0 rgb(255 255 255 / 0.05), 0 10px 30px -12px rgb(0 0 0 / 0.7);
+  --shadow-pop: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 20px 40px -16px rgb(0 0 0 / 0.8);
 
   /* Absence block statuses (board) */
   --draft-bg: #2a3352;
@@ -105,6 +105,12 @@
 
   /* Hero gradient (headers, empty states) */
   --gradient-hero: linear-gradient(135deg, #7c6bff 0%, #34e0ff 100%);
+
+  /* Ambient scene: soft neon washes behind everything */
+  --bg-scene:
+    radial-gradient(60rem 40rem at 85% -10%, rgb(124 107 255 / 0.16), transparent 60%),
+    radial-gradient(50rem 36rem at -10% 110%, rgb(52 224 255 / 0.1), transparent 60%),
+    var(--bg-primary);
 }
 
 /* ── Light theme (secondary; neon toned down, same slots) ─────── */
@@ -165,6 +171,11 @@
   --topbar-text: #f6f7fc;
 
   --gradient-hero: linear-gradient(135deg, #5b48f5 0%, #0899c2 100%);
+
+  --bg-scene:
+    radial-gradient(60rem 40rem at 85% -10%, rgb(91 72 245 / 0.08), transparent 60%),
+    radial-gradient(50rem 36rem at -10% 110%, rgb(8 153 194 / 0.06), transparent 60%),
+    var(--bg-primary);
 }
 
 /* ── Kinetic motion is opt-out via user preference ─────────────── */

@@ -102,3 +102,14 @@ reproducible from empty DB; seeded app logs in as admin/manager/employee.
 3. `docs/DEPLOY.md` — Vercel + Neon setup, env table, seeding, deploy loop.
 4. i18n decision: UI ships Swedish-only; next-intl extraction deferred until
    copy stabilizes (rationale + path in VERIFICATION.md).
+
+## Phase 7 — right-click menu + neon reskin (landed)
+
+1. Planning board context menu (manager+): right-click a block → Redigera /
+   Sätt status (all five statuses, engine-validated via the same save path) /
+   Ta bort; right-click an empty cell → Ny frånvaro här. Escape/click-away
+   closes; employees get no menu. Covered by 3 Playwright tests.
+2. Reskin "activated" on the provisional neon-kinetic tokens: ambient radial
+   neon scene background, hero-gradient page titles + brand, gradient primary
+   buttons, inset panel highlights. All token-driven — swapping in the real
+   design file remains a tokens.css-only change.

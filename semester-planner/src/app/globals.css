@@ -61,7 +61,8 @@
 }
 
 body {
-  background: var(--bg-primary);
+  background: var(--bg-scene, var(--bg-primary));
+  background-attachment: fixed;
   color: var(--text-primary);
   font-family: var(--font-body);
 }
@@ -71,6 +72,15 @@ h2,
 h3,
 h4 {
   font-family: var(--font-heading);
+}
+
+/* Neon-kinetic identity: page titles and the brand render in the hero gradient. */
+.text-hero-gradient,
+main h1 {
+  background: var(--gradient-hero);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 :focus-visible {

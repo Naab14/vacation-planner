@@ -8,7 +8,7 @@ const base =
   'hover:[transform:var(--lift-hover)] active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50';
 
 const variants: Record<Variant, string> = {
-  primary: 'bg-accent text-ink-inverse hover:shadow-glow-accent',
+  primary: '[background:var(--gradient-hero)] text-ink-inverse hover:shadow-glow-accent',
   secondary: 'border border-line-strong bg-raised text-ink hover:shadow-glow-accent',
   danger: 'bg-alert text-ink-inverse hover:shadow-glow-risk',
   ghost: 'text-ink-muted hover:bg-raised hover:text-ink',

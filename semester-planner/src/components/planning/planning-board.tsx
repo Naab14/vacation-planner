@@ -28,6 +28,11 @@ interface EditorState {
   status: AbsenceStatus;
 }
 
+/** Right-click menu: on a block (edit/status/delete) or on an empty cell (create). */
+type MenuState =
+  | { kind: 'block'; x: number; y: number; block: EngineAbsence; operatorName: string }
+  | { kind: 'cell'; x: number; y: number; operatorId: string; operatorName: string; week: number };
+
 const STATUS_LABEL: Record<AbsenceStatus, string> = {
   DRAFT: 'Utkast',
   REQUESTED: 'Begärd',
@@ -76,6 +81,7 @@ export function PlanningBoard({ data, canEdit, isAdmin }: Props) {
   const [blocks, setBlocks] = useState<EngineAbsence[]>(data.absences);
   const [drag, setDrag] = useState<DragState | null>(null);
   const [editor, setEditor] = useState<EditorState | null>(null);
+  const [menu, setMenu] = useState<MenuState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notices, setNotices] = useState<ConflictWarning[]>([]);
   const dragRef = useRef<DragState | null>(null);
@@ -261,6 +267,33 @@ export function PlanningBoard({ data, canEdit, isAdmin }: Props) {
     setDrag((prev) => (prev ? { ...prev, week } : prev));
   };
 
+  // ── Context menu lifecycle: any click elsewhere, Escape or scroll closes it ─
+  useEffect(() => {
+    if (!menu) return;
+    const close = () => setMenu(null);
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && close();
+    window.addEventListener('pointerdown', close);
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('scroll', close, true);
+    return () => {
+      window.removeEventListener('pointerdown', close);
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('scroll', close, true);
+    };
+  }, [menu]);
+
+  const setBlockStatus = (block: EngineAbsence, status: AbsenceStatus) => {
+    setMenu(null);
+    if (status === block.status) return;
+    persistBlock({
+      blockId: block.id,
+      operatorId: block.operatorId,
+      startWeek: block.startWeek,
+      endWeek: block.endWeek,
+      status,
+    });
+  };
+
   // ── Demand editing ───────────────────────────────────────────────────────
   const [demandEdit, setDemandEdit] = useState<{ processId: string; week: number; value: string } | null>(null);
   const commitDemand = () => {
@@ -434,6 +467,11 @@ export function PlanningBoard({ data, canEdit, isAdmin }: Props) {
                             setDrag({ kind: 'create', operatorId: op.id, anchorWeek: week, week });
                           }}
                           onPointerEnter={() => onCellEnter(week)}
+                          onContextMenu={(e) => {
+                            if (!canEdit) return;
+                            e.preventDefault();
+                            setMenu({ kind: 'cell', x: e.clientX, y: e.clientY, operatorId: op.id, operatorName: op.name, week });
+                          }}
                           onClick={(e) => {
                             // Keyboard/click fallback: plain click (no drag movement) opens the editor.
                             if (!canEdit || e.detail !== 0) return; // e.detail 0 = keyboard "click"
@@ -488,6 +526,12 @@ export function PlanningBoard({ data, canEdit, isAdmin }: Props) {
                                 grabOffset,
                                 week: shown.startWeek + grabOffset,
                               });
+                            }}
+                            onContextMenu={(e) => {
+                              if (!canEdit) return;
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setMenu({ kind: 'block', x: e.clientX, y: e.clientY, block, operatorName: op.name });
                             }}
                             onKeyDown={(e) => {
                               if (!canEdit) return;
@@ -647,8 +691,93 @@ export function PlanningBoard({ data, canEdit, isAdmin }: Props) {
             {STATUS_LABEL[s]}
           </span>
         ))}
-        <span className="ml-2">🔒 = låst vecka · randig = helgdag · drag för att skapa/flytta, Enter för tangentbord</span>
+        <span className="ml-2">🔒 = låst vecka · randig = helgdag · drag för att skapa/flytta · högerklick för meny · Enter för tangentbord</span>
       </div>
+
+      {/* Right-click context menu */}
+      {menu && (
+        <div
+          role="menu"
+          aria-label={`Åtgärder för ${menu.operatorName}`}
+          className="fixed z-50 min-w-44 overflow-hidden rounded-md border border-line-strong bg-panel py-1 shadow-pop"
+          style={{
+            left: Math.min(menu.x, typeof window !== 'undefined' ? window.innerWidth - 200 : menu.x),
+            top: Math.min(menu.y, typeof window !== 'undefined' ? window.innerHeight - 280 : menu.y),
+          }}
+          onPointerDown={(e) => e.stopPropagation()}
+          onContextMenu={(e) => e.preventDefault()}
+        >
+          <div className="px-3 py-1.5 text-xs font-semibold text-ink-muted">
+            {menu.operatorName}
+            {menu.kind === 'block'
+              ? ` · v.${menu.block.startWeek}–${menu.block.endWeek}`
+              : ` · v.${menu.week}`}
+          </div>
+          {menu.kind === 'cell' ? (
+            <button
+              type="button"
+              role="menuitem"
+              className="block w-full px-3 py-1.5 text-left text-sm hover:bg-raised"
+              onClick={() => {
+                setMenu(null);
+                setEditor({ operatorId: menu.operatorId, startWeek: menu.week, endWeek: menu.week, status: 'DRAFT' });
+              }}
+            >
+              Ny frånvaro här…
+            </button>
+          ) : (
+            <>
+              <button
+                type="button"
+                role="menuitem"
+                className="block w-full px-3 py-1.5 text-left text-sm hover:bg-raised"
+                onClick={() => {
+                  const { block } = menu;
+                  setMenu(null);
+                  setEditor({
+                    blockId: block.id,
+                    operatorId: block.operatorId,
+                    startWeek: block.startWeek,
+                    endWeek: block.endWeek,
+                    status: block.status,
+                  });
+                }}
+              >
+                Redigera…
+              </button>
+              <div className="mt-1 border-t border-line px-3 pt-1.5 pb-0.5 text-xs text-ink-muted">Sätt status</div>
+              {(Object.keys(STATUS_LABEL) as AbsenceStatus[]).map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  role="menuitemradio"
+                  aria-checked={menu.block.status === s}
+                  className={`block w-full px-3 py-1.5 text-left text-sm hover:bg-raised ${
+                    menu.block.status === s ? 'font-bold text-accent-2' : ''
+                  }`}
+                  onClick={() => setBlockStatus(menu.block, s)}
+                >
+                  {menu.block.status === s ? '✓ ' : ''}
+                  {STATUS_LABEL[s]}
+                </button>
+              ))}
+              <div className="mt-1 border-t border-line" />
+              <button
+                type="button"
+                role="menuitem"
+                className="block w-full px-3 py-1.5 text-left text-sm font-semibold text-alert hover:bg-raised"
+                onClick={() => {
+                  const id = menu.block.id;
+                  setMenu(null);
+                  removeBlock(id);
+                }}
+              >
+                Ta bort
+              </button>
+            </>
+          )}
+        </div>
+      )}
 
       {/* Editor dialog: keyboard/click fallback for create & edit */}
       {editor && (
