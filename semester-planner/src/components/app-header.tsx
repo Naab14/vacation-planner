@@ -39,8 +39,8 @@ export async function AppHeader({
   return (
     <header className="flex items-center justify-between border-b border-line bg-topbar px-4 py-2.5 text-topbar-ink">
       <div className="flex items-center gap-5">
-        <Link href="/" className="text-hero-gradient font-heading text-lg font-black">
-          Semester Planner
+        <Link href="/" className="brand-wordmark text-lg">
+          Semester<span className="brand-dot">.</span>Planner
         </Link>
         <nav className="flex items-center gap-1" aria-label="Huvudmeny">
           {NAV.filter((item) => item.minRole.includes(role)).map((item) => (

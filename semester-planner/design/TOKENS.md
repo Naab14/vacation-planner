@@ -1,31 +1,22 @@
 # Design tokens — status & provenance
 
-**Source of truth per the brief:** the neon-kinetic design at
-`https://claude.ai/design/p/d4672239-17e6-4b80-a21b-eac4a80e91ff?file=Semester+Planner.html`
+**Source of truth:** the owner's design bundle, received 2026-07-06 and archived in
+`design/reference/` (HANDOFF.md — the hifi spec, DESIGN_STRATEGY.md — the creative
+brief, sp-app.jsx — the 8-theme palette map). Aesthetic: **Neo-Kinetic**
+(Neo-Brutalism × Memphis) — warm paper surfaces, 2px ink borders, hard 4px offset
+"game-piece" shadows, Epilogue 900 italic display, indigo/coral/yellow triad,
+light default + soft dark.
 
-**Access status: BLOCKED from the build environment.** The share link redirects to
-`claude.ai/login` (it is scoped to the owner's Claude account), and the login page is
-additionally behind a Cloudflare Turnstile challenge. Attempted via WebFetch (403),
-curl (Cloudflare challenge), and a real headless Chromium through the egress proxy
-(reaches the page, then is bounced to login). The raw bundle is hosted on
-`claudeusercontent.com` behind the same auth.
+**Status: RECONCILED.** `tokens.css` implements the Neo-Kinetic default theme
+(light + soft dark) from the bundle. The remaining 7 themes (Duck Pond, Citrus
+Grove, Electric Plum, Harbor, Monochrome, Lumina, Playful) live in the archived
+THEMES map and can be added as alternate `[data-theme]` blocks + a theme picker
+when wanted. The bundle's `sp.css` (1134 lines) was not part of the upload; the
+HANDOFF.md spec is detailed enough that shadows, radii, status colors and type
+treatments are matched from it.
 
-**To unblock (any one of these):**
-1. In the design page, download/copy the `Semester Planner.html` file and commit it to
-   this repo (e.g. `semester-planner/design/reference/Semester Planner.html`), or
-2. Paste the design's `<style>` / CSS variable block into the PR, or
-3. Publish the design as a public artifact and share that URL.
-
-Until then, `tokens.css` is a **provisional** implementation of the brief's written
-guardrails, structured so reconciliation touches only two files:
-
-- `design/tokens.css` — every color, glow, radius, font, duration as CSS variables,
-  dark (primary) + light themes, `prefers-reduced-motion` zeroing.
-- `tailwind.preset.ts` (phase 0) — maps Tailwind theme slots onto the variables
-  (`bg-panel`, `text-primary`, `shadow-glow-accent`, `ease-spring`, …).
-
-Components consume only Tailwind classes / `var(--…)` — no hardcoded hexes — so
-swapping in the real palette is a token-file diff, not a refactor.
+Components consume only Tailwind classes / `var(--…)` — no hardcoded hexes —
+so palette changes remain a token-file diff, not a refactor.
 
 ## Token groups
 

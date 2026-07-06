@@ -1,181 +1,176 @@
 /*
- * Semester Planner — "Neon-Kinetic" design tokens
+ * Semester Planner — "Neo-Kinetic" design tokens
  *
- * STATUS: PROVISIONAL. The authoritative visual spec is the claude.ai/design
- * share link in FABLE_PROMPT.md, which requires the owner's Claude login and is
- * not reachable from this build environment (redirects to claude.ai/login).
- * These values implement the brief's written guardrails (dark base surfaces,
- * saturated neon accents with layered soft glows, springy micro-motion,
- * crisp high-contrast text) and reuse the reference SPA's semantic slots
- * (status/coverage/holiday colors). Every value below is a single source of
- * truth — components must never hardcode a hex, shadow, or duration.
+ * STATUS: RECONCILED with the owner's design bundle (design/reference/ —
+ * HANDOFF.md + the THEMES map in sp-app.jsx). Values below are the
+ * Neo-Kinetic default theme, light (primary) + soft dark, mapped onto the
+ * slots the components already consume. Aesthetic: Neo-Brutalism × Memphis —
+ * warm paper surfaces, 2px ink borders, hard 4px offset "game-piece" shadows
+ * (never soft blur glows), Epilogue 900 italic display, indigo/coral/yellow
+ * brand triad. The remaining 7 themes from the bundle can be layered on later
+ * as alternate [data-theme] blocks.
  *
- * RECONCILIATION: when the real design HTML is provided, only this file and
- * the Tailwind preset change; component code stays untouched.
+ * Every value below is a single source of truth — components must never
+ * hardcode a hex, shadow, or duration.
  */
 
 :root {
   /* ── Typography ─────────────────────────────────────────────── */
   --font-heading: 'Epilogue', system-ui, sans-serif;
   --font-body: 'Plus Jakarta Sans', system-ui, sans-serif;
-  --font-mono: 'Space Mono', ui-monospace, monospace; /* week numbers, counts */
+  --font-mono: 'Space Mono', ui-monospace, monospace; /* week numbers, counts, kickers */
 
-  /* ── Radii ──────────────────────────────────────────────────── */
+  /* ── Radii (design: 6 / 10 / 18 / pill) ─────────────────────── */
   --radius-sm: 6px;
   --radius-md: 10px;
-  --radius-lg: 14px;
+  --radius-lg: 18px;
   --radius-pill: 999px;
 
-  /* ── Motion (kinetic) ───────────────────────────────────────── */
-  --motion-fast: 120ms;
-  --motion-base: 200ms;
-  --motion-slow: 320ms;
-  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1); /* springy overshoot */
+  /* ── Motion (design: fast 80ms transforms, 140ms panels) ────── */
+  --motion-fast: 80ms;
+  --motion-base: 140ms;
+  --motion-slow: 240ms;
+  --ease-spring: cubic-bezier(0.2, 0.8, 0.2, 1);
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-  --lift-hover: translateY(-2px) scale(1.01);
-  --lift-drag: translateY(-4px) scale(1.03);
+  /* Game-piece physics: hover lifts 1px toward the light, drag lifts more */
+  --lift-hover: translate(-1px, -1px);
+  --lift-drag: translate(-2px, -2px);
 }
 
-/* ── Dark (primary) theme — neon-kinetic base ─────────────────── */
+/* ── Light (primary) theme — Neo-Kinetic paper ─────────────────── */
 :root,
-[data-theme='dark'] {
-  color-scheme: dark;
-
-  /* Base surfaces: deep, slightly blue-black layers */
-  --bg-primary: #070b14;
-  --bg-secondary: #0c1120;
-  --bg-panel: #111830;
-  --bg-raised: #17203d;
-  --border: #24304f;
-  --border-strong: #35446b;
-
-  /* Text: crisp, high contrast */
-  --text-primary: #eef2ff;
-  --text-secondary: #93a0c4;
-  --text-inverse: #070b14;
-
-  /* Neon accents */
-  --accent: #7c6bff; /* electric violet — primary interactive */
-  --accent-secondary: #34e0ff; /* cyan — links, secondary actions */
-  --accent-alert: #ff4d7d; /* neon rose — destructive/risk */
-  --accent-ok: #46f2a9; /* neon mint — success */
-
-  /* Layered neon glows (interactive/active elements only) */
-  --glow-accent:
-    0 0 0 1px rgb(124 107 255 / 0.55), 0 0 12px rgb(124 107 255 / 0.35), 0 0 32px rgb(124 107 255 / 0.18);
-  --glow-ok: 0 0 0 1px rgb(70 242 169 / 0.5), 0 0 12px rgb(70 242 169 / 0.3), 0 0 28px rgb(70 242 169 / 0.15);
-  --glow-risk: 0 0 0 1px rgb(255 77 125 / 0.6), 0 0 12px rgb(255 77 125 / 0.35), 0 0 28px rgb(255 77 125 / 0.2);
-  --shadow-panel: inset 0 1px 0 rgb(255 255 255 / 0.05), 0 10px 30px -12px rgb(0 0 0 / 0.7);
-  --shadow-pop: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 20px 40px -16px rgb(0 0 0 / 0.8);
-
-  /* Absence block statuses (board) */
-  --draft-bg: #2a3352;
-  --draft-border: #566089;
-  --requested-bg: #4a3a10;
-  --requested-border: #f5b829;
-  --pending-bg: #4d2f08;
-  --pending-border: #ff9d2e;
-  --approved-bg: #0b3d2c;
-  --approved-border: #46f2a9;
-  --denied-bg: #3d1220;
-  --denied-border: #ff4d7d;
-
-  /* Coverage levels */
-  --coverage-green: #46f2a9;
-  --coverage-yellow: #ffd84d;
-  --coverage-red: #ff4d7d;
-
-  /* Holidays */
-  --holiday-bg: #251222;
-  --holiday-border: #a3325f;
-  --holiday-text: #ff9dbd;
-  --holiday-stripe-color: rgb(255 77 125 / 0.16);
-  --holiday-pattern: repeating-linear-gradient(
-      45deg,
-      var(--holiday-stripe-color),
-      var(--holiday-stripe-color) 6px,
-      transparent 6px,
-      transparent 12px
-    ),
-    var(--holiday-bg);
-
-  /* Top bar / chrome */
-  --topbar-bg: #05070f;
-  --topbar-text: #eef2ff;
-
-  /* Hero gradient (headers, empty states) */
-  --gradient-hero: linear-gradient(135deg, #7c6bff 0%, #34e0ff 100%);
-
-  /* Ambient scene: soft neon washes behind everything */
-  --bg-scene:
-    radial-gradient(60rem 40rem at 85% -10%, rgb(124 107 255 / 0.16), transparent 60%),
-    radial-gradient(50rem 36rem at -10% 110%, rgb(52 224 255 / 0.1), transparent 60%),
-    var(--bg-primary);
-}
-
-/* ── Light theme (secondary; neon toned down, same slots) ─────── */
 [data-theme='light'] {
   color-scheme: light;
 
-  --bg-primary: #f6f7fc;
-  --bg-secondary: #eceef8;
+  /* Ink + paper (warm off-white ramp; dividers are surface shifts) */
+  --bg-primary: #faf7f2;
+  --bg-secondary: #f2ece2;
   --bg-panel: #ffffff;
-  --bg-raised: #ffffff;
-  --border: #dde1f0;
-  --border-strong: #b9c0dd;
+  --bg-raised: #f2ece2;
+  --border: #e8e0d0;
+  --border-strong: #0b0a1f;
 
-  --text-primary: #131a33;
-  --text-secondary: #5a6486;
-  --text-inverse: #ffffff;
+  --text-primary: #0b0a1f;
+  --text-secondary: #3a3758;
+  --text-inverse: #faf7f2;
 
-  --accent: #5b48f5;
-  --accent-secondary: #0899c2;
-  --accent-alert: #e11d5f;
-  --accent-ok: #0e9f6e;
+  /* Brand triad */
+  --accent: #4f46e5; /* electric indigo — primary */
+  --accent-secondary: #4f46e5; /* links/secondary actions follow primary */
+  --accent-alert: #ff4d6d; /* neon coral — destructive/risk */
+  --accent-ok: #0ea89a; /* coverage teal */
 
-  --glow-accent: 0 0 0 1px rgb(91 72 245 / 0.4), 0 4px 16px rgb(91 72 245 / 0.25);
-  --glow-ok: 0 0 0 1px rgb(14 159 110 / 0.4), 0 4px 16px rgb(14 159 110 / 0.2);
-  --glow-risk: 0 0 0 1px rgb(225 29 95 / 0.45), 0 4px 16px rgb(225 29 95 / 0.25);
-  --shadow-panel: 0 10px 24px -12px rgb(19 26 51 / 0.18);
-  --shadow-pop: 0 20px 36px -16px rgb(19 26 51 / 0.25);
+  /* Game-piece shadows: hard offsets, never blurred */
+  --glow-accent: 4px 4px 0 0 #0b0a1f;
+  --glow-ok: 4px 4px 0 0 #0ea89a;
+  --glow-risk: 4px 4px 0 0 #ff4d6d;
+  --shadow-panel: 4px 4px 0 0 #0b0a1f;
+  --shadow-pop: 6px 6px 0 0 #0b0a1f;
 
-  --draft-bg: #e4e7f4;
-  --draft-border: #9aa3c4;
-  --requested-bg: #fdeeb9;
-  --requested-border: #d99e06;
-  --pending-bg: #ffe3c2;
-  --pending-border: #e07c0c;
-  --approved-bg: #c9f7e2;
-  --approved-border: #0e9f6e;
-  --denied-bg: #fbd7e2;
-  --denied-border: #e11d5f;
+  /* Absence block statuses (design status system; DENIED derived in-language) */
+  --draft-bg: #ede6d6;
+  --draft-border: #b8ae95;
+  --requested-bg: #eeebff;
+  --requested-border: #4f46e5;
+  --pending-bg: #ffe4e9;
+  --pending-border: #ff4d6d;
+  --approved-bg: #ffd60a; /* the "win state" — loudest */
+  --approved-border: #0b0a1f;
+  --denied-bg: #f2ece2;
+  --denied-border: #ff4d6d;
 
-  --coverage-green: #0e9f6e;
-  --coverage-yellow: #d99e06;
-  --coverage-red: #e11d5f;
+  /* Coverage levels (yellow darkened for text-on-paper legibility) */
+  --coverage-green: #0ea89a;
+  --coverage-yellow: #a37e00;
+  --coverage-red: #ff4d6d;
 
-  --holiday-bg: #fdf0f4;
-  --holiday-border: #f0a3bd;
-  --holiday-text: #ad1a52;
-  --holiday-stripe-color: rgb(225 29 95 / 0.14);
+  /* Holidays: coral-tinted with diagonal stripes */
+  --holiday-bg: #ffe4e9;
+  --holiday-border: #ff4d6d;
+  --holiday-text: #d81b4d;
+  --holiday-stripe-color: rgb(255 77 125 / 0.18);
   --holiday-pattern: repeating-linear-gradient(
       45deg,
       var(--holiday-stripe-color),
-      var(--holiday-stripe-color) 6px,
-      transparent 6px,
-      transparent 12px
+      var(--holiday-stripe-color) 4px,
+      transparent 4px,
+      transparent 8px
     ),
     var(--holiday-bg);
 
-  --topbar-bg: #131a33;
-  --topbar-text: #f6f7fc;
+  /* Top bar: ink plate with paper text */
+  --topbar-bg: #0b0a1f;
+  --topbar-text: #faf7f2;
 
-  --gradient-hero: linear-gradient(135deg, #5b48f5 0%, #0899c2 100%);
+  /* Brand extras */
+  --brand-yellow: #ffd60a;
+  --brand-coral: #ff4d6d;
+  --gradient-hero: linear-gradient(135deg, #4f46e5 0%, #4f46e5 100%);
+  --bg-scene: var(--bg-primary);
+}
 
-  --bg-scene:
-    radial-gradient(60rem 40rem at 85% -10%, rgb(91 72 245 / 0.08), transparent 60%),
-    radial-gradient(50rem 36rem at -10% 110%, rgb(8 153 194 / 0.06), transparent 60%),
-    var(--bg-primary);
+/* ── Soft dark theme (never pitch black; warm tinted surfaces) ─── */
+[data-theme='dark'] {
+  color-scheme: dark;
+
+  --bg-primary: #1a1830;
+  --bg-secondary: #22203a;
+  --bg-panel: #26233f;
+  --bg-raised: #2d2a4a;
+  --border: #2d2a4a;
+  --border-strong: #f5f1e8;
+
+  --text-primary: #f5f1e8;
+  --text-secondary: #c9c3d9;
+  --text-inverse: #1a1830;
+
+  --accent: #8b82ff;
+  --accent-secondary: #8b82ff;
+  --accent-alert: #ff7a93;
+  --accent-ok: #35c9ba;
+
+  --glow-accent: 4px 4px 0 0 #0b0a1f;
+  --glow-ok: 4px 4px 0 0 #0e6b62;
+  --glow-risk: 4px 4px 0 0 #a63550;
+  --shadow-panel: 4px 4px 0 0 #0b0a1f;
+  --shadow-pop: 6px 6px 0 0 #0b0a1f;
+
+  /* Statuses: color-mixed tints on panel for legibility (per sp-app.jsx) */
+  --draft-bg: #2d2a4a;
+  --draft-border: #8a84a6;
+  --requested-bg: color-mix(in srgb, #8b82ff 22%, #26233f);
+  --requested-border: #8b82ff;
+  --pending-bg: color-mix(in srgb, #ff7a93 28%, #26233f);
+  --pending-border: #ff7a93;
+  --approved-bg: color-mix(in srgb, #ffe156 55%, #26233f);
+  --approved-border: #ffe156;
+  --denied-bg: #22203a;
+  --denied-border: #ff7a93;
+
+  --coverage-green: #35c9ba;
+  --coverage-yellow: #ffe156;
+  --coverage-red: #ff7a93;
+
+  --holiday-bg: color-mix(in srgb, #ff7a93 18%, #26233f);
+  --holiday-border: #ff7a93;
+  --holiday-text: #ff7a93;
+  --holiday-stripe-color: rgb(255 122 147 / 0.2);
+  --holiday-pattern: repeating-linear-gradient(
+      45deg,
+      var(--holiday-stripe-color),
+      var(--holiday-stripe-color) 4px,
+      transparent 4px,
+      transparent 8px
+    ),
+    var(--holiday-bg);
+
+  --topbar-bg: #12102a;
+  --topbar-text: #f5f1e8;
+
+  --brand-yellow: #ffe156;
+  --brand-coral: #ff7a93;
+  --gradient-hero: linear-gradient(135deg, #8b82ff 0%, #8b82ff 100%);
+  --bg-scene: var(--bg-primary);
 }
 
 /* ── Kinetic motion is opt-out via user preference ─────────────── */

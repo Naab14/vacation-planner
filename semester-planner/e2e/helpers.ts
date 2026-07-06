@@ -8,5 +8,5 @@ export async function login(page: Page, user: { email: string; password: string 
   await page.getByLabel('E-post').fill(user.email);
   await page.getByLabel('Lösenord').fill(user.password);
   await page.getByRole('button', { name: 'Logga in' }).click();
-  await expect(page.getByRole('link', { name: 'Semester Planner' })).toBeVisible();
+  await expect(page.getByRole('link', { name: /Semester.?Planner/ })).toBeVisible();
 }

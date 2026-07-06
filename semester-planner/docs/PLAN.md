@@ -113,3 +113,17 @@ reproducible from empty DB; seeded app logs in as admin/manager/employee.
    neon scene background, hero-gradient page titles + brand, gradient primary
    buttons, inset panel highlights. All token-driven — swapping in the real
    design file remains a tokens.css-only change.
+
+## Phase 8 — design reconciliation: Neo-Kinetic (landed)
+
+Owner delivered the real design bundle (archived in `design/reference/`).
+`tokens.css` rewritten to the Neo-Kinetic system: warm paper light theme
+(default) + soft dark, 2px ink borders, hard 4px offset game-piece shadows
+(no blur glows), brand triad indigo/coral/yellow, status remap (approved =
+yellow "win state", requested = indigo, pending = coral, draft = paper tone),
+coverage teal/amber/coral, coral-striped holidays. Component touch-ups:
+brand wordmark "Semester.Planner" (coral dot, yellow period), Epilogue 900
+italic page titles, game-piece button physics (hover lifts, active seats
+down), 3px indigo focus rings. 11 e2e + 28 unit tests green; verified with
+screenshots in both modes. Remaining 7 themes from the bundle are a
+follow-up (theme picker + palette blocks).

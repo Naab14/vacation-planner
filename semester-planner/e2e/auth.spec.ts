@@ -7,7 +7,7 @@ test('rejects wrong credentials', async ({ page }) => {
   await page.getByLabel('Lösenord').fill('fel-lösenord');
   await page.getByRole('button', { name: 'Logga in' }).click();
   await expect(page).toHaveURL(/login/);
-  await expect(page.getByRole('link', { name: 'Semester Planner' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: /Semester.?Planner/ })).toHaveCount(0);
 });
 
 test('manager sees the manager-only navigation', async ({ page }) => {

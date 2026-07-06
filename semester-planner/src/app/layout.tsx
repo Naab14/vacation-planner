@@ -10,7 +10,7 @@ const themeInit = `(function(){try{var t=localStorage.getItem('sp-theme');if(t==
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="sv" data-theme="dark" suppressHydrationWarning>
+    <html lang="sv" data-theme="light" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
