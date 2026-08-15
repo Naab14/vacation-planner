@@ -1,0 +1,129 @@
+# Semester Planner — Phase 0–1 plan
+
+Full-stack rebuild per `FABLE_PROMPT.md`. App lives in `semester-planner/` (clearly
+separated from the legacy SPA at the repo root); Vercel's project root will point here.
+Behavior reference: `codex/vacation-planner-evolution` (`src/coverage.js`,
+`src/conflicts.js`, `src/schema.js`, `src/settings.js`) — ported as typed, tested,
+server-authoritative code, not copied.
+
+## Stack decisions
+
+| Concern | Choice | Rationale |
+|---|---|---|
+| Framework | Next.js 15 (App Router) + TypeScript, strict | brief mandate |
+| DB | PostgreSQL (Neon) + Prisma Migrate | brief mandate; Neon has a Vercel-native integration |
+| Auth | Auth.js v5 credentials provider, JWT session strategy, argon2 hashes | works on Vercel serverless without a session table; RBAC claims re-checked server-side per mutation |
+| Validation | zod on every route handler / server action | brief mandate |
+| Styling | Tailwind v4 + `design/tokens.css` variables via a preset | tokens are the single source of truth |
+| i18n | next-intl, `sv` default / `en` ready | brief mandate |
+| Tests | Vitest (engines, RBAC helpers) + Playwright (login, request→approve, drag-create) | brief mandate |
+| Email | Resend, env-gated, no-op when unconfigured | phase 5 |
+
+## Phase 0 — scaffold (one PR-reviewable commit series)
+
+1. `create-next-app` in `semester-planner/` (TS, ESLint, Tailwind, App Router,
+   `src/` layout); Prettier; strict tsconfig.
+2. Tokens wired: `design/tokens.css` imported in the root layout; Tailwind preset
+   mapping theme slots → CSS variables; base components (Button, Panel, Badge) to
+   prove the token pipeline; dark default + light theme toggle;
+   `prefers-reduced-motion` honored.
+3. Prisma init with `prisma/schema.prisma` (already in this PR); `db push`-free
+   workflow: `prisma migrate dev` locally, `prisma migrate deploy` on release.
+4. Auth skeleton: `/login`, Auth.js credentials + argon2, middleware guarding all
+   app routes, role helpers (`requireRole('MANAGER')`) used by every server action;
+   basic rate limit on the credentials callback (per-IP token bucket, Upstash-free
+   in-memory fallback for dev).
+5. Seed admin (`ADMIN_EMAIL`/`ADMIN_PASSWORD` env, never committed).
+6. Docs: `README.md` (setup, env, commands), `ARCHITECTURE.md` (real stack),
+   `AGENTS.md`, `.env.example` (`DATABASE_URL`, `AUTH_SECRET`, `RESEND_API_KEY`,
+   `ADMIN_EMAIL`, `ADMIN_PASSWORD`), `vercel.json` + deploy notes.
+7. CI: GitHub Actions — lint, typecheck, vitest on PR.
+
+## Phase 1 — data + engines
+
+1. Full migration for the schema; sparse `Demand` (missing row ⇒
+   `Settings.defaultRequired`).
+2. Seed script: 1 org, settings (planningYear 2026, S1/S2 planned separately (no combined/summer modes)),
+   5 Swedish processes (Avsyning, Kapselresaren, Serialisering, Etikettering,
+   Granskning/uttag av dok), 16 operators with certs (from reference seed),
+   demand, ~10 absence blocks across statuses, SE holidays for the planning year,
+   demo manager + employee users.
+3. `src/server/engine/coverage.ts` — pure, typed port:
+   single-cert operators assigned first; multi-cert to lowest covered/required
+   ratio; `confirmed` (APPROVED) vs `projected` (APPROVED+PENDING+REQUESTED)
+   modes; level green (covered ≥ required), yellow (= required−1), red
+   (< required−1); thresholds read from Settings.
+4. `src/server/engine/conflicts.ts` — locked weeks (hard block, admin override);
+   overlap = simultaneous projected-status absences within the same shift only
+   (never drafts, never cross-shift); below-min-staffing only when the candidate
+   worsens it; projected-RED warning only when the candidate newly causes or
+   worsens red (before/after comparison).
+5. Vitest suites for both engines ported from the reference behavior + edge cases
+   (draft exclusion, cross-shift exclusion, pre-existing red not blamed, locked
+   week boundaries, sparse demand fallback).
+6. Read-only API: `GET /api/coverage?year&from&to&mode`, RBAC-checked, zod-validated
+   — consumed by phases 2+.
+
+Exit criteria: `pnpm lint && pnpm typecheck && pnpm test` green in CI; migrations
+reproducible from empty DB; seeded app logs in as admin/manager/employee.
+
+## Open items needing input
+
+1. **Design access (blocking pixel-perfect tokens only):** see `design/TOKENS.md` —
+   commit the design HTML, paste its CSS, or publish it publicly. Build proceeds on
+   provisional tokens meanwhile.
+2. **Database provisioning:** no `DATABASE_URL` exists in this environment. I'll
+   develop against local Postgres in CI/dev; for the Vercel deploy I need a Neon
+   (or Supabase) connection string added to Vercel env — or tell me if you want the
+   Vercel-Neon integration and I'll document the exact steps.
+3. **Vercel deploy:** happy to wire `vercel.json` + docs now; the actual deploy
+   needs the Vercel project linked to this repo with root directory
+   `semester-planner/`.
+
+## Phase 5 — overview, reports & email (landed)
+
+1. `/dashboard` (manager+): pending-request count, projected staffing risks across
+   the visible window (worst deficits first), who is away this week / next week.
+2. `/reports` (manager+): projected coverage heatmap per shift, per-operator
+   absence summary, CSV exports (coverage + absences, UTF-8 BOM for Excel).
+3. Email: `src/server/email.ts` posts to Resend's REST API when `RESEND_API_KEY`
+   is set; `notify.ts` mirrors in-app notifications to email best-effort — a
+   failed send never breaks the mutation. No-op when unconfigured.
+
+## Phase 6 — e2e, a11y, deploy docs (landed)
+
+1. Playwright e2e (`e2e/`, `npm run test:e2e`): auth/RBAC, full submit→approve
+   request flow across two browser sessions, dashboard/reports incl. real CSV
+   downloads, board render. Runs as its own CI job on a fresh seeded Postgres
+   (browser installed in CI; sandboxes with a pre-installed Chromium can point
+   `PLAYWRIGHT_CHROMIUM_PATH` at it).
+2. A11y spot-check documented in `docs/VERIFICATION.md` (labels, landmarks,
+   keyboard fallbacks, reduced motion, no color-only signaling).
+3. `docs/DEPLOY.md` — Vercel + Neon setup, env table, seeding, deploy loop.
+4. i18n decision: UI ships Swedish-only; next-intl extraction deferred until
+   copy stabilizes (rationale + path in VERIFICATION.md).
+
+## Phase 7 — right-click menu + neon reskin (landed)
+
+1. Planning board context menu (manager+): right-click a block → Redigera /
+   Sätt status (all five statuses, engine-validated via the same save path) /
+   Ta bort; right-click an empty cell → Ny frånvaro här. Escape/click-away
+   closes; employees get no menu. Covered by 3 Playwright tests.
+2. Reskin "activated" on the provisional neon-kinetic tokens: ambient radial
+   neon scene background, hero-gradient page titles + brand, gradient primary
+   buttons, inset panel highlights. All token-driven — swapping in the real
+   design file remains a tokens.css-only change.
+
+## Phase 8 — design reconciliation: Neo-Kinetic (landed)
+
+Owner delivered the real design bundle (archived in `design/reference/`).
+`tokens.css` rewritten to the Neo-Kinetic system: warm paper light theme
+(default) + soft dark, 2px ink borders, hard 4px offset game-piece shadows
+(no blur glows), brand triad indigo/coral/yellow, status remap (approved =
+yellow "win state", requested = indigo, pending = coral, draft = paper tone),
+coverage teal/amber/coral, coral-striped holidays. Component touch-ups:
+brand wordmark "Semester.Planner" (coral dot, yellow period), Epilogue 900
+italic page titles, game-piece button physics (hover lifts, active seats
+down), 3px indigo focus rings. 11 e2e + 28 unit tests green; verified with
+screenshots in both modes. Remaining 7 themes from the bundle are a
+follow-up (theme picker + palette blocks).

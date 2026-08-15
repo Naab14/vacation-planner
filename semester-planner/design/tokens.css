@@ -1,0 +1,186 @@
+/*
+ * Semester Planner — "Neo-Kinetic" design tokens
+ *
+ * STATUS: RECONCILED with the owner's design bundle (design/reference/ —
+ * HANDOFF.md + the THEMES map in sp-app.jsx). Values below are the
+ * Neo-Kinetic default theme, light (primary) + soft dark, mapped onto the
+ * slots the components already consume. Aesthetic: Neo-Brutalism × Memphis —
+ * warm paper surfaces, 2px ink borders, hard 4px offset "game-piece" shadows
+ * (never soft blur glows), Epilogue 900 italic display, indigo/coral/yellow
+ * brand triad. The remaining 7 themes from the bundle can be layered on later
+ * as alternate [data-theme] blocks.
+ *
+ * Every value below is a single source of truth — components must never
+ * hardcode a hex, shadow, or duration.
+ */
+
+:root {
+  /* ── Typography ─────────────────────────────────────────────── */
+  --font-heading: 'Epilogue', system-ui, sans-serif;
+  --font-body: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-mono: 'Space Mono', ui-monospace, monospace; /* week numbers, counts, kickers */
+
+  /* ── Radii (design: 6 / 10 / 18 / pill) ─────────────────────── */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 18px;
+  --radius-pill: 999px;
+
+  /* ── Motion (design: fast 80ms transforms, 140ms panels) ────── */
+  --motion-fast: 80ms;
+  --motion-base: 140ms;
+  --motion-slow: 240ms;
+  --ease-spring: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  /* Game-piece physics: hover lifts 1px toward the light, drag lifts more */
+  --lift-hover: translate(-1px, -1px);
+  --lift-drag: translate(-2px, -2px);
+}
+
+/* ── Light (primary) theme — Neo-Kinetic paper ─────────────────── */
+:root,
+[data-theme='light'] {
+  color-scheme: light;
+
+  /* Ink + paper (warm off-white ramp; dividers are surface shifts) */
+  --bg-primary: #faf7f2;
+  --bg-secondary: #f2ece2;
+  --bg-panel: #ffffff;
+  --bg-raised: #f2ece2;
+  --border: #e8e0d0;
+  --border-strong: #0b0a1f;
+
+  --text-primary: #0b0a1f;
+  --text-secondary: #3a3758;
+  --text-inverse: #faf7f2;
+
+  /* Brand triad */
+  --accent: #4f46e5; /* electric indigo — primary */
+  --accent-secondary: #4f46e5; /* links/secondary actions follow primary */
+  --accent-alert: #ff4d6d; /* neon coral — destructive/risk */
+  --accent-ok: #0ea89a; /* coverage teal */
+
+  /* Game-piece shadows: hard offsets, never blurred */
+  --glow-accent: 4px 4px 0 0 #0b0a1f;
+  --glow-ok: 4px 4px 0 0 #0ea89a;
+  --glow-risk: 4px 4px 0 0 #ff4d6d;
+  --shadow-panel: 4px 4px 0 0 #0b0a1f;
+  --shadow-pop: 6px 6px 0 0 #0b0a1f;
+
+  /* Absence block statuses (design status system; DENIED derived in-language) */
+  --draft-bg: #ede6d6;
+  --draft-border: #b8ae95;
+  --requested-bg: #eeebff;
+  --requested-border: #4f46e5;
+  --pending-bg: #ffe4e9;
+  --pending-border: #ff4d6d;
+  --approved-bg: #ffd60a; /* the "win state" — loudest */
+  --approved-border: #0b0a1f;
+  --denied-bg: #f2ece2;
+  --denied-border: #ff4d6d;
+
+  /* Coverage levels (yellow darkened for text-on-paper legibility) */
+  --coverage-green: #0ea89a;
+  --coverage-yellow: #a37e00;
+  --coverage-red: #ff4d6d;
+
+  /* Holidays: coral-tinted with diagonal stripes */
+  --holiday-bg: #ffe4e9;
+  --holiday-border: #ff4d6d;
+  --holiday-text: #d81b4d;
+  --holiday-stripe-color: rgb(255 77 125 / 0.18);
+  --holiday-pattern: repeating-linear-gradient(
+      45deg,
+      var(--holiday-stripe-color),
+      var(--holiday-stripe-color) 4px,
+      transparent 4px,
+      transparent 8px
+    ),
+    var(--holiday-bg);
+
+  /* Top bar: ink plate with paper text */
+  --topbar-bg: #0b0a1f;
+  --topbar-text: #faf7f2;
+
+  /* Brand extras */
+  --brand-yellow: #ffd60a;
+  --brand-coral: #ff4d6d;
+  --gradient-hero: linear-gradient(135deg, #4f46e5 0%, #4f46e5 100%);
+  --bg-scene: var(--bg-primary);
+}
+
+/* ── Soft dark theme (never pitch black; warm tinted surfaces) ─── */
+[data-theme='dark'] {
+  color-scheme: dark;
+
+  --bg-primary: #1a1830;
+  --bg-secondary: #22203a;
+  --bg-panel: #26233f;
+  --bg-raised: #2d2a4a;
+  --border: #2d2a4a;
+  --border-strong: #f5f1e8;
+
+  --text-primary: #f5f1e8;
+  --text-secondary: #c9c3d9;
+  --text-inverse: #1a1830;
+
+  --accent: #8b82ff;
+  --accent-secondary: #8b82ff;
+  --accent-alert: #ff7a93;
+  --accent-ok: #35c9ba;
+
+  --glow-accent: 4px 4px 0 0 #0b0a1f;
+  --glow-ok: 4px 4px 0 0 #0e6b62;
+  --glow-risk: 4px 4px 0 0 #a63550;
+  --shadow-panel: 4px 4px 0 0 #0b0a1f;
+  --shadow-pop: 6px 6px 0 0 #0b0a1f;
+
+  /* Statuses: color-mixed tints on panel for legibility (per sp-app.jsx) */
+  --draft-bg: #2d2a4a;
+  --draft-border: #8a84a6;
+  --requested-bg: color-mix(in srgb, #8b82ff 22%, #26233f);
+  --requested-border: #8b82ff;
+  --pending-bg: color-mix(in srgb, #ff7a93 28%, #26233f);
+  --pending-border: #ff7a93;
+  --approved-bg: color-mix(in srgb, #ffe156 55%, #26233f);
+  --approved-border: #ffe156;
+  --denied-bg: #22203a;
+  --denied-border: #ff7a93;
+
+  --coverage-green: #35c9ba;
+  --coverage-yellow: #ffe156;
+  --coverage-red: #ff7a93;
+
+  --holiday-bg: color-mix(in srgb, #ff7a93 18%, #26233f);
+  --holiday-border: #ff7a93;
+  --holiday-text: #ff7a93;
+  --holiday-stripe-color: rgb(255 122 147 / 0.2);
+  --holiday-pattern: repeating-linear-gradient(
+      45deg,
+      var(--holiday-stripe-color),
+      var(--holiday-stripe-color) 4px,
+      transparent 4px,
+      transparent 8px
+    ),
+    var(--holiday-bg);
+
+  --topbar-bg: #12102a;
+  --topbar-text: #f5f1e8;
+
+  --brand-yellow: #ffe156;
+  --brand-coral: #ff7a93;
+  --gradient-hero: linear-gradient(135deg, #8b82ff 0%, #8b82ff 100%);
+  --bg-scene: var(--bg-primary);
+}
+
+/* ── Kinetic motion is opt-out via user preference ─────────────── */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-fast: 0ms;
+    --motion-base: 0ms;
+    --motion-slow: 0ms;
+    --ease-spring: linear;
+    --lift-hover: none;
+    --lift-drag: none;
+  }
+}
