@@ -5,6 +5,7 @@ export default function TopBar({
   shiftMode, onShiftModeChange, theme, onThemeChange,
   onImportCSV, onExportCSV, onSave, onExportJSON, onImportJSON, onReset, onShare,
   onUndo, onRedo, canUndo, canRedo,
+  onToggleInsights, insightsBadge = 0,
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
@@ -74,6 +75,23 @@ export default function TopBar({
 
       {/* Right side actions */}
       <div className="flex items-center gap-2.5 ml-auto">
+        {/* Planning Assistant — prescriptive insights drawer */}
+        {onToggleInsights && (
+          <button onClick={onToggleInsights}
+            aria-label="Planning assistant"
+            className="relative px-4 py-1 text-xs font-bold rounded-full transition-all duration-200 hover:scale-[1.03] active:scale-95"
+            style={{ background: 'rgba(255,255,255,0.12)', color: 'var(--topbar-text)', border: '1px solid rgba(255,255,255,0.2)' }}>
+            ✨ Insights
+            {insightsBadge > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center text-[10px] font-extrabold rounded-full"
+                style={{ background: 'var(--accent-alert)', color: '#fff', boxShadow: '0 0 8px rgba(244,63,94,0.6)' }}
+                aria-label={`${insightsBadge} requests need review`}>
+                {insightsBadge}
+              </span>
+            )}
+          </button>
+        )}
+
         {/* Share — prominent indigo button */}
         <button onClick={onShare}
           className="px-4 py-1 text-xs font-bold rounded-full transition-all duration-200 hover:scale-[1.03] active:scale-95"

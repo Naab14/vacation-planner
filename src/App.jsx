@@ -12,9 +12,12 @@ import { buildHolidayMap, initHolidays } from './holidays';
 import { historyReducer, initHistory } from './historyReducer';
 import { useBreakpoint } from './hooks/useBreakpoint';
 
+import { FULL_SEASON, analyzePendingApprovals } from './insights';
+
 import TopBar from './components/TopBar';
 import OperatorPanel from './components/OperatorPanel';
 import CalendarGrid from './components/calendar/CalendarGrid';
+import InsightsPanel from './components/InsightsPanel';
 
 /* ── Utility ──────────────────────────────────────────────────────────────── */
 let _uid = 0;
@@ -56,6 +59,7 @@ export default function App() {
   const [toast, setToast] = useState(initResult.wasShared ? 'Loaded shared workspace' : null);
   const [showDemand, setShowDemand] = useState(false);
   const [showOperatorMgmt, setShowOperatorMgmt] = useState(false);
+  const [showInsights, setShowInsights] = useState(false);
   const [zoom, setZoom] = useState(storedUI.zoom === 'day' ? 'day' : 'week');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(!!storedUI.sidebarCollapsed);
   const { isMobile, isTablet, isDesktop } = useBreakpoint();
@@ -78,6 +82,14 @@ export default function App() {
 
   const [holidayMap, setHolidayMap] = useState(() => buildHolidayMap());
   const flash = msg => { setToast(msg); setTimeout(() => setToast(null), 3000); };
+
+  // Lightweight badge: how many pending requests can't be safely approved.
+  // (Cheap — only inspects each request's own weeks; the full insight set is
+  // computed lazily inside the panel when it opens.)
+  const insightsBadge = useMemo(
+    () => analyzePendingApprovals(state, { holidayMap }).filter(a => a.verdict !== 'safe').length,
+    [state, holidayMap],
+  );
 
   // Load holidays async (date-holidays is code-split)
   useEffect(() => {
@@ -173,6 +185,7 @@ export default function App() {
         startWeek: Math.max(1, Math.min(52 - s.settings.visibleWeeks + 1, w)),
       },
     })), [setFn]);
+  const jumpToWeek = useCallback(week => setStartWeek(week - 1), [setStartWeek]);
 
   /* ── Operator management ────────────────────────────────────────────────── */
   const addOperator = useCallback((name, shift) => {
@@ -247,6 +260,8 @@ export default function App() {
         onShare={handleShare}
         onUndo={undo} onRedo={redo}
         canUndo={canUndo} canRedo={canRedo}
+        onToggleInsights={() => setShowInsights(p => !p)}
+        insightsBadge={insightsBadge}
       />
 
       {/* ── Main content ─────────────────────────────────────────────────── */}
@@ -279,6 +294,17 @@ export default function App() {
           onZoomChange={setZoom}
         />
       </div>
+
+      {/* Planning Assistant — prescriptive insights drawer */}
+      {showInsights && (
+        <InsightsPanel
+          state={state} weeks={FULL_SEASON} holidayMap={holidayMap}
+          onSetBlockStatus={setBlockStatus}
+          onUpdateOperator={updateOp}
+          onJumpToWeek={w => { jumpToWeek(w); flash(`Jumped to v.${w}`); }}
+          onClose={() => setShowInsights(false)}
+        />
+      )}
 
       {/* Toast — Neo-Kinetic pill */}
       {toast && (
