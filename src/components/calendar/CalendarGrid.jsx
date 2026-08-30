@@ -233,8 +233,14 @@ export default function CalendarGrid({
             +
           </button>
         </div>
-        <button onClick={() => setShowTools(t => !t)}
+        <button onClick={onToggleDemand}
           className="px-2 py-1 text-sm rounded ml-auto"
+          title={showDemand ? 'Hide demand editor' : 'Show demand editor'}
+          style={{ background: showDemand ? 'var(--accent)' : 'var(--bg-primary)', color: showDemand ? '#fff' : 'var(--text-primary)', border: '1px solid var(--border)' }}>
+          Demand
+        </button>
+        <button onClick={() => setShowTools(t => !t)}
+          className="px-2 py-1 text-sm rounded"
           style={{ background: showTools ? 'var(--accent)' : 'var(--bg-primary)', color: showTools ? '#fff' : 'var(--text-primary)', border: '1px solid var(--border)' }}>
           ⚙
         </button>
@@ -244,10 +250,6 @@ export default function CalendarGrid({
       {showTools && (
         <div className="flex items-center gap-3 px-3 py-1.5 flex-wrap" style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-secondary)' }}>
           <Legend />
-          <button onClick={onToggleDemand} className="px-2 py-1 text-xs ml-auto"
-            style={{ background: showDemand ? 'var(--accent)' : 'var(--bg-primary)', color: showDemand ? '#fff' : 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 'var(--border-radius)' }}>
-            Demand
-          </button>
         </div>
       )}
 
