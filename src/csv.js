@@ -30,23 +30,23 @@ function levenshtein(a, b) {
   return prev[n];
 }
 
-function suggestCert(input) {
+function suggestCert(input, processes = PROCESSES) {
   const trimmed = input.trim();
   if (!trimmed) return null;
   let best = null;
   let bestDist = Infinity;
-  for (const p of PROCESSES) {
+  for (const p of processes) {
     const d = levenshtein(trimmed, p);
     if (d < bestDist && d <= 2) { bestDist = d; best = p; }
   }
   return best;
 }
 
-function matchCertCaseInsensitive(input) {
+function matchCertCaseInsensitive(input, processes = PROCESSES) {
   const trimmed = input.trim();
   if (!trimmed) return null;
   const lower = trimmed.toLowerCase();
-  return PROCESSES.find(p => p.toLowerCase() === lower) || null;
+  return processes.find(p => p.toLowerCase() === lower) || null;
 }
 
 function normalizeHeader(raw) {
@@ -62,7 +62,7 @@ function normalizeHeader(raw) {
  * treated as comments and skipped. Returns `{ operators, error, warnings }`
  * where warnings carry per-row hints (unknown certs with fuzzy suggestions).
  */
-export function parseCSV(text) {
+export function parseCSV(text, processes = PROCESSES) {
   const stripped = text.replace(/^\uFEFF/, '');
   const allLines = stripped.split(/\r?\n/);
   const dataLines = [];
@@ -98,11 +98,11 @@ export function parseCSV(text) {
     const certTokens = rawCerts.split(';').map(c => c.trim()).filter(Boolean);
     const certifications = [];
     for (const token of certTokens) {
-      const matched = matchCertCaseInsensitive(token);
+      const matched = matchCertCaseInsensitive(token, processes);
       if (matched) {
         certifications.push(matched);
       } else {
-        const suggestion = suggestCert(token);
+        const suggestion = suggestCert(token, processes);
         warnings.push(
           suggestion
             ? `Rad ${rowNum}: Okänd certifiering "${token}" — menade du "${suggestion}"?`
@@ -156,12 +156,12 @@ function todayIso() {
   return `${d.getFullYear()}-${mm}-${dd}`;
 }
 
-function buildHeaderComments(title) {
+function buildHeaderComments(title, processes = PROCESSES) {
   return [
     `# ${title}`,
     `# Genererad: ${todayIso()}`,
     '# Format: Namn, Skift (S1/S2), Certifieringar (semikolon-separerade)',
-    `# Tillgängliga certifieringar: ${PROCESSES.join('; ')}`,
+    `# Tillgängliga certifieringar: ${processes.join('; ')}`,
     '',
   ];
 }
@@ -171,9 +171,9 @@ function buildHeaderComments(title) {
  * preamble). Returns the string including a UTF-8 BOM so Excel opens it
  * correctly without encoding issues.
  */
-export function exportOperatorsCSV(operators) {
+export function exportOperatorsCSV(operators, processes = PROCESSES) {
   const rows = [
-    ...buildHeaderComments('Semester Planner — Personalexport'),
+    ...buildHeaderComments('Semester Planner — Personalexport', processes),
     'Namn,Skift,Certifieringar',
     ...operators.map(op =>
       [csvEscape(op.name), csvEscape(op.shift), csvEscape((op.certifications || []).join(';'))].join(','),
@@ -195,19 +195,19 @@ function triggerDownload(content, filename) {
  * Download the current operator list as a Swedish CSV file.
  * Filename: `personal-YYYY-MM-DD.csv`.
  */
-export function downloadOperatorsCSV(operators) {
-  triggerDownload(exportOperatorsCSV(operators), `personal-${todayIso()}.csv`);
+export function downloadOperatorsCSV(operators, processes = PROCESSES) {
+  triggerDownload(exportOperatorsCSV(operators, processes), `personal-${todayIso()}.csv`);
 }
 
 /**
  * Download a CSV template with `#` comments listing valid certifications and
  * three example rows (full certs, partial certs, no certs).
  */
-export function downloadCSVTemplate() {
+export function downloadCSVTemplate(processes = PROCESSES) {
   const rows = [
-    ...buildHeaderComments('Semester Planner — Personalmall'),
+    ...buildHeaderComments('Semester Planner — Personalmall', processes),
     'Namn,Skift,Certifieringar',
-    `Anna Lindgren,S1,${PROCESSES.join(';')}`,
+    `Anna Lindgren,S1,${processes.join(';')}`,
     'Erik Holm,S1,Kapselresaren;Etikettering',
     'Klara Dahl,S2,',
   ];

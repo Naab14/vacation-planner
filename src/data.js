@@ -7,6 +7,10 @@ export const PROCESSES = [
   'Granskning/uttag av dok',
 ];
 
+// Stateful copy of the process list used to seed a fresh workspace. The list
+// lives in app state so the certification matrix can add / rename / remove it.
+export const seedProcesses = [...PROCESSES];
+
 // ── Seed Operators ───────────────────────────────────────────────────────────
 export const seedOperators = [
   { id: 'op1',  name: 'Anna Lindgren',   shift: 'S1', active: true, certifications: ['Avsyning', 'Serialisering', 'Granskning/uttag av dok'] },
@@ -42,11 +46,11 @@ export const seedVacationBlocks = [
 ];
 
 // ── Default Demand (2 per process per week across 52 weeks) ──────────────────
-export function buildDefaultDemand() {
+export function buildDefaultDemand(processes = PROCESSES, required = 2) {
   const d = {};
-  for (const p of PROCESSES) {
+  for (const p of processes) {
     d[p] = {};
-    for (let w = 1; w <= 52; w++) d[p][w] = 2;
+    for (let w = 1; w <= 52; w++) d[p][w] = required;
   }
   return d;
 }
@@ -56,7 +60,16 @@ export const defaultSettings = {
   shiftMode: 'separate',
   visibleWeeks: 12,
   startWeek: 15,
+  planningYear: 2026,
+  defaultRequired: 2,   // default demand applied to newly added processes
+  minStaffing: 0,       // global minimum bodies available per process/week (0 = off)
+  allowedOverlap: 0,    // max simultaneous absences per shift/week (0 = unlimited)
+  lockedWeeks: [],      // ISO week numbers that may not be edited
 };
+
+// Current persistence schema version. Bump when the shape changes and add a
+// migration step in src/store/index.js.
+export const SCHEMA_VERSION = 2;
 
 // ── Themes ───────────────────────────────────────────────────────────────────
 export const themes = [

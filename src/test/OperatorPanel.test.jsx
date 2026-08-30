@@ -153,12 +153,12 @@ describe('OperatorPanel', () => {
 
   it('renders the search input', () => {
     render(<OperatorPanel {...defaultProps()} />);
-    expect(screen.getByPlaceholderText('Search operators')).toBeInTheDocument();
+    expect(screen.getByLabelText('Search operators')).toBeInTheDocument();
   });
 
   it('filters operators by name (case-insensitive)', () => {
     render(<OperatorPanel {...defaultProps()} />);
-    const searchInput = screen.getByPlaceholderText('Search operators');
+    const searchInput = screen.getByLabelText('Search operators');
     fireEvent.change(searchInput, { target: { value: 'anna' } });
     expect(screen.getByText('Anna Lindgren')).toBeInTheDocument();
     expect(screen.queryByText('Erik Holm')).not.toBeInTheDocument();
@@ -166,14 +166,28 @@ describe('OperatorPanel', () => {
 
   it('matches substring anywhere in the name', () => {
     render(<OperatorPanel {...defaultProps()} />);
-    fireEvent.change(screen.getByPlaceholderText('Search operators'), { target: { value: 'holm' } });
+    fireEvent.change(screen.getByLabelText('Search operators'), { target: { value: 'holm' } });
     expect(screen.queryByText('Anna Lindgren')).not.toBeInTheDocument();
     expect(screen.getByText('Erik Holm')).toBeInTheDocument();
   });
 
+  it('filters by certification, not just name', () => {
+    const props = {
+      ...defaultProps(),
+      operators: [
+        makeOp('1', 'Anna Lindgren', 'S1', true, ['Avsyning']),
+        makeOp('2', 'Erik Holm', 'S2', true, ['Etikettering']),
+      ],
+    };
+    render(<OperatorPanel {...props} />);
+    fireEvent.change(screen.getByLabelText('Search operators'), { target: { value: 'avsyning' } });
+    expect(screen.getByText('Anna Lindgren')).toBeInTheDocument();
+    expect(screen.queryByText('Erik Holm')).not.toBeInTheDocument();
+  });
+
   it('shows "No matches" when nothing matches', () => {
     render(<OperatorPanel {...defaultProps()} />);
-    fireEvent.change(screen.getByPlaceholderText('Search operators'), { target: { value: 'zzzz' } });
+    fireEvent.change(screen.getByLabelText('Search operators'), { target: { value: 'zzzz' } });
     expect(screen.getByText('No matches')).toBeInTheDocument();
     expect(screen.queryByText('Anna Lindgren')).not.toBeInTheDocument();
     expect(screen.queryByText('Erik Holm')).not.toBeInTheDocument();
@@ -181,7 +195,7 @@ describe('OperatorPanel', () => {
 
   it('clear button resets the search', () => {
     render(<OperatorPanel {...defaultProps()} />);
-    const searchInput = screen.getByPlaceholderText('Search operators');
+    const searchInput = screen.getByLabelText('Search operators');
     fireEvent.change(searchInput, { target: { value: 'anna' } });
     expect(screen.queryByText('Erik Holm')).not.toBeInTheDocument();
     fireEvent.click(screen.getByLabelText('Clear search'));

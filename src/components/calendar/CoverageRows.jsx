@@ -30,17 +30,17 @@ function CoverageTooltip({ coverageData, week, process, holidayMap, style }) {
 
 const colorMap = { green: 'var(--coverage-green)', yellow: 'var(--coverage-yellow)', red: 'var(--coverage-red)' };
 
-export default function CoverageRows({ operators, vacationBlocks, demand, weeks, shiftMode, shiftFilter, holidayMap, label, cellWidth }) {
+export default function CoverageRows({ operators, vacationBlocks, demand, weeks, shiftMode, shiftFilter, holidayMap, label, cellWidth, processes = PROCESSES, coverageOpts }) {
   const [tooltip, setTooltip] = useState(null);
   const w = cellWidth ?? CELL_W;
 
   const coverageByWeek = useMemo(() => {
     const map = {};
     for (const w of weeks) {
-      map[w] = getAllCoverageForWeek(operators, vacationBlocks, demand, w, shiftMode, shiftFilter, holidayMap);
+      map[w] = getAllCoverageForWeek(operators, vacationBlocks, demand, w, shiftMode, shiftFilter, holidayMap, processes, coverageOpts || {});
     }
     return map;
-  }, [operators, vacationBlocks, demand, weeks, shiftMode, shiftFilter, holidayMap]);
+  }, [operators, vacationBlocks, demand, weeks, shiftMode, shiftFilter, holidayMap, processes, coverageOpts]);
 
   return (
     <>
@@ -48,7 +48,7 @@ export default function CoverageRows({ operators, vacationBlocks, demand, weeks,
         style={{ height: 24, background: 'var(--bg-secondary)', color: 'var(--text-secondary)', borderBottom: '1px solid var(--border)' }}>
         <div style={{ width: LABEL_W, minWidth: LABEL_W }}>{label}</div>
       </div>
-      {PROCESSES.map(proc => (
+      {processes.map(proc => (
         <div key={proc} className="flex" style={{ height: CELL_H, borderBottom: '1px solid var(--border)' }}>
           <div className="sticky left-0 z-10 flex items-center px-2 text-xs truncate"
             style={{ width: LABEL_W, minWidth: LABEL_W, background: 'var(--bg-primary)', borderRight: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
