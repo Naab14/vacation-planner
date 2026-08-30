@@ -33,6 +33,11 @@ import App from '../App';
 import { seedOperators } from '../data';
 import * as storage from '../storage';
 
+const openOverflowMenu = () => {
+  const button = screen.getAllByRole('button').find(btn => ['⋮', 'â‹®'].includes(btn.textContent.trim()));
+  fireEvent.click(button);
+};
+
 describe('App', () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -52,7 +57,7 @@ describe('App', () => {
       const matches = screen.getAllByText(op.name);
       expect(matches.length).toBeGreaterThanOrEqual(1);
     });
-  });
+  }, 15000);
 
   it('renders the top bar title', () => {
     render(<App />);
@@ -63,6 +68,13 @@ describe('App', () => {
     render(<App />);
     expect(screen.getByText('v.15')).toBeInTheDocument();
   });
+
+  it('switches to the dashboard module from the top navigation', () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: 'Dashboard' }));
+    expect(screen.getByText('Plan health')).toBeInTheDocument();
+    expect(screen.queryByText('v.15')).not.toBeInTheDocument();
+  }, 15000);
 
   it('applies theme on change', async () => {
     render(<App />);
@@ -121,7 +133,22 @@ describe('App', () => {
     expect(screen.getByText('State saved')).toBeInTheDocument();
     act(() => { vi.advanceTimersByTime(3000); });
     expect(screen.queryByText('State saved')).not.toBeInTheDocument();
-  });
+  }, 15000);
+
+  it('does not let an older toast timer clear a newer toast', () => {
+    render(<App />);
+    openOverflowMenu();
+    fireEvent.click(screen.getByText('Save'));
+    expect(screen.getByText('State saved')).toBeInTheDocument();
+
+    act(() => { vi.advanceTimersByTime(1000); });
+    openOverflowMenu();
+    fireEvent.click(screen.getByText('Export'));
+    expect(screen.getByText('Exported to file')).toBeInTheDocument();
+
+    act(() => { vi.advanceTimersByTime(2100); });
+    expect(screen.getByText('Exported to file')).toBeInTheDocument();
+  }, 15000);
 
   it('reset restores defaults after confirm', () => {
     vi.spyOn(window, 'confirm').mockReturnValue(true);

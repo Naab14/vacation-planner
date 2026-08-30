@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { STATUS_COLORS, STATUS_LABELS, STATUSES } from './constants';
 
-export default function BlockPopover({ x, y, block, dateStr, onSetStatus, onDelete, onSetDayStatus, onClearDayStatus, onSetNote, onClose }) {
+export default function BlockPopover({ x, y, block, dateStr, onSetStatus, onDelete, onSetDayStatus, onClearDayStatus, onSetNote, onUpdateBlock, onClose }) {
   const ref = useRef(null);
   const [noteDraft, setNoteDraft] = useState(block?.note || '');
+  const [startDraft, setStartDraft] = useState(block?.startWeek ?? 1);
+  const [endDraft, setEndDraft] = useState(block?.endWeek ?? block?.startWeek ?? 1);
 
   useEffect(() => {
     const handler = e => { if (ref.current && !ref.current.contains(e.target)) onClose(); };
@@ -23,6 +25,17 @@ export default function BlockPopover({ x, y, block, dateStr, onSetStatus, onDele
 
   const dayStatus = dateStr ? (block.dayStatuses?.[dateStr] || block.status) : null;
   const hasOverride = dateStr && block.dayStatuses?.[dateStr];
+  const applyRange = () => {
+    if (!onUpdateBlock) return;
+    const start = Number(startDraft);
+    const end = Number(endDraft);
+    if (!Number.isFinite(start) || !Number.isFinite(end)) return;
+    onUpdateBlock(block.id, {
+      startWeek: Math.min(start, end),
+      endWeek: Math.max(start, end),
+    });
+    onClose();
+  };
 
   return (
     <div ref={ref} className="block-popover" style={{ left: x, top: y }}>
@@ -78,6 +91,49 @@ export default function BlockPopover({ x, y, block, dateStr, onSetStatus, onDele
           {STATUS_LABELS[s]}
         </button>
       ))}
+      {onUpdateBlock && (
+        <>
+          <hr style={{ borderColor: 'var(--border)' }} className="my-1" />
+          <div className="px-3 py-1 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>
+            Week range
+          </div>
+          <div className="px-3 pb-2 grid grid-cols-2 gap-2">
+            <label className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+              Start
+              <input
+                aria-label="Start week"
+                type="number"
+                min={1}
+                max={53}
+                value={startDraft}
+                onChange={e => setStartDraft(e.target.value)}
+                className="w-full mt-1 text-sm rounded p-1.5"
+                style={{ background: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}
+              />
+            </label>
+            <label className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+              End
+              <input
+                aria-label="End week"
+                type="number"
+                min={1}
+                max={53}
+                value={endDraft}
+                onChange={e => setEndDraft(e.target.value)}
+                className="w-full mt-1 text-sm rounded p-1.5"
+                style={{ background: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}
+              />
+            </label>
+            <button
+              type="button"
+              onClick={applyRange}
+              className="col-span-2 px-2 py-1.5 text-xs font-semibold rounded"
+              style={{ background: 'var(--accent)', color: '#fff' }}>
+              Apply week range
+            </button>
+          </div>
+        </>
+      )}
       {onSetNote && (
         <>
           <hr style={{ borderColor: 'var(--border)' }} className="my-1" />

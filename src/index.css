@@ -362,6 +362,16 @@ h1, h2, h3, h4, h5, h6 { font-family: var(--font-heading); }
 }
 .sidebar-collapsed .sidebar-full-only { display: none !important; }
 
+.operator-field:focus-visible {
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.operator-row:hover,
+.operator-row:focus-visible {
+  transform: scale(1.02);
+  background: rgba(79,70,229,0.06);
+}
+
 /* ── Action popover ───────────────────────────────────────────────────────── */
 .block-popover {
   position: fixed;
@@ -430,4 +440,12 @@ h1, h2, h3, h4, h5, h6 { font-family: var(--font-heading); }
 @media (max-width: 767px) {
   [data-week][data-op] { min-height: 44px; }
   .time-slider { width: 120px !important; }
+}
+
+@media print {
+  body { background: #fff !important; color: #000 !important; }
+  .no-print, .no-print * { display: none !important; }
+  main { overflow: visible !important; }
+  table { page-break-inside: auto; }
+  tr { page-break-inside: avoid; page-break-after: auto; }
 }

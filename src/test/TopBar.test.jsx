@@ -17,6 +17,8 @@ const defaultProps = () => ({
   onRedo: vi.fn(),
   canUndo: true,
   canRedo: true,
+  activeModule: 'planning',
+  onModuleChange: vi.fn(),
 });
 
 describe('TopBar', () => {
@@ -30,6 +32,23 @@ describe('TopBar', () => {
     expect(screen.getByText('Separate')).toBeInTheDocument();
     expect(screen.getByText('Combined')).toBeInTheDocument();
     expect(screen.getByText('Summer')).toBeInTheDocument();
+  });
+
+  it('renders module navigation buttons', () => {
+    render(<TopBar {...defaultProps()} />);
+    expect(screen.getByRole('button', { name: 'Dashboard' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Planning' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Matrix' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Employees' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Settings' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Export / Print' })).toBeInTheDocument();
+  });
+
+  it('calls onModuleChange when clicking a module', () => {
+    const props = defaultProps();
+    render(<TopBar {...props} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Dashboard' }));
+    expect(props.onModuleChange).toHaveBeenCalledWith('dashboard');
   });
 
   it('calls onShiftModeChange when clicking a mode button', () => {

@@ -9,7 +9,7 @@ describe('parseCSV — English headers (backwards compat)', () => {
     expect(operators).toHaveLength(2);
     expect(operators[0].name).toBe('Anna');
     expect(operators[0].shift).toBe('S1');
-    expect(operators[0].certifications).toEqual(['Avsyning', 'Serialisering']);
+    expect(operators[0].certifications).toEqual(['avsyning', 'serialisering']);
     expect(operators[1].name).toBe('Erik');
     expect(operators[1].shift).toBe('S2');
   });
@@ -57,7 +57,7 @@ describe('parseCSV — Swedish headers', () => {
     expect(error).toBeNull();
     expect(operators).toHaveLength(1);
     expect(operators[0].name).toBe('Anna');
-    expect(operators[0].certifications).toEqual(['Avsyning', 'Serialisering']);
+    expect(operators[0].certifications).toEqual(['avsyning', 'serialisering']);
   });
 
   it('accepts Swedish headers case-insensitively with whitespace', () => {
@@ -96,7 +96,7 @@ describe('parseCSV — cert handling', () => {
   it('matches cert names case-insensitively and trims whitespace', () => {
     const csv = 'Namn,Skift,Certifieringar\nAnna,S1,  avsyning ; SERIALISERING ';
     const { operators } = parseCSV(csv);
-    expect(operators[0].certifications).toEqual(['Avsyning', 'Serialisering']);
+    expect(operators[0].certifications).toEqual(['avsyning', 'serialisering']);
   });
 
   it('emits a fuzzy suggestion warning for a typo within Levenshtein ≤ 2', () => {
@@ -133,8 +133,8 @@ describe('parseCSV — cert handling', () => {
 
 describe('exportOperatorsCSV', () => {
   const ops = [
-    { id: '1', name: 'Anna Lindgren', shift: 'S1', active: true, certifications: ['Avsyning', 'Serialisering'] },
-    { id: '2', name: 'Erik Holm', shift: 'S1', active: true, certifications: ['Kapselresaren'] },
+    { id: '1', name: 'Anna Lindgren', shift: 'S1', active: true, certifications: ['avsyning', 'serialisering'] },
+    { id: '2', name: 'Erik Holm', shift: 'S1', active: true, certifications: ['kapselresaren'] },
   ];
 
   it('prefixes UTF-8 BOM for Excel compatibility', () => {
@@ -168,9 +168,9 @@ describe('exportOperatorsCSV', () => {
     expect(operators).toHaveLength(2);
     expect(operators[0].name).toBe('Anna Lindgren');
     expect(operators[0].shift).toBe('S1');
-    expect(operators[0].certifications).toEqual(['Avsyning', 'Serialisering']);
+    expect(operators[0].certifications).toEqual(['avsyning', 'serialisering']);
     expect(operators[1].name).toBe('Erik Holm');
-    expect(operators[1].certifications).toEqual(['Kapselresaren']);
+    expect(operators[1].certifications).toEqual(['kapselresaren']);
   });
 
   it('escapes names containing commas with quotes', () => {
@@ -184,11 +184,11 @@ describe('exportOperatorsCSV', () => {
 
 describe('mergeOperators', () => {
   const existing = [
-    { id: 'op1', name: 'Anna', shift: 'S1', active: true, certifications: ['Avsyning'] },
+    { id: 'op1', name: 'Anna', shift: 'S1', active: true, certifications: ['avsyning'] },
   ];
 
   it('adds new operators', () => {
-    const imported = [{ name: 'Erik', shift: 'S2', certifications: ['Serialisering'] }];
+    const imported = [{ name: 'Erik', shift: 'S2', certifications: ['serialisering'] }];
     const { operators, added, updated } = mergeOperators(existing, imported);
     expect(added).toBe(1);
     expect(updated).toBe(0);
@@ -198,13 +198,13 @@ describe('mergeOperators', () => {
   });
 
   it('updates existing operators by case-insensitive name match', () => {
-    const imported = [{ name: 'anna', shift: 'S2', certifications: ['Serialisering'] }];
+    const imported = [{ name: 'anna', shift: 'S2', certifications: ['serialisering'] }];
     const { operators, added, updated } = mergeOperators(existing, imported);
     expect(added).toBe(0);
     expect(updated).toBe(1);
     expect(operators).toHaveLength(1);
     expect(operators[0].shift).toBe('S2');
-    expect(operators[0].certifications).toEqual(['Serialisering']);
+    expect(operators[0].certifications).toEqual(['serialisering']);
   });
 
   it('preserves id and active status of existing operators', () => {

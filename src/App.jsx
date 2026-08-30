@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback, useMemo, useReducer } from 'react';
-import { seedOperators, seedVacationBlocks, buildDefaultDemand, defaultSettings } from './data';
+import { useState, useEffect, useCallback, useMemo, useReducer, useRef } from 'react';
+import { buildDefaultState } from './data';
+import { migrateState, processIdForName, buildOperatorIcon } from './schema';
 import {
   saveState, loadState, clearState,
   saveTheme, loadTheme,
@@ -11,10 +12,15 @@ import { parseCSV, mergeOperators, downloadCSVTemplate, downloadOperatorsCSV } f
 import { buildHolidayMap, initHolidays } from './holidays';
 import { historyReducer, initHistory } from './historyReducer';
 import { useBreakpoint } from './hooks/useBreakpoint';
+import { sanitizeSettingsPatch } from './settings';
 
 import TopBar from './components/TopBar';
-import OperatorPanel from './components/OperatorPanel';
-import CalendarGrid from './components/calendar/CalendarGrid';
+import PlanningBoard from './modules/PlanningBoard';
+import Dashboard from './modules/Dashboard';
+import CertificationMatrix from './modules/CertificationMatrix';
+import Employees from './modules/Employees';
+import Settings from './modules/Settings';
+import ExportPrint from './modules/ExportPrint';
 
 /* ── Utility ──────────────────────────────────────────────────────────────── */
 let _uid = 0;
@@ -24,15 +30,10 @@ function getDefaults() {
   const shared = loadStateFromUrl();
   if (shared) {
     clearShareHash();
-    return { state: shared, wasShared: true };
+    return { state: migrateState(shared), wasShared: true };
   }
   return {
-    state: loadState() || {
-      operators: seedOperators,
-      vacationBlocks: seedVacationBlocks,
-      demand: buildDefaultDemand(),
-      settings: defaultSettings,
-    },
+    state: migrateState(loadState() || buildDefaultState()),
     wasShared: false,
   };
 }
@@ -56,8 +57,10 @@ export default function App() {
   const [toast, setToast] = useState(initResult.wasShared ? 'Loaded shared workspace' : null);
   const [showDemand, setShowDemand] = useState(false);
   const [showOperatorMgmt, setShowOperatorMgmt] = useState(false);
+  const [activeModule, setActiveModule] = useState('planning');
   const [zoom, setZoom] = useState(storedUI.zoom === 'day' ? 'day' : 'week');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(!!storedUI.sidebarCollapsed);
+  const toastTimerRef = useRef(null);
   const { isMobile, isTablet, isDesktop } = useBreakpoint();
 
   // Auto-collapse sidebar on tablet/mobile; restore latest persisted preference on desktop
@@ -69,7 +72,7 @@ export default function App() {
     }
   }, [isMobile, isTablet, isDesktop]);
 
-  const { operators, vacationBlocks, demand, settings } = state;
+  const { operators, vacationBlocks, demand, settings, processes } = state;
   const { startWeek, visibleWeeks, shiftMode } = settings;
   const weeks = useMemo(
     () => Array.from({ length: visibleWeeks }, (_, i) => startWeek + i),
@@ -77,7 +80,18 @@ export default function App() {
   );
 
   const [holidayMap, setHolidayMap] = useState(() => buildHolidayMap());
-  const flash = msg => { setToast(msg); setTimeout(() => setToast(null), 3000); };
+  const flash = useCallback(msg => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    setToast(msg);
+    toastTimerRef.current = setTimeout(() => {
+      setToast(null);
+      toastTimerRef.current = null;
+    }, 3000);
+  }, []);
+
+  useEffect(() => () => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+  }, []);
 
   // Load holidays async (date-holidays is code-split)
   useEffect(() => {
@@ -161,8 +175,54 @@ export default function App() {
         return { ...b, note: trimmed };
       }),
     })), [setFn]);
-  const updateDemand = useCallback((proc, week, val) =>
-    setFn(s => ({ ...s, demand: { ...s.demand, [proc]: { ...s.demand[proc], [week]: val } } })), [setFn]);
+  const updateDemand = useCallback((processId, week, val) =>
+    setFn(s => ({ ...s, demand: { ...s.demand, [processId]: { ...s.demand[processId], [week]: val } } })), [setFn]);
+  const toggleCertification = useCallback((operatorId, processId) =>
+    setFn(s => ({
+      ...s,
+      operators: s.operators.map(op => {
+        if (op.id !== operatorId) return op;
+        const hasCert = (op.certifications || []).includes(processId);
+        return {
+          ...op,
+          certifications: hasCert
+            ? op.certifications.filter(cert => cert !== processId)
+            : [...(op.certifications || []), processId],
+        };
+      }),
+    })), [setFn]);
+  const addProcess = useCallback(name =>
+    setFn(s => {
+      const baseId = processIdForName(name);
+      let id = baseId;
+      let suffix = 2;
+      while (s.processes.some(process => process.id === id)) id = `${baseId}-${suffix++}`;
+      const weekDemand = {};
+      for (let w = 1; w <= 52; w++) weekDemand[w] = s.settings.defaultRequired ?? 2;
+      return {
+        ...s,
+        processes: [...s.processes, { id, name }],
+        demand: { ...s.demand, [id]: weekDemand },
+      };
+    }), [setFn]);
+  const renameProcess = useCallback((processId, name) =>
+    setFn(s => ({
+      ...s,
+      processes: s.processes.map(process => process.id === processId ? { ...process, name } : process),
+    })), [setFn]);
+  const removeProcess = useCallback(processId =>
+    setFn(s => {
+      const { [processId]: _removed, ...demand } = s.demand;
+      return {
+        ...s,
+        processes: s.processes.filter(process => process.id !== processId),
+        demand,
+        operators: s.operators.map(op => ({
+          ...op,
+          certifications: (op.certifications || []).filter(cert => cert !== processId),
+        })),
+      };
+    }), [setFn]);
   const setShiftMode = useCallback(m =>
     setFn(s => ({ ...s, settings: { ...s.settings, shiftMode: m } })), [setFn]);
   const setStartWeek = useCallback(w =>
@@ -173,13 +233,18 @@ export default function App() {
         startWeek: Math.max(1, Math.min(52 - s.settings.visibleWeeks + 1, w)),
       },
     })), [setFn]);
+  const updateSettings = useCallback(patch =>
+    setFn(s => ({
+      ...s,
+      settings: sanitizeSettingsPatch(s.settings, patch),
+    })), [setFn]);
 
   /* ── Operator management ────────────────────────────────────────────────── */
   const addOperator = useCallback((name, shift) => {
-    const op = { id: uid(), name, shift, active: true, certifications: [] };
+    const op = { id: uid(), name, shift, active: true, certifications: [], icon: buildOperatorIcon(name, operators.length) };
     setFn(s => ({ ...s, operators: [...s.operators, op] }));
     flash(`${name} tillagd`);
-  }, [setFn]);
+  }, [flash, operators.length, setFn]);
   const removeOperator = useCallback(id => {
     setFn(s => ({
       ...s,
@@ -197,7 +262,7 @@ export default function App() {
       if (!file) return;
       const reader = new FileReader();
       reader.onload = ev => {
-        const { operators: parsed, error, warnings } = parseCSV(ev.target.result);
+        const { operators: parsed, error, warnings } = parseCSV(ev.target.result, processes);
         if (error) { flash(error); return; }
         const { operators: merged, added, updated } = mergeOperators(operators, parsed);
         update({ operators: merged });
@@ -208,30 +273,30 @@ export default function App() {
       reader.readAsText(file);
     };
     input.click();
-  }, [operators, update]);
+  }, [flash, operators, processes, update]);
   const handleCSVExport = useCallback(() => {
-    downloadOperatorsCSV(operators);
+    downloadOperatorsCSV(operators, processes);
     flash('Personalexport nedladdad');
-  }, [operators]);
+  }, [flash, operators, processes]);
 
-  const handleSave = useCallback(() => { saveState(state); flash('State saved'); }, [state]);
-  const handleExport = useCallback(() => { exportJSON(state); flash('Exported to file'); }, [state]);
+  const handleSave = useCallback(() => { saveState(state); flash('State saved'); }, [flash, state]);
+  const handleExport = useCallback(() => { exportJSON(state); flash('Exported to file'); }, [flash, state]);
   const handleImport = useCallback(async () => {
     const data = await importJSON();
     if (data) { setFn(() => data); flash('State imported'); }
-  }, [setFn]);
+  }, [flash, setFn]);
   const handleReset = useCallback(() => {
     if (confirm('Reset all data to defaults? This cannot be undone.')) {
       clearState();
-      setFn(() => ({ operators: seedOperators, vacationBlocks: seedVacationBlocks, demand: buildDefaultDemand(), settings: defaultSettings }));
+      setFn(() => buildDefaultState());
       flash('Reset to defaults');
     }
-  }, [setFn]);
+  }, [flash, setFn]);
   const handleShare = useCallback(async () => {
     const link = buildShareLink(state);
     const ok = await copyToClipboard(link);
     flash(ok ? 'Share link copied' : 'Could not copy link');
-  }, [state]);
+  }, [flash, state]);
 
   /* ── Render ─────────────────────────────────────────────────────────────── */
   return (
@@ -247,29 +312,46 @@ export default function App() {
         onShare={handleShare}
         onUndo={undo} onRedo={redo}
         canUndo={canUndo} canRedo={canRedo}
+        activeModule={activeModule}
+        onModuleChange={setActiveModule}
       />
 
       {/* ── Main content ─────────────────────────────────────────────────── */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* Left: Operator Panel */}
-        <OperatorPanel
-          operators={operators} onUpdateOperator={updateOp}
-          showMgmt={showOperatorMgmt}
-          onToggleMgmt={() => setShowOperatorMgmt(p => !p)}
-          onAddOperator={addOperator} onRemoveOperator={removeOperator}
-          onDownloadTemplate={downloadCSVTemplate}
-          collapsed={sidebarCollapsed}
-          onToggleCollapse={() => setSidebarCollapsed(p => !p)}
-        />
-
-        {/* Center: Calendar (handles both zoom levels internally) */}
-        <CalendarGrid
-          operators={operators} vacationBlocks={vacationBlocks}
-          demand={demand} settings={settings} weeks={weeks}
+      {activeModule === 'dashboard' && (
+        <Dashboard
+          operators={operators}
+          vacationBlocks={vacationBlocks}
+          demand={demand}
+          processes={processes}
+          weeks={weeks}
+          settings={settings}
           holidayMap={holidayMap}
-          onAddBlock={addBlock} onUpdateBlock={updateBlock}
-          onDeleteBlock={deleteBlock} onSetBlockStatus={setBlockStatus}
-          onSetBlockDayStatus={setBlockDayStatus} onClearBlockDayStatus={clearBlockDayStatus}
+          onOpenPlanning={() => setActiveModule('planning')}
+        />
+      )}
+      {activeModule === 'planning' && (
+        <PlanningBoard
+          operators={operators}
+          vacationBlocks={vacationBlocks}
+          demand={demand}
+          settings={settings}
+          processes={processes}
+          weeks={weeks}
+          holidayMap={holidayMap}
+          onUpdateOperator={updateOp}
+          showOperatorMgmt={showOperatorMgmt}
+          onToggleOperatorMgmt={() => setShowOperatorMgmt(p => !p)}
+          onAddOperator={addOperator}
+          onRemoveOperator={removeOperator}
+          onDownloadTemplate={() => downloadCSVTemplate(processes)}
+          sidebarCollapsed={sidebarCollapsed}
+          onToggleSidebar={() => setSidebarCollapsed(p => !p)}
+          onAddBlock={addBlock}
+          onUpdateBlock={updateBlock}
+          onDeleteBlock={deleteBlock}
+          onSetBlockStatus={setBlockStatus}
+          onSetBlockDayStatus={setBlockDayStatus}
+          onClearBlockDayStatus={clearBlockDayStatus}
           onSetBlockNote={setBlockNote}
           setStartWeek={setStartWeek}
           showDemand={showDemand}
@@ -278,7 +360,41 @@ export default function App() {
           zoom={zoom}
           onZoomChange={setZoom}
         />
-      </div>
+      )}
+      {activeModule === 'matrix' && (
+        <CertificationMatrix
+          operators={operators}
+          processes={processes}
+          onToggleCertification={toggleCertification}
+          onAddProcess={addProcess}
+          onRenameProcess={renameProcess}
+          onRemoveProcess={removeProcess}
+        />
+      )}
+      {activeModule === 'employees' && (
+        <Employees
+          operators={operators}
+          processes={processes}
+          onUpdateOperator={updateOp}
+          showMgmt={showOperatorMgmt}
+          onToggleMgmt={() => setShowOperatorMgmt(p => !p)}
+          onAddOperator={addOperator}
+          onRemoveOperator={removeOperator}
+          onDownloadTemplate={() => downloadCSVTemplate(processes)}
+        />
+      )}
+      {activeModule === 'settings' && <Settings settings={settings} onUpdateSettings={updateSettings} />}
+      {activeModule === 'export' && (
+        <ExportPrint
+          operators={operators}
+          vacationBlocks={vacationBlocks}
+          demand={demand}
+          processes={processes}
+          weeks={weeks}
+          settings={settings}
+          holidayMap={holidayMap}
+        />
+      )}
 
       {/* Toast — Neo-Kinetic pill */}
       {toast && (
